@@ -45,10 +45,25 @@ cargo check --workspace
 cargo clippy --workspace --all-targets -- -D warnings   # CI runs with -D warnings
 cargo fmt --all
 cargo test --workspace
+cargo insta review          # after snapshot changes
+cargo bench -p oarfish-drain
 
 cd web && npm run dev      # board on :4321, proxies /api to the daemon on :4000
 cd web && npm run build
 ```
+
+## Testing approach
+
+- **`insta`** for anything parser-shaped: raw lines -> masked -> templates. When you
+  tune a mask or a threshold you should see exactly which templates moved. This is
+  also how the Drain port gets validated against drain3 — snapshot both over one
+  corpus and diff.
+- **`wiremock`** for everything touching `oarfish-jev`. Tests never hit the real API:
+  it bills, and the engine's routing needs *chosen* confidence values so you can prove
+  0.93 pages and 0.61 does not.
+- **`proptest`** for invariants — masking is idempotent, template ids are stable.
+- **`criterion`** for the every-line path. "Fast" without a regression guard is a
+  claim, not a property.
 
 ## Conventions
 
@@ -69,6 +84,12 @@ cd web && npm run build
 | OTLP ingest | `tonic` + `prost` + `opentelemetry-proto` | vendored `.proto` files |
 | Ingest backpressure | `governor` | dropping on the floor |
 | Hot verdict lookups | `moka` (in front of `fjall`) | hitting fjall per line |
+| Values stored in fjall | `postcard` | JSON in an LSM store |
+| Alarm ids | `ulid` (`Ulid::generate()`) | `uuid` v4 — it will not sort |
+| Board-facing types | `ts-rs`, exported from `oarfish-core` | hand-written TS interfaces |
+| Applying the mask bundle | `regex::RegexSet` — one pass | looping N regexes per line |
+| Config (file + env + CLI) | `figment` | hand-rolled merging |
+| The daemon's own log writes | `tracing-appender` (non-blocking) | blocking on the ingest path |
 
 A runaway container emitting 100k lines/sec is a normal homelab failure, not an
 edge case. Ingest is rate-limited on purpose.
