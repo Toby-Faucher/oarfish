@@ -1,15 +1,8 @@
 <script lang="ts">
   import Severity from './Severity.svelte';
-  import { ROW_HEIGHT, type Density, type Severity as Level } from '../lib/severity';
-
-  export interface Alarm {
-    id: string;
-    level: Level;
-    title: string;
-    host: string;
-    count: number;
-    at: string;
-  }
+  import { ROW_HEIGHT, type Density } from '../lib/severity';
+  import type { Alarm } from '../lib/bindings/oarfish';
+  import { clockOf } from '../lib/time';
 
   interface Props {
     alarm: Alarm;
@@ -30,13 +23,18 @@
   ]} {selected ? 'bg-l2' : ''}"
 >
   <div class="w-[104px] shrink-0">
-    <Severity level={alarm.level} compact={density === 'compact'} />
+    <Severity level={alarm.severity} compact={density === 'compact'} />
   </div>
 
   <div class="min-w-0 flex-1">
-    <div class="truncate text-[13.5px] font-medium">{alarm.title}</div>
+    <!--
+      The display line is the masked template, in mono because it is machine
+      text. Flat: the dimensioned drawing is Template.svelte's job, and only
+      one component gets to be loud.
+    -->
+    <div class="truncate font-mono text-[12.5px]">{alarm.template}</div>
     {#if density !== 'compact'}
-      <div class="mt-0.5 font-mono text-[10.5px] text-ink-3">{alarm.host} · {alarm.at}</div>
+      <div class="mt-0.5 font-mono text-[10.5px] text-ink-3">{alarm.host} · {clockOf(alarm.opened_at)}</div>
     {/if}
   </div>
 

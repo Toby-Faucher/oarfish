@@ -1,0 +1,10 @@
+# ts-rs writes the board's TypeScript during `cargo test`. It lands directly in the
+# board's source tree: there is one definition of `Alarm` in this repo, and it is the
+# Rust one. CI regenerates and fails on a diff, so the two cannot drift.
+#
+# Only oarfish-core may export into oarfish.ts. ts-rs's export registry is
+# process-local, and `cargo test --workspace` runs one test binary per crate: a
+# second crate exporting into the same file would truncate what the first one
+# wrote instead of merging with it, nondeterministically depending on test order.
+[env]
+TS_RS_EXPORT_DIR = { value = "web/src/lib/bindings", relative = true }
