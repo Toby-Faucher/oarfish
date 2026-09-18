@@ -12,3 +12,8 @@ oarfish-core.workspace = true
 regex.workspace        = true
 serde.workspace        = true
 thiserror.workspace    = true
+
+[dev-dependencies]
+insta.workspace = true
+rstest.workspace = true
+proptest.workspace = true

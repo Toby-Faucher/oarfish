@@ -34,11 +34,13 @@ serde_json = "1"
 toml       = "1.1"
 time       = { version = "0.3", features = ["serde", "formatting", "parsing", "macros"] }
 blake3     = "1"
+ulid       = { version = "3", features = ["serde", "std"] }
 regex      = "1"
 
 # storage
 fjall = "3.1"
 moka  = { version = "0.12", features = ["future"] }
+postcard = { version = "1", default-features = false, features = ["use-std"] }
 
 # http
 axum       = { version = "0.8", features = ["macros"] }
@@ -59,6 +61,20 @@ thiserror          = "2"
 tracing            = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 console-subscriber = "0.5"
+tracing-appender   = "0.2"
+figment            = { version = "0.10", features = ["env"] }
+indicatif          = "0.18"
+clap_complete      = "4"
+
+# board type generation
+ts-rs = "12"
+
+# dev only
+insta     = { version = "1", features = ["glob", "json"] }
+wiremock  = "0.6"
+criterion = { version = "0.8", features = ["async_tokio"] }
+rstest    = "0.27"
+proptest  = "1"
 
 [profile.release]
 opt-level     = 3

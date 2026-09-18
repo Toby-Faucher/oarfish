@@ -7,3 +7,28 @@
 //! and `Alarm`. Nothing here does I/O.
 
 #![forbid(unsafe_code)]
+
+#[cfg(test)]
+mod tests {
+    use ulid::Ulid;
+
+    /// Alarm ids are ULIDs specifically so the store gets chronological range
+    /// scans for free. If this ever stops holding, the key layout is wrong.
+    #[test]
+    fn ulids_sort_chronologically() {
+        let first = Ulid::generate();
+        std::thread::sleep(std::time::Duration::from_millis(2));
+        let second = Ulid::generate();
+
+        assert!(first < second);
+        assert!(first.to_string() < second.to_string());
+    }
+
+    #[test]
+    fn ulids_round_trip_through_serde() {
+        let id = Ulid::generate();
+        let json = serde_json::to_string(&id).expect("serialize");
+        let back: Ulid = serde_json::from_str(&json).expect("deserialize");
+        assert_eq!(id, back);
+    }
+}
