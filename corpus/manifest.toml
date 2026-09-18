@@ -1,0 +1,43 @@
+# Third-party log corpora, fetched on demand and never committed.
+#
+# Source: loghub - https://github.com/logpai/loghub
+#
+# The loghub datasets are made "freely available for research or academic work",
+# and the project asks that any use or distribution cite the repository URL
+# above. That is narrower than this repository's MIT licence, so oarfish does
+# not redistribute them: this manifest records where they came from and what
+# they should hash to, and `scripts/fetch-corpus.sh` downloads them into a
+# gitignored directory on the machine that wants them.
+#
+# The `_templates.csv` files carry loghub's ground-truth templates. M1 does not
+# use them; M2 compares the Drain port against them.
+
+[[file]]
+url    = "https://raw.githubusercontent.com/logpai/loghub/dd61d0952749ee7963bde24220d1be5ede023033/Linux/Linux_2k.log"
+path   = "loghub/Linux_2k.log"
+sha256 = "b3e20bc1afe732ab1bf3ed1de4bf9c809e4194e02f7dea911d918e5342e8e173"
+
+[[file]]
+url    = "https://raw.githubusercontent.com/logpai/loghub/dd61d0952749ee7963bde24220d1be5ede023033/OpenSSH/OpenSSH_2k.log"
+path   = "loghub/OpenSSH_2k.log"
+sha256 = "1e4912727fa88245113d41b16a0cd25ceadba7f931e1c406542885b91254264f"
+
+[[file]]
+url    = "https://raw.githubusercontent.com/logpai/loghub/dd61d0952749ee7963bde24220d1be5ede023033/Apache/Apache_2k.log"
+path   = "loghub/Apache_2k.log"
+sha256 = "c7efa3eb686e3a96bd2f8f4457b2a7887e9cf2f3649327f1b4e87af841363ce8"
+
+[[file]]
+url    = "https://raw.githubusercontent.com/logpai/loghub/dd61d0952749ee7963bde24220d1be5ede023033/Zookeeper/Zookeeper_2k.log"
+path   = "loghub/Zookeeper_2k.log"
+sha256 = "e40e0af5ef9eb6e4097200f260b9d1f626b3676f861a432e87977242e75543d8"
+
+[[file]]
+url    = "https://raw.githubusercontent.com/logpai/loghub/dd61d0952749ee7963bde24220d1be5ede023033/Linux/Linux_2k.log_templates.csv"
+path   = "loghub/Linux_2k.log_templates.csv"
+sha256 = "60ed088e0aa899a467c66863c30e2ae460d7bc1def1a65bff70ec47a668df0f7"
+
+[[file]]
+url    = "https://raw.githubusercontent.com/logpai/loghub/dd61d0952749ee7963bde24220d1be5ede023033/OpenSSH/OpenSSH_2k.log_templates.csv"
+path   = "loghub/OpenSSH_2k.log_templates.csv"
+sha256 = "c23fb1bb925abd0ca2b110e661f5f0a1e0f66e4783e61a502ef3486a2d84b2c7"

@@ -20,5 +20,9 @@ web/.astro/
 .DS_Store
 *.swp
 
+# Third-party corpora, fetched by scripts/fetch-corpus.sh. Never committed:
+# see the licence note in corpus/manifest.toml.
+/corpus/loghub/
+
 # SDD scratch: ledgers, briefs, review packages
 .superpowers/

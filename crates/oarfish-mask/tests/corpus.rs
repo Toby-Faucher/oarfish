@@ -51,3 +51,42 @@ fn the_committed_corpus_masks_idempotently() {
         }
     });
 }
+
+/// The wider tier. Skips silently when the corpus has not been fetched, so a
+/// fresh clone with no network is still green; run `scripts/fetch-corpus.sh`
+/// to turn it on.
+#[test]
+fn the_fetched_corpus_masks_as_snapshotted() {
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../corpus/loghub")
+        .canonicalize();
+
+    let Ok(root) = root else {
+        eprintln!("skipping: corpus/loghub is absent; run scripts/fetch-corpus.sh");
+        return;
+    };
+
+    let mut files: Vec<_> = std::fs::read_dir(&root)
+        .expect("read corpus/loghub")
+        .filter_map(Result::ok)
+        .map(|entry| entry.path())
+        .filter(|path| path.extension().is_some_and(|ext| ext == "log"))
+        .collect();
+    files.sort();
+    assert!(
+        !files.is_empty(),
+        "corpus/loghub exists but holds no .log files"
+    );
+
+    for path in files {
+        let name = path
+            .file_stem()
+            .expect("stem")
+            .to_string_lossy()
+            .into_owned();
+        let contents = std::fs::read_to_string(&path).expect("read corpus file");
+        insta::with_settings!({ snapshot_suffix => name, omit_expression => true }, {
+            insta::assert_snapshot!(render(&contents));
+        });
+    }
+}
