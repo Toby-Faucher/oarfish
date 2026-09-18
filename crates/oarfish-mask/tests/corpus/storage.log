@@ -1,0 +1,8 @@
+smartd: Device: /dev/sda [SAT], SMART Usage Attribute: 194 Temperature_Celsius changed from 38 to 41
+smartd: Device: /dev/sdb [SAT], 1 Currently unreadable (pending) sectors
+zed: eid=42 class=statechange pool='tank' vdev=nvme0n1p2 vdev_state=DEGRADED
+zpool: pool 'tank' scrub repaired 0B in 01:22:43 with 0 errors
+zpool: pool 'backup' state is DEGRADED: One or more devices has experienced an unrecoverable error
+docker: container 3f2a9c1e88b4 exited with code 137 after 1.5s
+docker: pulled image ghcr.io/tfaucher/oarfish@sha256:9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08
+postgres[4412]: FATAL: could not write to file "pg_wal/000000010000000000000042": No space left on device

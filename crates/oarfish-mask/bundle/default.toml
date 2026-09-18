@@ -1,0 +1,87 @@
+# oarfish's curated default mask bundle.
+#
+# ORDER IN THIS FILE IS PRECEDENCE. It becomes the order of alternates in one
+# compiled regex, and the first alternate that matches at a position wins. Move
+# NUM up and every IP address in your corpus quietly becomes four numbers, with
+# no error and no warning: just a verdict cache full of templates that mean
+# nothing. Add specific patterns above general ones, always.
+#
+# `MASKED` is reserved and must not be declared here. The masker injects it
+# ahead of everything below so text that is already masked passes through
+# untouched.
+#
+# Changing anything in this file changes the bundle hash, which moves every
+# template id, which orphans every cached verdict. That is deliberate and it is
+# supposed to be visible.
+
+version = 1
+
+[[slot]]
+name    = "TS"
+pattern = '\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})?|\d{4}/\d{2}/\d{2}[T ]\d{2}:\d{2}:\d{2}|\d{2}/[A-Za-z]{3}/\d{4}:\d{2}:\d{2}:\d{2}(?:\s[+-]\d{4})?|\b\d{2}:\d{2}:\d{2}\b'
+why     = "ISO-8601, nginx error-log slash dates, nginx common-log, and a bare wall clock. First, because a timestamp is made of numbers and everything numeric below would shred it."
+
+[[slot]]
+name    = "UUID"
+pattern = '\b[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\b'
+why     = "before HEX, which would otherwise take the first eight characters and leave the rest as litter"
+
+[[slot]]
+name    = "MAC"
+pattern = '\b(?:[0-9a-fA-F]{2}:){5}[0-9a-fA-F]{2}\b'
+why     = "before HEX and before the bare clock branch of TS, both of which match pieces of a MAC"
+
+[[slot]]
+name    = "IP6"
+pattern = '\b(?:[0-9a-fA-F]{0,4}:){2,7}[0-9a-fA-F]{0,4}(?:%[A-Za-z0-9]+)?\b'
+why     = "before IP4, since a v4-mapped v6 address contains a dotted quad"
+
+[[slot]]
+name    = "IP4"
+pattern = '\b(?:\d{1,3}\.){3}\d{1,3}\b'
+why     = "dotted quad, before NUM so the octets are not eaten one at a time"
+
+[[slot]]
+name    = "URL"
+pattern = "\\b[a-z][a-z0-9+.-]*://[^\\s\"']+"
+why     = "before PATH, which would otherwise claim the path component and leave a dangling scheme"
+
+[[slot]]
+name    = "EMAIL"
+pattern = '\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b'
+why     = "before PATH and HEX, which both match fragments of an address"
+
+[[slot]]
+name    = "DEV"
+pattern = '/dev/[a-zA-Z0-9/_-]+|\b(?:sd[a-z]+\d*|nvme\d+n\d+(?:p\d+)?|dm-\d+|vd[a-z]\d*|md\d+|zd\d+)\b'
+why     = "before PATH so /dev/sda1 is a device rather than a generic path, and before NUM so sda1 does not become sda<VAR:NUM>. vd[a-z] takes a single letter on purpose: vd[a-z]+ matches the word vdev."
+
+[[slot]]
+name    = "PATH"
+pattern = '(?:/[A-Za-z0-9._-]+){2,}/?'
+why     = "two segments minimum, so a bare / or an isolated /tmp stays literal text"
+
+[[slot]]
+name    = "HEX"
+pattern = '\b0x[0-9a-fA-F]+\b|\b[0-9a-fA-F]{8,}\b'
+why     = "kernel addresses and container ids. Eight characters minimum so ordinary short words are not swallowed."
+
+[[slot]]
+name    = "SIZE"
+pattern = '\b\d+(?:\.\d+)?\s?(?:[KMGTPkmgtp]?i?B|bytes)\b'
+why     = "before DUR and NUM, both of which would take the number and leave the unit. The prefix is optional and case-insensitive because the kernel writes kB and scrub lines write a bare 0B."
+
+[[slot]]
+name    = "DUR"
+pattern = '\b\d+(?:\.\d+)?\s?(?:ns|us|ms|s|m|h)\b'
+why     = "same reason as SIZE. After SIZE, because MB and ms are distinguishable but B and s are close enough to want a fixed order."
+
+[[slot]]
+name    = "PID"
+pattern = '\[\d+\]'
+why     = "the bracketed form only. A bare pid is indistinguishable from any other number, and guessing is the Drain heuristic this crate exists to replace."
+
+[[slot]]
+name    = "NUM"
+pattern = '\b\d+(?:\.\d+)?\b'
+why     = "the catch-all, last on purpose. Word-bounded so EXT4-fs stays EXT4-fs and nvme0 stays nvme0: digits inside a word are part of the word's identity, not variables."

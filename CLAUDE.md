@@ -159,6 +159,7 @@ cargo fmt --all
 cargo test --workspace
 cargo insta review          # after snapshot changes
 cargo bench -p oarfish-drain
+cargo bench -p oarfish-mask
 
 cd web && bun run dev      # board on :4321, proxies /api to the daemon on :4000
 cd web && bun run build
@@ -205,13 +206,19 @@ cd web && bun run build
 | Values stored in fjall | `postcard` | JSON in an LSM store |
 | Alarm ids | `ulid` (`Ulid::generate()`) | `uuid` v4 — it will not sort |
 | Board-facing types | `ts-rs`, exported from `oarfish-core` | hand-written TS interfaces |
-| Applying the mask bundle | `regex::RegexSet` — one pass | looping N regexes per line |
+| Applying the mask bundle | one compiled `Regex` of named groups | `RegexSet`, which gives no spans |
 | Config (file + env + CLI) | `figment` | hand-rolled merging |
 | The daemon's own log writes | `tracing-appender` (non-blocking) | blocking on the ingest path |
 | Board behaviour (menus, dialogs) | `bits-ui` — headless | a component kit with its own look |
 | Alarm list at scale | `@tanstack/svelte-virtual` | a data grid; an alarm list is not a table |
 | Templates view | `@tanstack/svelte-table` | hand-rolled sorting |
 | Sparklines | `uplot` | Chart.js or Recharts, both overkill here |
+
+`RegexSet` looks like the right tool for the mask bundle and is not: it reports *which*
+patterns matched, never *where*, so it can only prefilter and replacement still needs a
+second scan per candidate plus a hand-written overlap resolver. One alternation of named
+groups walks the line once and yields spans, and it moves precedence out of merge code and
+into the bundle file, where it can be read.
 
 A runaway container emitting 100k lines/sec is a normal homelab failure, not an
 edge case. Ingest is rate-limited on purpose.

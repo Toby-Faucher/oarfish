@@ -1,0 +1,20 @@
+---
+source: crates/oarfish-mask/tests/corpus.rs
+assertion_line: 36
+expression: render(&contents)
+input_file: crates/oarfish-mask/tests/corpus/nginx.log
+---
+raw:    10.0.0.9 - - [18/Sep/2026:03:14:07 +0000] "GET /api/alarms HTTP/1.1" 200 4523 "-" "curl/8.5.0"
+masked: <VAR:IP4> - - [<VAR:TS>] "GET <VAR:PATH> HTTP/<VAR:NUM>" <VAR:NUM> <VAR:NUM> "-" "curl/<VAR:NUM>.<VAR:NUM>"
+
+raw:    10.0.0.9 - - [18/Sep/2026:03:14:09 +0000] "POST /api/alarms/01K5ZG7Q2M/ack HTTP/1.1" 204 0 "-" "Mozilla/5.0"
+masked: <VAR:IP4> - - [<VAR:TS>] "POST <VAR:PATH> HTTP/<VAR:NUM>" <VAR:NUM> <VAR:NUM> "-" "Mozilla/<VAR:NUM>"
+
+raw:    192.168.1.20 - - [18/Sep/2026:03:15:44 +0000] "GET /favicon.ico HTTP/1.1" 404 153 "-" "Mozilla/5.0"
+masked: <VAR:IP4> - - [<VAR:TS>] "GET /favicon.ico HTTP/<VAR:NUM>" <VAR:NUM> <VAR:NUM> "-" "Mozilla/<VAR:NUM>"
+
+raw:    2026/09/18 03:14:07 [error] 918#918: *4412 upstream timed out (110: Connection timed out) while reading response header from upstream, client: 10.0.0.9, server: board.lan, request: "GET /api/stream HTTP/1.1", upstream: "http://127.0.0.1:4000/api/stream"
+masked: <VAR:TS> [error] <VAR:NUM>#<VAR:NUM>: *<VAR:NUM> upstream timed out (<VAR:NUM>: Connection timed out) while reading response header from upstream, client: <VAR:IP4>, server: board.lan, request: "GET <VAR:PATH> HTTP/<VAR:NUM>", upstream: "<VAR:URL>"
+
+raw:    2026/09/18 03:16:01 [warn] 918#918: *4530 a client request body is buffered to a temporary file /var/lib/nginx/body/0000000012
+masked: <VAR:TS> [warn] <VAR:NUM>#<VAR:NUM>: *<VAR:NUM> a client request body is buffered to a temporary file <VAR:PATH>

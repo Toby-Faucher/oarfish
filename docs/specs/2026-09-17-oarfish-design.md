@@ -126,8 +126,12 @@ cuts downstream false alarms by 30%+.
    `oarfish masks synthesize` samples representative lines and asks an LLM to produce
    regexes, once, writing the result to the bundle.
 
-The bundle is applied with `regex::RegexSet` so all patterns are tested in one pass
-rather than looping N regexes per line.
+The bundle compiles into one `Regex` of named groups, so every pattern is tested in a
+single pass rather than by looping N regexes per line. `RegexSet` cannot do this job:
+it reports *which* patterns matched, never *where*, so it can only prefilter, and
+replacement would still need a second scan per candidate plus a hand-written resolver
+for overlaps. Declaration order in the bundle becomes alternation order, which makes
+precedence a readable property of the bundle file instead of merge code.
 
 ### 5.4 Cluster
 
@@ -360,7 +364,8 @@ bundle covers M1 through M6, and synthesis lands after.
 2. **Light theme.** Specified in tokens, not yet drawn or reviewed. Needs its own pass.
 
 *Resolved 2026-09-18: transport is OpenRouter (§5.11); the contextual check reads a
-snapshot, not the engine (§5.8).*
+snapshot, not the engine (§5.8); the mask bundle is one compiled alternation, not a
+`RegexSet` (§5.3, and `docs/specs/2026-09-18-m1-mask-design.md` §4).*
 
 ## 13. Risks
 

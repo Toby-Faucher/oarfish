@@ -1,0 +1,10 @@
+EXT4-fs error (device sda1): ext4_find_entry:1455: inode #98304: comm ls: reading directory lblock 0
+EXT4-fs (dm-3): mounted filesystem with ordered data mode. Opts: (null)
+nvme nvme0: I/O 442 QID 3 timeout, aborting
+nvme nvme0: Abort status: 0x0
+Out of memory: Killed process 28143 (postgres) total-vm:4194304kB, anon-rss:2097152kB
+BUG: unable to handle kernel NULL pointer dereference at 0xffff888100a41000
+CPU: 3 PID: 28143 Comm: postgres Tainted: G           OE     6.11.4-arch1-1
+usb 1-4: new high-speed USB device number 7 using xhci_hcd
+eth0: link up, 1000 Mbps, full duplex
+TCP: request_sock_TCP: Possible SYN flooding on port 443. Sending cookies.
