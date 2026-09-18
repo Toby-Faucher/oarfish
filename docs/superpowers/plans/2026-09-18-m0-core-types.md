@@ -247,25 +247,11 @@ Modify `.github/workflows/ci.yml`. In the `rust` job, replace the
             || { echo "::error::web/src/lib/bindings is stale. Run 'cargo test --workspace' and commit the result."; exit 1; }
 ```
 
-- [ ] **Step 9: Verify the gate catches drift**
+- [ ] **Step 9: Format, lint, commit**
 
-Run:
-```sh
-sed -i 's/    Critical,/    Critical,\n    Fake,/' crates/oarfish-core/src/severity.rs
-cargo test -p oarfish-core >/dev/null 2>&1
-git diff --exit-code -- web/src/lib/bindings
-```
-Expected: exit status 1, with `Fake` shown in the diff. This proves the gate works.
-
-Then revert and confirm it is clean again:
-```sh
-git checkout crates/oarfish-core/src/severity.rs
-cargo test -p oarfish-core >/dev/null 2>&1
-git diff --exit-code -- web/src/lib/bindings && echo CLEAN
-```
-Expected: `CLEAN`.
-
-- [ ] **Step 10: Format, lint, commit**
+The commit comes before the gate is exercised, because exercising it means
+reverting a deliberate edit, and `git checkout <path>` only works on a file git
+already tracks.
 
 ```sh
 cargo fmt --all
@@ -273,6 +259,28 @@ cargo clippy --workspace --all-targets -- -D warnings
 git add .cargo/config.toml crates/oarfish-core .github/workflows/ci.yml web/src/lib
 git commit -m "feat(core): add Severity, exported to the board via ts-rs"
 ```
+
+- [ ] **Step 10: Verify the gate catches drift**
+
+A gate nobody has seen fail is a claim, not a property. Break the type on purpose
+and confirm the gate notices:
+
+```sh
+sed -i 's/    Critical,/    Critical,\n    Fake,/' crates/oarfish-core/src/severity.rs
+cargo test -p oarfish-core >/dev/null 2>&1
+git diff --exit-code -- web/src/lib/bindings
+```
+Expected: exit status 1, with `Fake` shown in the diff.
+
+Then revert and confirm it goes clean again:
+
+```sh
+git checkout crates/oarfish-core/src/severity.rs
+cargo test -p oarfish-core >/dev/null 2>&1
+git status --short
+```
+Expected: no output from `git status --short`. The working tree is clean and the
+commit from Step 9 stands unamended.
 
 ---
 
