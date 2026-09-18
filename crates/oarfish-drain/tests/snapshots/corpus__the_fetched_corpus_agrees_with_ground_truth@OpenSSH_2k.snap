@@ -1,0 +1,64 @@
+---
+source: crates/oarfish-drain/tests/corpus.rs
+assertion_line: 337
+---
+truth_templates: 27 port_clusters: 26
+unambiguous: 2000 unmatched: 0 ambiguous: 0
+impure_clusters: 2
+  seq 12 mixes ["E5", "E4"]: Dec <VAR:NUM> <VAR:TS> LabSZ sshd<VAR:PID>: Disconnecting: Too many authentication failures for <*> [preauth]
+  seq 20 mixes ["E16", "E15"]: Dec <VAR:NUM> <VAR:TS> LabSZ sshd<VAR:PID>: PAM <VAR:NUM> more authentication <*> logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=ssh ruser= rhost=<VAR:IP4>
+split_events: 1
+  E19 in 3 clusters
+lines: 2000 clusters: 26
+413 Dec <VAR:NUM> <VAR:TS> LabSZ sshd<VAR:PID>: Received disconnect from <VAR:IP4>: <VAR:NUM>: Bye Bye [preauth]
+  eg: Dec 10 07:07:45 LabSZ sshd[24206]: Received disconnect from 52.80.34.196: 11: Bye Bye [preauth]
+383 Dec <VAR:NUM> <VAR:TS> LabSZ sshd<VAR:PID>: Failed password for <*> from <VAR:IP4> port <VAR:NUM> ssh2
+  eg: Dec 10 07:13:43 LabSZ sshd[24227]: Failed password for root from 5.36.59.76 port 42393 ssh2
+369 Dec <VAR:NUM> <VAR:TS> LabSZ sshd<VAR:PID>: pam_unix(sshd:auth): authentication failure; logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=ssh ruser= <*> user=root
+  eg: Dec 10 07:13:31 LabSZ sshd[24227]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=5.36.59.76.dynamic-dsl-ip.omantel.net.om  user=root
+135 Dec <VAR:NUM> <VAR:TS> LabSZ sshd<VAR:PID>: Failed password for invalid user <*> from <VAR:IP4> port <VAR:NUM> ssh2
+  eg: Dec 10 06:55:48 LabSZ sshd[24200]: Failed password for invalid user webmaster from 173.234.31.186 port 38926 ssh2
+135 Dec <VAR:NUM> <VAR:TS> LabSZ sshd<VAR:PID>: pam_unix(sshd:auth): check pass; user unknown
+  eg: Dec 10 06:55:46 LabSZ sshd[24200]: pam_unix(sshd:auth): check pass; user unknown
+113 Dec <VAR:NUM> <VAR:TS> LabSZ sshd<VAR:PID>: Invalid user <*> from <VAR:IP4>
+  eg: Dec 10 06:55:46 LabSZ sshd[24200]: Invalid user webmaster from 173.234.31.186
+113 Dec <VAR:NUM> <VAR:TS> LabSZ sshd<VAR:PID>: input_userauth_request: invalid user <*> [preauth]
+  eg: Dec 10 06:55:46 LabSZ sshd[24200]: input_userauth_request: invalid user webmaster [preauth]
+110 Dec <VAR:NUM> <VAR:TS> LabSZ sshd<VAR:PID>: pam_unix(sshd:auth): authentication failure; logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=ssh ruser= <*>
+  eg: Dec 10 06:55:46 LabSZ sshd[24200]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=173.234.31.186 
+85 Dec <VAR:NUM> <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for <*> [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
+  eg: Dec 10 06:55:46 LabSZ sshd[24200]: reverse mapping checking getaddrinfo for ns.marryaldkfaczcz.com [173.234.31.186] failed - POSSIBLE BREAK-IN ATTEMPT!
+45 Dec <VAR:NUM> <VAR:TS> LabSZ sshd<VAR:PID>: error: Received disconnect from <VAR:IP4>: <VAR:NUM>: No more user authentication methods available. [preauth]
+  eg: Dec 10 09:11:22 LabSZ sshd[24439]: error: Received disconnect from 103.99.0.122: 14: No more user authentication methods available. [preauth]
+34 Dec <VAR:NUM> <VAR:TS> LabSZ sshd<VAR:PID>: Connection closed by <VAR:IP4> [preauth]
+  eg: Dec 10 06:55:48 LabSZ sshd[24200]: Connection closed by 173.234.31.186 [preauth]
+15 Dec <VAR:NUM> <VAR:TS> LabSZ sshd<VAR:PID>: pam_unix(sshd:auth): authentication failure; logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=ssh ruser= rhost=<VAR:IP4> <*>
+  eg: Dec 10 07:51:18 LabSZ sshd[24326]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=195.154.37.122  user=uucp
+10 Dec <VAR:NUM> <VAR:TS> LabSZ sshd<VAR:PID>: Did not receive identification string from <VAR:IP4>
+  eg: Dec 10 07:34:33 LabSZ sshd[24301]: Did not receive identification string from 123.235.32.19
+8 Dec <VAR:NUM> <VAR:TS> LabSZ sshd<VAR:PID>: PAM <VAR:NUM> more authentication <*> logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=ssh ruser= rhost=<VAR:IP4>
+  eg: Dec 10 08:25:22 LabSZ sshd[24369]: PAM 4 more authentication failures; logname= uid=0 euid=0 tty=ssh ruser= rhost=5.188.10.180 
+7 Dec <VAR:NUM> <VAR:TS> LabSZ sshd<VAR:PID>: PAM service(sshd) ignoring max retries; <VAR:NUM> > <VAR:NUM>
+  eg: Dec 10 07:13:56 LabSZ sshd[24227]: PAM service(sshd) ignoring max retries; 6 > 3
+7 Dec <VAR:NUM> <VAR:TS> LabSZ sshd<VAR:PID>: Received disconnect from <VAR:IP4>: <VAR:NUM>: Closed due to user request. [preauth]
+  eg: Dec 10 07:56:15 LabSZ sshd[24334]: Received disconnect from 103.207.39.165: 11: Closed due to user request. [preauth]
+4 Dec <VAR:NUM> <VAR:TS> LabSZ sshd<VAR:PID>: Failed none for invalid user <*> from <VAR:IP4> port <VAR:NUM> ssh2
+  eg: Dec 10 08:24:40 LabSZ sshd[24363]: Failed none for invalid user 0 from 5.188.10.180 port 49811 ssh2
+3 Dec <VAR:NUM> <VAR:TS> LabSZ sshd<VAR:PID>: Disconnecting: Too many authentication failures for <*> [preauth]
+  eg: Dec 10 07:13:56 LabSZ sshd[24227]: Disconnecting: Too many authentication failures for root [preauth]
+2 Dec <VAR:NUM> <VAR:TS> LabSZ sshd<VAR:PID>: PAM <VAR:NUM> more authentication failures; logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=ssh ruser= <*> user=root
+  eg: Dec 10 07:13:56 LabSZ sshd[24227]: PAM 5 more authentication failures; logname= uid=0 euid=0 tty=ssh ruser= rhost=5.36.59.76.dynamic-dsl-ip.omantel.net.om  user=root
+2 Dec <VAR:NUM> <VAR:TS> LabSZ sshd<VAR:PID>: error: Received disconnect from <VAR:IP4>: <VAR:NUM>: com.jcraft.jsch.JSchException: Auth fail [preauth]
+  eg: Dec 10 07:51:15 LabSZ sshd[24324]: error: Received disconnect from 195.154.37.122: 3: com.jcraft.jsch.JSchException: Auth fail [preauth]
+2 Dec <VAR:NUM> <VAR:TS> LabSZ sshd<VAR:PID>: message repeated <VAR:NUM> times: [ Failed password for root from <VAR:IP4> port <VAR:NUM> ssh2]
+  eg: Dec 10 07:13:56 LabSZ sshd[24227]: message repeated 5 times: [ Failed password for root from 5.36.59.76 port 42393 ssh2]
+1 Dec <VAR:NUM> <VAR:TS> LabSZ sshd<VAR:PID>: Accepted password for fztu from <VAR:IP4> port <VAR:NUM> ssh2
+  eg: Dec 10 09:32:20 LabSZ sshd[24680]: Accepted password for fztu from 119.137.62.142 port 49116 ssh2
+1 Dec <VAR:NUM> <VAR:TS> LabSZ sshd<VAR:PID>: Received disconnect from <VAR:IP4>: <VAR:NUM>: disconnected by user
+  eg: Dec 10 09:45:06 LabSZ sshd[24761]: Received disconnect from 119.137.62.142: 11: disconnected by user
+1 Dec <VAR:NUM> <VAR:TS> LabSZ sshd<VAR:PID>: fatal: Write failed: Connection reset by peer [preauth]
+  eg: Dec 10 11:03:53 LabSZ sshd[25457]: fatal: Write failed: Connection reset by peer [preauth]
+1 Dec <VAR:NUM> <VAR:TS> LabSZ sshd<VAR:PID>: pam_unix(sshd:session): session closed for user fztu
+  eg: Dec 10 09:45:06 LabSZ sshd[24680]: pam_unix(sshd:session): session closed for user fztu
+1 Dec <VAR:NUM> <VAR:TS> LabSZ sshd<VAR:PID>: pam_unix(sshd:session): session opened for user fztu by (uid=<VAR:NUM>)
+  eg: Dec 10 09:32:20 LabSZ sshd[24680]: pam_unix(sshd:session): session opened for user fztu by (uid=0)

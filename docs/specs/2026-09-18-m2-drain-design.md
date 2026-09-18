@@ -147,8 +147,13 @@ port over the masked lines, then reports per file:
 - template count: ground truth vs port (expect more port clusters — §1's asymmetry plus
   M1's unmasked usernames/hostnames, which split what truth merges);
 - impurity: port clusters containing lines of more than one ground-truth event. **This
-  is the failure gate.** Anything above zero is reviewed as a potential silent-merge,
-  not accepted as noise;
+  is the failure gate, with reviewed exceptions.** Single-token differences in lines
+  of ten or more tokens merge at 0.90 by definition (12/13, 9/10), and the fetched
+  corpora contain three such pairs (a username, a cache kind, a driver name — all
+  same-verdict merges where the detail survives in the raw lines). Those pairs are
+  pinned in the harness; anything outside the list fails. Raising the threshold to
+  split them is rejected: the parent spec fixes 0.90, and a threshold that never
+  merges single-token differences in long lines never generalizes at all;
 - completeness: ground-truth events split across port clusters, reported per event for
   review, never asserted — over-splitting is the designed direction;
 - the full cluster list (template, size, one example line) as an insta snapshot, so a

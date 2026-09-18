@@ -1,0 +1,119 @@
+---
+source: crates/oarfish-drain/tests/corpus.rs
+assertion_line: 337
+---
+lines: 2000 clusters: 57
+313 <VAR:TS>,<VAR:NUM> - WARN [SendWorker:<VAR:HEX>:QuorumCnxManager$SendWorker@<VAR:NUM>] - Interrupted while waiting for message on queue
+  eg: 2015-07-29 19:04:29,079 - WARN  [SendWorker:188978561024:QuorumCnxManager$SendWorker@679] - Interrupted while waiting for message on queue
+299 <VAR:TS>,<VAR:NUM> - INFO [/<VAR:IP4><VAR:IP6>QuorumCnxManager$Listener@<VAR:NUM>] - Received connection request /<VAR:IP4>:<VAR:NUM>
+  eg: 2015-07-29 19:04:12,394 - INFO  [/10.10.34.11:3888:QuorumCnxManager$Listener@493] - Received connection request /10.10.34.11:45307
+289 <VAR:TS>,<VAR:NUM> - WARN [RecvWorker:<VAR:HEX>:QuorumCnxManager$RecvWorker@<VAR:NUM>] - Connection broken for id <VAR:HEX>, my id = <VAR:NUM>, error =
+  eg: 2015-07-29 19:13:24,282 - WARN  [RecvWorker:188978561024:QuorumCnxManager$RecvWorker@762] - Connection broken for id 188978561024, my id = 1, error = 
+265 <VAR:TS>,<VAR:NUM> - WARN [RecvWorker:<VAR:HEX>:QuorumCnxManager$RecvWorker@<VAR:NUM>] - Interrupting SendWorker
+  eg: 2015-07-29 19:14:07,559 - WARN  [RecvWorker:188978561024:QuorumCnxManager$RecvWorker@765] - Interrupting SendWorker
+261 <VAR:TS>,<VAR:NUM> - WARN [SendWorker:<VAR:HEX>:QuorumCnxManager$SendWorker@<VAR:NUM>] - Send worker leaving thread
+  eg: 2015-07-29 19:04:29,071 - WARN  [SendWorker:188978561024:QuorumCnxManager$SendWorker@688] - Send worker leaving thread
+80 <VAR:TS>,<VAR:NUM> - WARN [QuorumPeer[myid=<VAR:NUM>]/<VAR:IP6><VAR:IP6>QuorumCnxManager@<VAR:NUM>] - Cannot open channel to <VAR:NUM> at election address /<VAR:IP4>:<VAR:NUM>
+  eg: 2015-07-30 23:44:58,183 - WARN  [QuorumPeer[myid=1]/0:0:0:0:0:0:0:0:2181:QuorumCnxManager@368] - Cannot open channel to 2 at election address /10.10.34.12:3888
+50 <VAR:TS>,<VAR:NUM> - INFO <*> - Established session <VAR:HEX> with negotiated timeout <VAR:NUM> for client /<VAR:IP4>:<VAR:NUM>
+  eg: 2015-07-29 21:34:45,452 - INFO  [CommitProcessor:1:ZooKeeperServer@595] - Established session 0x14ed93111f20027 with negotiated timeout 10000 for client /10.10.34.13:37177
+48 <VAR:TS>,<VAR:NUM> - INFO [NIOServerCxn.Factory:<VAR:IP4>/<VAR:IP4><VAR:IP6>NIOServerCnxnFactory@<VAR:NUM>] - Accepted socket connection from /<VAR:IP4>:<VAR:NUM>
+  eg: 2015-07-29 21:39:24,986 - INFO  [NIOServerCxn.Factory:0.0.0.0/0.0.0.0:2181:NIOServerCnxnFactory@197] - Accepted socket connection from /10.10.34.13:37196
+47 <VAR:TS>,<VAR:NUM> - INFO [ProcessThread(sid:<VAR:NUM> cport:-<VAR:NUM>)::PrepRequestProcessor@<VAR:NUM>] - Processed session termination for sessionid: <VAR:HEX>
+  eg: 2015-07-30 18:18:02,003 - INFO  [ProcessThread(sid:1 cport:-1)::PrepRequestProcessor@476] - Processed session termination for sessionid: 0x14ede63a5a70002
+44 <VAR:TS>,<VAR:NUM> - INFO [NIOServerCxn.Factory:<VAR:IP4>/<VAR:IP4><VAR:IP6>NIOServerCnxn@<VAR:NUM>] - Closed socket connection for client /<VAR:IP4>:<VAR:NUM> which had sessionid <VAR:HEX>
+  eg: 2015-07-29 19:52:04,792 - INFO  [NIOServerCxn.Factory:0.0.0.0/0.0.0.0:2181:NIOServerCnxn@1001] - Closed socket connection for client /10.10.34.18:42772 which had sessionid 0x14ed93111f20005
+41 <VAR:TS>,<VAR:NUM> - INFO [NIOServerCxn.Factory:<VAR:IP4>/<VAR:IP4><VAR:IP6>ZooKeeperServer@<VAR:NUM>] - Client attempting to establish new session at /<VAR:IP4>:<VAR:NUM>
+  eg: 2015-07-29 21:01:41,504 - INFO  [NIOServerCxn.Factory:0.0.0.0/0.0.0.0:2181:ZooKeeperServer@839] - Client attempting to establish new session at /10.10.34.19:33425
+40 <VAR:TS>,<VAR:NUM> - INFO [SessionTracker:ZooKeeperServer@<VAR:NUM>] - Expiring session <VAR:HEX>, timeout of <VAR:DUR> exceeded
+  eg: 2015-07-30 20:06:34,001 - INFO  [SessionTracker:ZooKeeperServer@325] - Expiring session 0x24ede63a01b003b, timeout of 10000ms exceeded
+39 <VAR:TS>,<VAR:NUM> - WARN [NIOServerCxn.Factory:<VAR:IP4>/<VAR:IP4><VAR:IP6>ZooKeeperServer@<VAR:NUM>] - Connection request from old client /<VAR:IP4>:<VAR:NUM>; will be dropped if server is in r-o mode
+  eg: 2015-07-30 16:12:01,554 - WARN  [NIOServerCxn.Factory:0.0.0.0/0.0.0.0:2181:ZooKeeperServer@793] - Connection request from old client /10.10.34.19:33442; will be dropped if server is in r-o mode
+37 <VAR:TS>,<VAR:NUM> - INFO [QuorumPeer[myid=<VAR:NUM>]/<VAR:IP6><VAR:IP6>FastLeaderElection@<VAR:NUM>] - Notification time out: <VAR:NUM>
+  eg: 2015-07-29 17:41:44,747 - INFO  [QuorumPeer[myid=1]/0:0:0:0:0:0:0:0:2181:FastLeaderElection@774] - Notification time out: 3200
+37 <VAR:TS>,<VAR:NUM> - WARN [NIOServerCxn.Factory:<VAR:IP4>/<VAR:IP4><VAR:IP6>NIOServerCnxn@<VAR:NUM>] - caught end of stream exception
+  eg: 2015-07-29 19:52:05,118 - WARN  [NIOServerCxn.Factory:0.0.0.0/0.0.0.0:2181:NIOServerCnxn@349] - caught end of stream exception
+19 <VAR:TS>,<VAR:NUM> - WARN [LearnerHandler-/<VAR:IP4>:<VAR:NUM>:LearnerHandler@<VAR:NUM>] - ******* GOODBYE /<VAR:IP4>:<VAR:NUM> ********
+  eg: 2015-07-30 23:43:22,414 - WARN  [LearnerHandler-/10.10.34.12:35276:LearnerHandler@575] - ******* GOODBYE /10.10.34.12:35276 ********
+12 <VAR:TS>,<VAR:NUM> - ERROR [LearnerHandler-/<VAR:IP4>:<VAR:NUM>:LearnerHandler@<VAR:NUM>] - Unexpected exception causing shutdown while sock still open
+  eg: 2015-07-29 19:03:35,413 - ERROR [LearnerHandler-/10.10.34.11:52225:LearnerHandler@562] - Unexpected exception causing shutdown while sock still open
+12 <VAR:TS>,<VAR:NUM> - INFO [WorkerReceiver[myid=<VAR:NUM>]:FastLeaderElection@<VAR:NUM>] - Notification: <VAR:NUM> (n.leader), <VAR:HEX> (n.zxid), <VAR:HEX> (n.round), <*> (n.state), <VAR:NUM> (n.sid), <VAR:HEX> (n.peerEPoch), <*> (my state)
+  eg: 2015-08-07 07:27:47,425 - INFO  [WorkerReceiver[myid=1]:FastLeaderElection@542] - Notification: 3 (n.leader), 0x700000197 (n.zxid), 0x1 (n.round), LEADING (n.state), 3 (n.sid), 0x7 (n.peerEPoch), LOOKING (my state)
+6 <VAR:TS>,<VAR:NUM> - WARN [WorkerSender[myid=<VAR:NUM>]:QuorumCnxManager@<VAR:NUM>] - Cannot open channel to <VAR:NUM> at election address /<VAR:IP4>:<VAR:NUM>
+  eg: 2015-07-30 17:55:26,200 - WARN  [WorkerSender[myid=1]:QuorumCnxManager@368] - Cannot open channel to 2 at election address /10.10.34.12:3888
+4 <VAR:TS>,<VAR:NUM> - INFO [NIOServerCxn.Factory:<VAR:IP4>/<VAR:IP4><VAR:IP6>NIOServerCnxn@<VAR:NUM>] - Closed socket connection for client /<VAR:IP4>:<VAR:NUM> (no session established for client)
+  eg: 2015-08-20 17:12:29,467 - INFO  [NIOServerCxn.Factory:0.0.0.0/0.0.0.0:2181:NIOServerCnxn@1001] - Closed socket connection for client /10.10.34.11:56471 (no session established for client)
+4 <VAR:TS>,<VAR:NUM> - INFO [QuorumPeer[myid=<VAR:NUM>]/<VAR:IP6><VAR:IP6>QuorumPeer@<VAR:NUM>] - LOOKING
+  eg: 2015-07-30 23:43:23,613 - INFO  [QuorumPeer[myid=1]/0:0:0:0:0:0:0:0:2181:QuorumPeer@670] - LOOKING
+3 <VAR:TS>,<VAR:NUM> - INFO [NIOServerCxn.Factory:<VAR:IP4>/<VAR:IP4><VAR:IP6>Learner@<VAR:NUM>] - Revalidating client: <VAR:HEX>
+  eg: 2015-08-10 18:23:52,646 - INFO  [NIOServerCxn.Factory:0.0.0.0/0.0.0.0:2181:Learner@107] - Revalidating client: 0x14f05578bd80018
+3 <VAR:TS>,<VAR:NUM> - INFO [NIOServerCxn.Factory:<VAR:IP4>/<VAR:IP4><VAR:IP6>ZooKeeperServer@<VAR:NUM>] - Client attempting to renew session <VAR:HEX> at /<VAR:IP4>:<VAR:NUM>
+  eg: 2015-07-29 19:54:13,615 - INFO  [NIOServerCxn.Factory:0.0.0.0/0.0.0.0:2181:ZooKeeperServer@832] - Client attempting to renew session 0x24ed93119420016 at /10.10.34.13:37115
+3 <VAR:TS>,<VAR:NUM> - INFO [main:DatadirCleanupManager@<VAR:NUM>] - autopurge.purgeInterval set to <VAR:NUM>
+  eg: 2015-07-31 15:31:15,575 - INFO  [main:DatadirCleanupManager@79] - autopurge.purgeInterval set to 0
+3 <VAR:TS>,<VAR:NUM> - WARN [NIOServerCxn.Factory:<VAR:IP4>/<VAR:IP4><VAR:IP6>NIOServerCnxn@<VAR:NUM>] - Exception causing close of session <VAR:HEX> due to java.io.IOException: ZooKeeperServer not running
+  eg: 2015-08-20 17:14:11,414 - WARN  [NIOServerCxn.Factory:0.0.0.0/0.0.0.0:2181:NIOServerCnxn@354] - Exception causing close of session 0x0 due to java.io.IOException: ZooKeeperServer not running
+2 <VAR:TS>,<VAR:NUM> - INFO [QuorumPeer[myid=<VAR:NUM>]/<VAR:IP6><VAR:IP6>Environment@<VAR:NUM>] - Server environment:java.vendor=Oracle Corporation
+  eg: 2015-08-10 18:23:50,332 - INFO  [QuorumPeer[myid=1]/0:0:0:0:0:0:0:0:2181:Environment@100] - Server environment:java.vendor=Oracle Corporation
+2 <VAR:TS>,<VAR:NUM> - INFO [QuorumPeer[myid=<VAR:NUM>]/<VAR:IP6><VAR:IP6>Environment@<VAR:NUM>] - Server environment:os.name=Linux
+  eg: 2015-08-18 16:09:15,099 - INFO  [QuorumPeer[myid=1]/0:0:0:0:0:0:0:0:2181:Environment@100] - Server environment:os.name=Linux
+2 <VAR:TS>,<VAR:NUM> - INFO [QuorumPeer[myid=<VAR:NUM>]/<VAR:IP6><VAR:IP6>Environment@<VAR:NUM>] - Server environment:user.name=zookeeper
+  eg: 2015-08-10 18:25:22,082 - INFO  [QuorumPeer[myid=1]/0:0:0:0:0:0:0:0:2181:Environment@100] - Server environment:user.name=zookeeper
+2 <VAR:TS>,<VAR:NUM> - INFO [QuorumPeer[myid=<VAR:NUM>]/<VAR:IP6><VAR:IP6>FileTxnSnapLog@<VAR:NUM>] - Snapshotting: <VAR:HEX> to <VAR:PATH>
+  eg: 2015-07-30 23:46:31,590 - INFO  [QuorumPeer[myid=2]/0:0:0:0:0:0:0:0:2181:FileTxnSnapLog@240] - Snapshotting: 0x300000dcd to /var/lib/zookeeper/version-2/snapshot.300000dcd
+2 <VAR:TS>,<VAR:NUM> - INFO [QuorumPeer[myid=<VAR:NUM>]/<VAR:IP6><VAR:IP6>Follower@<VAR:NUM>] - FOLLOWING - LEADER ELECTION TOOK - <VAR:NUM>
+  eg: 2015-07-31 19:30:07,452 - INFO  [QuorumPeer[myid=1]/0:0:0:0:0:0:0:0:2181:Follower@63] - FOLLOWING - LEADER ELECTION TOOK - 49
+2 <VAR:TS>,<VAR:NUM> - INFO [QuorumPeer[myid=<VAR:NUM>]/<VAR:IP6><VAR:IP6>Learner@<VAR:NUM>] - Getting a snapshot from leader
+  eg: 2015-08-25 11:26:28,145 - INFO  [QuorumPeer[myid=2]/0:0:0:0:0:0:0:0:2181:Learner@325] - Getting a snapshot from leader
+2 <VAR:TS>,<VAR:NUM> - INFO [QuorumPeer[myid=<VAR:NUM>]/<VAR:IP6><VAR:IP6>QuorumPeer@<VAR:NUM>] - FOLLOWING
+  eg: 2015-07-31 15:31:42,213 - INFO  [QuorumPeer[myid=1]/0:0:0:0:0:0:0:0:2181:QuorumPeer@738] - FOLLOWING
+2 <VAR:TS>,<VAR:NUM> - INFO [main:QuorumPeer@<VAR:NUM>] - minSessionTimeout set to -<VAR:NUM>
+  eg: 2015-07-30 23:52:53,800 - INFO  [main:QuorumPeer@933] - minSessionTimeout set to -1
+2 <VAR:TS>,<VAR:NUM> - WARN [RecvWorker<VAR:IP6>QuorumCnxManager$RecvWorker@<VAR:NUM>] - Connection broken for id <VAR:NUM>, my id = <VAR:NUM>, error =
+  eg: 2015-08-25 11:20:12,465 - WARN  [RecvWorker:3:QuorumCnxManager$RecvWorker@762] - Connection broken for id 3, my id = 1, error = 
+1 <VAR:TS>,<VAR:NUM> - ERROR [CommitProcessor<VAR:IP6>NIOServerCnxn@<VAR:NUM>] - Unexpected Exception:
+  eg: 2015-07-29 23:44:28,903 - ERROR [CommitProcessor:1:NIOServerCnxn@180] - Unexpected Exception: 
+1 <VAR:TS>,<VAR:NUM> - INFO [LearnerHandler-/<VAR:IP4>:<VAR:NUM>:Leader@<VAR:NUM>] - Have quorum of supporters; starting up and setting last processed zxid: <VAR:HEX>
+  eg: 2015-08-18 16:09:18,900 - INFO  [LearnerHandler-/10.10.34.11:49928:Leader@598] - Have quorum of supporters; starting up and setting last processed zxid: 0xb00000000
+1 <VAR:TS>,<VAR:NUM> - INFO [LearnerHandler-/<VAR:IP4>:<VAR:NUM>:LearnerHandler@<VAR:NUM>] - Follower sid: <VAR:NUM> : info : org.apache.zookeeper.server.quorum.QuorumPeer$QuorumServer@<VAR:HEX>
+  eg: 2015-07-31 15:36:24,570 - INFO  [LearnerHandler-/10.10.34.13:59348:LearnerHandler@263] - Follower sid: 3 : info : org.apache.zookeeper.server.quorum.QuorumPeer$QuorumServer@33557fe4
+1 <VAR:TS>,<VAR:NUM> - INFO [LearnerHandler-/<VAR:IP4>:<VAR:NUM>:LearnerHandler@<VAR:NUM>] - Sending DIFF
+  eg: 2015-08-25 11:14:53,074 - INFO  [LearnerHandler-/10.10.34.11:32976:LearnerHandler@395] - Sending DIFF
+1 <VAR:TS>,<VAR:NUM> - INFO [ProcessThread(sid:<VAR:NUM> cport:-<VAR:NUM>)::PrepRequestProcessor@<VAR:NUM>] - Got user-level KeeperException when processing sessionid:<VAR:HEX> type:create cxid:<VAR:HEX> zxid:<VAR:HEX> txntype:-<VAR:NUM> reqpath:n/a Error Path:<VAR:PATH> Error:KeeperErrorCode = NodeExists for <VAR:PATH>
+  eg: 2015-07-29 19:37:27,222 - INFO  [ProcessThread(sid:2 cport:-1)::PrepRequestProcessor@627] - Got user-level KeeperException when processing sessionid:0x34ed93485090001 type:create cxid:0x55b8bb0f zxid:0x100000010 txntype:-1 reqpath:n/a Error Path:/home/curi/.zookeeper Error:KeeperErrorCode = NodeExists for /home/curi/.zookeeper
+1 <VAR:TS>,<VAR:NUM> - INFO [QuorumPeer[myid=<VAR:NUM>]/<VAR:IP6><VAR:IP6>Environment@<VAR:NUM>] - Server environment:host.name=mesos-master-<VAR:NUM>
+  eg: 2015-07-31 19:30:07,445 - INFO  [QuorumPeer[myid=1]/0:0:0:0:0:0:0:0:2181:Environment@100] - Server environment:host.name=mesos-master-1
+1 <VAR:TS>,<VAR:NUM> - INFO [QuorumPeer[myid=<VAR:NUM>]/<VAR:IP6><VAR:IP6>Environment@<VAR:NUM>] - Server environment:java.class.path=<VAR:PATH>:<VAR:PATH>:<VAR:PATH>:<VAR:PATH>:<VAR:PATH>:<VAR:PATH>:<VAR:PATH>:<VAR:PATH>:<VAR:PATH>
+  eg: 2015-08-18 16:09:18,789 - INFO  [QuorumPeer[myid=2]/0:0:0:0:0:0:0:0:2181:Environment@100] - Server environment:java.class.path=/etc/zookeeper/conf:/usr/share/java/jline.jar:/usr/share/java/log4j-1.2.jar:/usr/share/java/xercesImpl.jar:/usr/share/java/xmlParserAPIs.jar:/usr/share/java/netty.jar:/usr/share/java/slf4j-api.jar:/usr/share/java/slf4j-log4j12.jar:/usr/share/java/zookeeper.jar
+1 <VAR:TS>,<VAR:NUM> - INFO [QuorumPeer[myid=<VAR:NUM>]/<VAR:IP6><VAR:IP6>Environment@<VAR:NUM>] - Server environment:java.home=<VAR:PATH>
+  eg: 2015-07-31 15:36:23,865 - INFO  [QuorumPeer[myid=3]/0:0:0:0:0:0:0:0:2181:Environment@100] - Server environment:java.home=/usr/lib/jvm/java-7-openjdk-amd64/jre
+1 <VAR:TS>,<VAR:NUM> - INFO [QuorumPeer[myid=<VAR:NUM>]/<VAR:IP6><VAR:IP6>Environment@<VAR:NUM>] - Server environment:user.dir=/
+  eg: 2015-07-30 17:43:58,186 - INFO  [QuorumPeer[myid=1]/0:0:0:0:0:0:0:0:2181:Environment@100] - Server environment:user.dir=/
+1 <VAR:TS>,<VAR:NUM> - INFO [QuorumPeer[myid=<VAR:NUM>]/<VAR:IP6><VAR:IP6>Environment@<VAR:NUM>] - Server environment:zookeeper.version=<VAR:NUM>.<VAR:NUM>--<VAR:NUM>, built on <VAR:NUM><VAR:PATH> <VAR:NUM>:<VAR:NUM> GMT
+  eg: 2015-08-10 18:25:22,080 - INFO  [QuorumPeer[myid=1]/0:0:0:0:0:0:0:0:2181:Environment@100] - Server environment:zookeeper.version=3.4.5--1, built on 06/10/2013 17:26 GMT
+1 <VAR:TS>,<VAR:NUM> - INFO [QuorumPeer[myid=<VAR:NUM>]/<VAR:IP6><VAR:IP6>FastLeaderElection@<VAR:NUM>] - New election. My id = <VAR:NUM>, proposed zxid=<VAR:HEX>
+  eg: 2015-07-31 19:30:07,403 - INFO  [QuorumPeer[myid=1]/0:0:0:0:0:0:0:0:2181:FastLeaderElection@740] - New election. My id =  1, proposed zxid=0x700000000
+1 <VAR:TS>,<VAR:NUM> - INFO [QuorumPeer[myid=<VAR:NUM>]/<VAR:IP6><VAR:IP6>FinalRequestProcessor@<VAR:NUM>] - shutdown of request processor complete
+  eg: 2015-08-20 17:12:29,085 - INFO  [QuorumPeer[myid=2]/0:0:0:0:0:0:0:0:2181:FinalRequestProcessor@415] - shutdown of request processor complete
+1 <VAR:TS>,<VAR:NUM> - INFO [Thread-<VAR:NUM>:QuorumCnxManager$Listener@<VAR:NUM>] - My election bind port: <VAR:IP4>/<VAR:IP4>:<VAR:NUM>
+  eg: 2015-07-31 15:31:40,971 - INFO  [Thread-1:QuorumCnxManager$Listener@486] - My election bind port: 0.0.0.0/0.0.0.0:3888
+1 <VAR:TS>,<VAR:NUM> - INFO [WorkerSender[myid=<VAR:NUM>]:QuorumCnxManager@<VAR:NUM>] - Have smaller server identifier, so dropping the connection: (<VAR:NUM>, <VAR:NUM>)
+  eg: 2015-07-31 15:31:40,999 - INFO  [WorkerSender[myid=1]:QuorumCnxManager@190] - Have smaller server identifier, so dropping the connection: (2, 1)
+1 <VAR:TS>,<VAR:NUM> - INFO [main:DatadirCleanupManager@<VAR:NUM>] - autopurge.snapRetainCount set to <VAR:NUM>
+  eg: 2015-08-10 18:23:49,901 - INFO  [main:DatadirCleanupManager@78] - autopurge.snapRetainCount set to 3
+1 <VAR:TS>,<VAR:NUM> - INFO [main:FileSnap@<VAR:NUM>] - Reading snapshot <VAR:PATH>
+  eg: 2015-08-25 11:14:51,662 - INFO  [main:FileSnap@83] - Reading snapshot /var/lib/zookeeper/version-2/snapshot.b00000084
+1 <VAR:TS>,<VAR:NUM> - INFO [main:QuorumPeer@<VAR:NUM>] - maxSessionTimeout set to -<VAR:NUM>
+  eg: 2015-08-10 18:25:25,239 - INFO  [main:QuorumPeer@944] - maxSessionTimeout set to -1
+1 <VAR:TS>,<VAR:NUM> - INFO [main:QuorumPeer@<VAR:NUM>] - tickTime set to <VAR:NUM>
+  eg: 2015-08-24 15:26:54,494 - INFO  [main:QuorumPeer@913] - tickTime set to 2000
+1 <VAR:TS>,<VAR:NUM> - INFO [main:QuorumPeerMain@<VAR:NUM>] - Starting quorum peer
+  eg: 2015-07-30 23:46:27,304 - INFO  [main:QuorumPeerMain@127] - Starting quorum peer
+1 <VAR:TS>,<VAR:NUM> - WARN [LearnerHandler-/<VAR:IP4>:<VAR:NUM>:Leader@<VAR:NUM>] - First is <VAR:HEX>
+  eg: 2015-08-20 17:14:13,880 - WARN  [LearnerHandler-/10.10.34.13:42241:Leader@576] - First is 0x0
+1 <VAR:TS>,<VAR:NUM> - WARN [RecvWorker<VAR:IP6>QuorumCnxManager$RecvWorker@<VAR:NUM>] - Interrupting SendWorker
+  eg: 2015-07-30 23:49:40,005 - WARN  [RecvWorker:3:QuorumCnxManager$RecvWorker@765] - Interrupting SendWorker
+1 <VAR:TS>,<VAR:NUM> - WARN [SendWorker<VAR:IP6>QuorumCnxManager$SendWorker@<VAR:NUM>] - Interrupted while waiting for message on queue
+  eg: 2015-07-31 19:02:04,304 - WARN  [SendWorker:1:QuorumCnxManager$SendWorker@679] - Interrupted while waiting for message on queue
+1 <VAR:TS>,<VAR:NUM> - WARN [SendWorker<VAR:IP6>QuorumCnxManager$SendWorker@<VAR:NUM>] - Send worker leaving thread
+  eg: 2015-07-29 19:53:12,538 - WARN  [SendWorker:3:QuorumCnxManager$SendWorker@688] - Send worker leaving thread
