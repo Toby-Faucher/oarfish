@@ -1,87 +1,135 @@
+/* Self-hosted so the board has no runtime font dependency. */
+@import "@fontsource/barlow/400.css";
+@import "@fontsource/barlow/500.css";
+@import "@fontsource/barlow/600.css";
+@import "@fontsource/barlow-condensed/700.css";
+@import "@fontsource-variable/jetbrains-mono";
+
 @import "tailwindcss";
 
-/* Dark is opt-in via [data-theme="dark"] on <html>, so the toggle wins over the OS. */
+/* Dark is opt-in via [data-theme="dark"] so the toggle beats the OS setting. */
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
 /*
- * Palette is UniFi-flavoured: near-black ground, panels barely lifted off it,
- * one strong blue used only for interaction.
+ * Ground is never #000 — pure black causes halation and destroys elevation.
+ * Depth comes from stepping each nested surface ~4% lighter than its parent,
+ * not from shadows.
  *
- * Severity is a SEPARATE ramp on purpose. If alarm colours and the accent
- * compete, the board stops being scannable, which is the whole point of it.
+ * The accent is reserved for interaction. Severity is a separate ramp and must
+ * stay separate: a status colour competing with the accent makes the board
+ * unscannable, which is the only thing it is for.
+ *
+ * Severity hues come from the Wong palette (CVD-safe). Info is deliberately
+ * neutral rather than Wong's blue, because blue is spoken for — and an info
+ * alarm should recede anyway.
  */
+:root[data-theme="dark"],
 :root {
-  --ui-ground:    #f2f4f7;
-  --ui-surface:   #ffffff;
-  --ui-rail:      #10141b;
-  --ui-panel:     #e8ebf0;
-  --ui-line:      #d6dbe3;
+  --ui-l0:     #0f1319;
+  --ui-l1:     #161b23;
+  --ui-l2:     #1d242e;
+  --ui-l3:     #252d39;
+  --ui-line:   #2b3440;
+  --ui-line-2: #3a4653;
 
-  --ui-ink:       #131820;
-  --ui-ink-2:     #4d5766;
-  --ui-ink-3:     #7c8797;
+  --ui-ink:   #e6eaf0;
+  --ui-ink-2: #9aa3ae;
+  --ui-ink-3: #6c7682;
 
-  --ui-accent:    #0559c9;
-  --ui-accent-fg: #ffffff;
+  --ui-accent:      #4d9bf0;
+  --ui-accent-fg:   #06121f;
+  --ui-accent-soft: #14283d;
 
-  --ui-critical:  #c62828;
-  --ui-major:     #c55a11;
-  --ui-minor:     #8a6d00;
-  --ui-info:      #41648a;
-  --ui-ok:        #1d7a4c;
+  --ui-critical: #f2705a;
+  --ui-major:    #eda54a;
+  --ui-minor:    #d4bc5e;
+  --ui-info:     #8b95a3;
+  --ui-cleared:  #4fc79a;
 }
 
-:root[data-theme="dark"] {
-  --ui-ground:    #0a0d12;
-  --ui-surface:   #121721;
-  --ui-rail:      #080b10;
-  --ui-panel:     #1a2029;
-  --ui-line:      #232b36;
+/*
+ * Light is a separate design, not an inversion. Severity hues step darker so
+ * they still clear contrast on a pale ground.
+ */
+:root[data-theme="light"] {
+  --ui-l0:     #f1f3f6;
+  --ui-l1:     #ffffff;
+  --ui-l2:     #e9ecf1;
+  --ui-l3:     #dfe3ea;
+  --ui-line:   #d5dae2;
+  --ui-line-2: #b9c1cc;
 
-  --ui-ink:       #e6eaf0;
-  --ui-ink-2:     #a3adbb;
-  --ui-ink-3:     #6b7583;
+  --ui-ink:   #141922;
+  --ui-ink-2: #4b5563;
+  --ui-ink-3: #78828f;
 
-  --ui-accent:    #2e8cff;
-  --ui-accent-fg: #06121f;
+  --ui-accent:      #0559c9;
+  --ui-accent-fg:   #ffffff;
+  --ui-accent-soft: #e3edfb;
 
-  --ui-critical:  #ff6b5c;
-  --ui-major:     #ef9445;
-  --ui-minor:     #d8b93f;
-  --ui-info:      #7fa6d4;
-  --ui-ok:        #43c584;
+  --ui-critical: #c2410c;
+  --ui-major:    #a8620b;
+  --ui-minor:    #7d6a00;
+  --ui-info:     #5b6675;
+  --ui-cleared:  #0f7a5a;
 }
 
 @theme inline {
-  --color-ground:    var(--ui-ground);
-  --color-surface:   var(--ui-surface);
-  --color-rail:      var(--ui-rail);
-  --color-panel:     var(--ui-panel);
-  --color-line:      var(--ui-line);
+  --color-l0:     var(--ui-l0);
+  --color-l1:     var(--ui-l1);
+  --color-l2:     var(--ui-l2);
+  --color-l3:     var(--ui-l3);
+  --color-line:   var(--ui-line);
+  --color-line-2: var(--ui-line-2);
 
-  --color-ink:       var(--ui-ink);
-  --color-ink-2:     var(--ui-ink-2);
-  --color-ink-3:     var(--ui-ink-3);
+  --color-ink:   var(--ui-ink);
+  --color-ink-2: var(--ui-ink-2);
+  --color-ink-3: var(--ui-ink-3);
 
-  --color-accent:    var(--ui-accent);
-  --color-accent-fg: var(--ui-accent-fg);
+  --color-accent:      var(--ui-accent);
+  --color-accent-fg:   var(--ui-accent-fg);
+  --color-accent-soft: var(--ui-accent-soft);
 
-  --color-critical:  var(--ui-critical);
-  --color-major:     var(--ui-major);
-  --color-minor:     var(--ui-minor);
-  --color-info:      var(--ui-info);
-  --color-ok:        var(--ui-ok);
+  --color-critical: var(--ui-critical);
+  --color-major:    var(--ui-major);
+  --color-minor:    var(--ui-minor);
+  --color-info:     var(--ui-info);
+  --color-cleared:  var(--ui-cleared);
 
-  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-mono: ui-monospace, "SF Mono", "IBM Plex Mono", Menlo, monospace;
+  --font-sans: "Barlow", ui-sans-serif, system-ui, sans-serif;
+  --font-cond: "Barlow Condensed", "Barlow", ui-sans-serif, sans-serif;
+  --font-mono: "JetBrains Mono Variable", ui-monospace, Menlo, monospace;
 
-  --radius-ui: 5px;
+  --radius-ui: 4px;
+
+  /* Motion budget is two events. Everything else is a colour change. */
+  --ease-out-ui: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-html { color-scheme: light dark; }
+html { color-scheme: dark light; }
 
 body {
-  background: var(--ui-ground);
+  background: var(--ui-l0);
   color: var(--ui-ink);
   font-family: var(--font-sans);
+}
+
+/* Uppercase label treatment used for headings and severity. */
+@utility label {
+  font-family: var(--font-cond);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+:focus-visible {
+  outline: 2px solid var(--ui-accent);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }

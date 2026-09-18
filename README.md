@@ -79,6 +79,7 @@ What it shows, per alarm:
 | **Svelte 5** | the islands — compiles most of its runtime away |
 | **Tailwind 4** | CSS-first tokens, no config file |
 | **bits-ui** | headless behaviour (menus, dialogs, tooltips) — no visual opinion |
+| **Barlow + JetBrains Mono** | self-hosted via Fontsource, no runtime font dependency |
 | **@lucide/svelte** | icons |
 | **@tanstack/svelte-virtual** | the alarm list |
 | **@tanstack/svelte-table** | the templates view only — an alarm list is not a grid |
@@ -88,9 +89,26 @@ The rule that keeps it light: **a component only gets a `client:` directive if i
 genuinely needs to run in the browser.** Without one it still renders — as static
 HTML, shipping no JavaScript at all.
 
-Visually it's UniFi-flavoured: icon rail, near-black ground, panels barely lifted off
-it, one blue accent used only for interaction. Severity colours are a deliberately
-separate ramp — if they compete with the accent the board stops being scannable.
+### How it looks, and why
+
+UniFi-flavoured: icon rail, dark ground, panels barely lifted off it, one blue accent
+used **only** for interaction.
+
+Three decisions worth knowing about:
+
+- **Severity is never colour alone.** It carries bar count, text label and hue at once.
+  The hues come from the [Wong palette](https://www.nature.com/articles/nmeth.1618) —
+  the usual red-to-green ramp is the single worst pair for colour blindness, and around
+  8% of men can't read it.
+- **The ground is never `#000`.** Pure black causes halation and destroys any sense of
+  elevation; depth comes from stepping each surface ~4% lighter than its parent.
+- **Two things animate.** An alarm arriving, and a severity escalating. Everything else
+  changes colour in 120ms and otherwise holds still, because this board gets stared at
+  for hours.
+
+The one place the design is allowed to be loud is the template renderer, which draws a
+masked template as a dimensioned schematic part — the variable slots are measured slots,
+and the dimension lines beneath say what each one matched and how often.
 
 ---
 

@@ -1,23 +1,23 @@
 ---
 /**
- * The board shell. Everything in here is static HTML — it renders on the
- * server and ships zero JavaScript. Live regions are islands placed by the
- * page, never by this layout.
+ * The board shell. Static HTML — renders on the server, ships no JavaScript.
+ * Live regions are islands placed by the page, never by this layout.
  */
 import '../styles/global.css';
 import { TriangleAlert, LayoutGrid, Layers, Settings } from '@lucide/svelte';
 
 interface Props {
   title: string;
+  section?: string;
 }
 
-const { title } = Astro.props;
+const { title, section = 'alarms' } = Astro.props;
 
 const nav = [
-  { icon: TriangleAlert, label: 'Alarms', href: '/', current: true },
-  { icon: LayoutGrid, label: 'Overview', href: '/overview', current: false },
-  { icon: Layers, label: 'Templates', href: '/templates', current: false },
-  { icon: Settings, label: 'Settings', href: '/settings', current: false },
+  { icon: TriangleAlert, label: 'Alarms', href: '/', key: 'alarms' },
+  { icon: LayoutGrid, label: 'Overview', href: '/overview', key: 'overview' },
+  { icon: Layers, label: 'Templates', href: '/templates', key: 'templates' },
+  { icon: Settings, label: 'Settings', href: '/settings', key: 'settings' },
 ];
 ---
 
@@ -25,22 +25,24 @@ const nav = [
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Log-driven alarms for homelabs. Oarfish clusters your logs into templates and judges each one once, so it wakes you only when something earns it." />
     <title>{title}</title>
   </head>
   <body class="min-h-dvh">
     <div class="flex min-h-dvh">
-      <!-- icon rail: the UniFi signature -->
-      <nav class="flex w-14 shrink-0 flex-col items-center gap-1 bg-rail py-3" aria-label="Sections">
-        <div class="mb-3 font-mono text-lg leading-none" title="oarfish">🐟</div>
-        {nav.map(({ icon: Icon, label, href, current }) => (
+      <nav class="flex w-14 shrink-0 flex-col items-center gap-1 bg-l0 py-3 ring-1 ring-line" aria-label="Sections">
+        <div class="mb-3 text-lg leading-none" title="oarfish" aria-hidden="true">🐟</div>
+        {nav.map(({ icon: Icon, label, href, key }) => (
           <a
             href={href}
             title={label}
             aria-label={label}
-            aria-current={current ? 'page' : undefined}
+            aria-current={key === section ? 'page' : undefined}
             class:list={[
-              'grid size-10 place-items-center rounded-(--radius-ui) transition-colors',
-              current ? 'bg-accent text-accent-fg' : 'text-ink-3 hover:bg-panel hover:text-ink',
+              'grid size-10 place-items-center rounded-(--radius-ui) transition-colors duration-[120ms]',
+              key === section
+                ? 'bg-accent text-accent-fg'
+                : 'text-ink-3 hover:bg-l2 hover:text-ink',
             ]}
           >
             <Icon size={18} />

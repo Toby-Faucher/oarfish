@@ -3,6 +3,10 @@
 Log-driven alarms for homelabs. Rust daemon + Astro board. Pre-alpha: the scaffold
 builds, almost nothing is implemented.
 
+Oarfish exists so you **don't** get woken up. Every decision below serves that.
+
+---
+
 ## The one idea
 
 Work is priced by how often it runs. Three rates, kept strictly separate:
@@ -17,7 +21,9 @@ Work is priced by how often it runs. Three rates, kept strictly separate:
 
 If you are about to make something run more often than it has to, stop.
 
-## Invariants
+---
+
+## Backend invariants
 
 1. **`oarfish-core` depends on nothing else in the workspace.** Every other crate
    depends on it; a cycle here is a cycle everywhere.
@@ -32,32 +38,117 @@ If you are about to make something run more often than it has to, stop.
 5. **`oarfish-jev` is transport only.** It holds no policy about which questions to
    ask; that lives in `oarfish-engine`.
 
-## The board is a first-class feature
+---
 
-`web/` is Astro 7 with Svelte 5 islands, Tailwind 4 and **bun** (not npm — there is
-no package-lock.json, only bun.lock).
+## Design rules
 
-The rule that keeps it fast: **a component only gets a `client:` directive if it
-genuinely needs to run in the browser.** Without one it still renders, as static
-HTML, shipping no JavaScript. Default to no directive and add one when you need it.
+The board is read at 3am by someone half awake. It is dense, dark, and **measured**:
+every mark should be evidence something was counted, not decoration.
 
-Layout and chrome are static. Islands so far: the connection indicator. Planned:
-the live alarm list (SSE) and the templates table.
+Tokens live in `web/src/styles/global.css`. Use the token, never a literal colour.
 
-UI vocabulary is UniFi-flavoured — icon rail, near-black ground, panels barely
-lifted, one blue accent for interaction only. Severity colours are a **separate**
-ramp from the accent and must stay that way; if they compete the board stops being
-scannable. Tokens live in `web/src/styles/global.css`.
+### Severity
 
-Libraries: `bits-ui` for behaviour (headless, no visual opinion), `@lucide/svelte`
-for icons, `@tanstack/svelte-virtual` for the alarm list, `@tanstack/svelte-table`
-for the templates view only, `uplot` for sparklines.
+**Never encode severity by colour alone.** It carries three redundant signals —
+**bar count, text label, and hue** — so it survives colour blindness, a bad monitor,
+and greyscale. `src/lib/severity.ts` owns the mapping; `Severity.svelte` renders it.
 
+Hues come from the **Wong palette** (CVD-safe). Standard red→green ramps are the
+single worst pair for colour blindness, which is why ours isn't one.
 
+`info` is deliberately **neutral grey**, not Wong's blue, because blue belongs to the
+accent — and an info alarm should recede anyway.
 
-`web/` is not a bolt-on. It is the primary interface. Server-rendered Astro shell,
-one live island fed by SSE, minimal client JS. Changes to alarm shape need a
-corresponding change to the board.
+### Colour
+
+- **The accent (`--ui-accent`) is for interaction only.** Never for status. A status
+  colour that competes with the accent destroys scanning.
+- **Ground is never `#000`.** Pure black causes halation and destroys elevation.
+  Base is `#0f1319`; each nested surface steps ~4% lighter (`l0` → `l1` → `l2` → `l3`).
+- Depth comes from the surface stack, not from shadows.
+- Light theme is a **separate design**, not an inversion.
+
+### Type
+
+- **Barlow** (UI), **Barlow Condensed** (labels, headings, severity), **JetBrains
+  Mono** (templates, ids, timestamps, counts). Self-hosted via Fontsource — no
+  runtime font dependency.
+- Barlow is DIN-derived, which gives a monitoring tool engineering heritage.
+- **Never Inter.** Its ubiquity is itself a tell that nothing was chosen.
+- `tabular-nums` anywhere digits line up in a column.
+
+### Motion budget — two moments, total
+
+| Event | Motion |
+|---|---|
+| Alarm arrives | 220ms, ease-out, slide + fade |
+| Severity escalates | 160ms, ease-out, one bar fills |
+| **Everything else** | 120ms colour change, no movement |
+
+Scattered animation is itself an AI tell, and this board is stared at for hours.
+Never animate keyboard-initiated actions or anything triggered hundreds of times a
+shift. `prefers-reduced-motion` is honoured globally in `global.css`.
+
+### Rows and tables
+
+- **Row separators, not gridlines.** A full grid of rules fights the data.
+- Numbers right-aligned and tabular; magnitude is read off the leading edge.
+- **Density is a feature**: `compact` (default) / `comfortable` / `spacious`.
+  Compact is default because this is an ops tool and its users came for data.
+- **No hover-only actions** — unreachable by keyboard and touch.
+- Sort columns show direction; filtered views show that they are filtered.
+
+### Things that mark a UI as AI-generated — don't
+
+- **Thin coloured accent bars down the left edge of a card.** This is the most
+  specific tell there is. It is also why severity is a real column.
+- Blue→purple gradients. Inter. Three equal cards with identical spacing.
+- Decorative motion with no job.
+- **Em-dash overuse in UI copy.** Watch this one; it is easy to slip into.
+
+### The signature
+
+`Template.svelte` renders a masked template as a **dimensioned schematic part** —
+variable slots boxed with leader ticks, dimension lines beneath reporting what each
+slot matched and how often.
+
+This is the one component allowed to be loud. **If a second one starts competing
+with it, cut something.**
+
+### Copy
+
+Write from the operator's side of the screen. Active voice. A control says exactly
+what happens, and keeps the same word through the flow ("Acknowledge" → "Acknowledged").
+Errors explain what broke and how to fix it, without apologising. An empty screen is
+an invitation, not a shrug.
+
+---
+
+## The board
+
+`web/` is Astro 7 + Svelte 5 islands + Tailwind 4 + **bun** (no package-lock.json,
+only bun.lock). It is not a bolt-on; it is the primary interface.
+
+**The rule that keeps it fast:** a component only gets a `client:` directive if it
+genuinely needs to run in the browser. Without one it still renders — as static HTML,
+shipping no JavaScript. Default to no directive.
+
+Static: layout, chrome, the template panel.
+Islands: `AlarmList` (density state, SSE next), `ConnectionPulse`.
+
+Components:
+
+| File | Job |
+|---|---|
+| `layouts/Board.astro` | shell + icon rail. Static, zero JS |
+| `components/Template.svelte` | **the signature** — dimensioned template |
+| `components/Severity.svelte` | bars + label + hue |
+| `components/AlarmRow.svelte` | one row, density-aware |
+| `components/AlarmList.svelte` | island: density state, arrival motion, empty state |
+| `components/DensityToggle.svelte` | compact / comfortable / spacious |
+| `lib/severity.ts` | severity + density types and maps |
+
+---
 
 ## Commands
 
@@ -73,6 +164,8 @@ cd web && bun run dev      # board on :4321, proxies /api to the daemon on :4000
 cd web && bun run build
 ```
 
+---
+
 ## Testing approach
 
 - **`insta`** for anything parser-shaped: raw lines -> masked -> templates. When you
@@ -86,6 +179,8 @@ cd web && bun run build
 - **`criterion`** for the every-line path. "Fast" without a regression guard is a
   claim, not a property.
 
+---
+
 ## Conventions
 
 - Rust 1.98, edition 2024, pinned in `rust-toolchain.toml`.
@@ -94,6 +189,8 @@ cd web && bun run build
 - Each crate's `lib.rs` opens with a doc comment saying what it does, how you use it,
   and what it depends on. Keep it accurate when you change the crate.
 - Tests live beside the code they test unless they need fixtures.
+
+---
 
 ## Key dependencies — reach for the right one
 
@@ -111,9 +208,15 @@ cd web && bun run build
 | Applying the mask bundle | `regex::RegexSet` — one pass | looping N regexes per line |
 | Config (file + env + CLI) | `figment` | hand-rolled merging |
 | The daemon's own log writes | `tracing-appender` (non-blocking) | blocking on the ingest path |
+| Board behaviour (menus, dialogs) | `bits-ui` — headless | a component kit with its own look |
+| Alarm list at scale | `@tanstack/svelte-virtual` | a data grid; an alarm list is not a table |
+| Templates view | `@tanstack/svelte-table` | hand-rolled sorting |
+| Sparklines | `uplot` | Chart.js or Recharts, both overkill here |
 
 A runaway container emitting 100k lines/sec is a normal homelab failure, not an
 edge case. Ingest is rate-limited on purpose.
+
+---
 
 ## Optional features
 
@@ -121,6 +224,8 @@ edge case. Ingest is rate-limited on purpose.
   ```sh
   RUSTFLAGS="--cfg tokio_unstable" cargo run -p oarfish --features console
   ```
+
+---
 
 ## External APIs
 
@@ -130,9 +235,13 @@ auth via `TYPESAFE_API_KEY`. Body is `{state, model, questions}`; questions are
 request. Request budget ~32k tokens shared between state and questions. Answers carry
 calibrated `probabilities` and `confidence`. Docs: https://docs.typesafe.ai
 
+---
+
 ## Don't
 
 - Don't add a dependency to `oarfish-core`.
 - Don't put an LLM call on the every-line path.
 - Don't lower the Drain threshold to "fix" fragmented templates.
 - Don't summarize or rewrite log lines. Oarfish classifies; it does not narrate.
+- Don't use the accent colour for status, or a severity colour for anything else.
+- Don't put a coloured accent bar down the left edge of anything.
