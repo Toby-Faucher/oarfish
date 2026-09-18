@@ -71,6 +71,27 @@ What it shows, per alarm:
 - **"Not an alarm"** — a correction keyed to the template, so tuning happens against
   your lab instead of a benchmark
 
+### Frontend stack
+
+| | |
+|---|---|
+| **Astro 7** | server-rendered shell, islands architecture, bun for everything |
+| **Svelte 5** | the islands — compiles most of its runtime away |
+| **Tailwind 4** | CSS-first tokens, no config file |
+| **bits-ui** | headless behaviour (menus, dialogs, tooltips) — no visual opinion |
+| **@lucide/svelte** | icons |
+| **@tanstack/svelte-virtual** | the alarm list |
+| **@tanstack/svelte-table** | the templates view only — an alarm list is not a grid |
+| **uplot** | sparklines, ~45kB and very fast on time series |
+
+The rule that keeps it light: **a component only gets a `client:` directive if it
+genuinely needs to run in the browser.** Without one it still renders — as static
+HTML, shipping no JavaScript at all.
+
+Visually it's UniFi-flavoured: icon rail, near-black ground, panels barely lifted off
+it, one blue accent used only for interaction. Severity colours are a deliberately
+separate ramp — if they compete with the accent the board stops being scannable.
+
 ---
 
 ## How it works
@@ -123,7 +144,7 @@ alarms. Oarfish does that at install and never pays for it again.
 
 ## Quick start
 
-**Requirements:** Rust 1.98+ (pinned in `rust-toolchain.toml`), Node 22+.
+**Requirements:** Rust 1.98+ (pinned in `rust-toolchain.toml`) and [bun](https://bun.sh).
 
 ```sh
 git clone https://github.com/Toby-Faucher/oarfish
@@ -133,10 +154,10 @@ cd oarfish
 cargo check --workspace
 
 # board
-cd web && npm install && npm run dev
+cd web && bun install && bun run dev
 ```
 
-The board expects the daemon on `:4000`; `npm run dev` proxies `/api` there.
+The board expects the daemon on `:4000`; `bun run dev` proxies `/api` there.
 
 A TypeSafe API key is optional. Without one the pipeline still runs end to end —
 it just stops knowing what anything means.
@@ -167,7 +188,7 @@ crates/
   oarfish-engine   windows, the two Jev passes, alarm state machine
   oarfish-api      JSON API + SSE stream + static hosting
   oarfish          the daemon and its CLI (wiring only)
-web/               the board — Astro, SSR + islands
+web/               the board — Astro 7 + Svelte 5 islands, Tailwind 4, bun
 docs/specs/        design documents
 ```
 

@@ -1,0 +1,87 @@
+@import "tailwindcss";
+
+/* Dark is opt-in via [data-theme="dark"] on <html>, so the toggle wins over the OS. */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+/*
+ * Palette is UniFi-flavoured: near-black ground, panels barely lifted off it,
+ * one strong blue used only for interaction.
+ *
+ * Severity is a SEPARATE ramp on purpose. If alarm colours and the accent
+ * compete, the board stops being scannable, which is the whole point of it.
+ */
+:root {
+  --ui-ground:    #f2f4f7;
+  --ui-surface:   #ffffff;
+  --ui-rail:      #10141b;
+  --ui-panel:     #e8ebf0;
+  --ui-line:      #d6dbe3;
+
+  --ui-ink:       #131820;
+  --ui-ink-2:     #4d5766;
+  --ui-ink-3:     #7c8797;
+
+  --ui-accent:    #0559c9;
+  --ui-accent-fg: #ffffff;
+
+  --ui-critical:  #c62828;
+  --ui-major:     #c55a11;
+  --ui-minor:     #8a6d00;
+  --ui-info:      #41648a;
+  --ui-ok:        #1d7a4c;
+}
+
+:root[data-theme="dark"] {
+  --ui-ground:    #0a0d12;
+  --ui-surface:   #121721;
+  --ui-rail:      #080b10;
+  --ui-panel:     #1a2029;
+  --ui-line:      #232b36;
+
+  --ui-ink:       #e6eaf0;
+  --ui-ink-2:     #a3adbb;
+  --ui-ink-3:     #6b7583;
+
+  --ui-accent:    #2e8cff;
+  --ui-accent-fg: #06121f;
+
+  --ui-critical:  #ff6b5c;
+  --ui-major:     #ef9445;
+  --ui-minor:     #d8b93f;
+  --ui-info:      #7fa6d4;
+  --ui-ok:        #43c584;
+}
+
+@theme inline {
+  --color-ground:    var(--ui-ground);
+  --color-surface:   var(--ui-surface);
+  --color-rail:      var(--ui-rail);
+  --color-panel:     var(--ui-panel);
+  --color-line:      var(--ui-line);
+
+  --color-ink:       var(--ui-ink);
+  --color-ink-2:     var(--ui-ink-2);
+  --color-ink-3:     var(--ui-ink-3);
+
+  --color-accent:    var(--ui-accent);
+  --color-accent-fg: var(--ui-accent-fg);
+
+  --color-critical:  var(--ui-critical);
+  --color-major:     var(--ui-major);
+  --color-minor:     var(--ui-minor);
+  --color-info:      var(--ui-info);
+  --color-ok:        var(--ui-ok);
+
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "IBM Plex Mono", Menlo, monospace;
+
+  --radius-ui: 5px;
+}
+
+html { color-scheme: light dark; }
+
+body {
+  background: var(--ui-ground);
+  color: var(--ui-ink);
+  font-family: var(--font-sans);
+}

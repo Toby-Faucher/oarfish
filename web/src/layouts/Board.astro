@@ -1,22 +1,56 @@
 ---
 /**
- * The board shell. Static: everything that does not change between alarms.
- * Live regions are islands placed by the page, not by this layout.
+ * The board shell. Everything in here is static HTML — it renders on the
+ * server and ships zero JavaScript. Live regions are islands placed by the
+ * page, never by this layout.
  */
+import '../styles/global.css';
+import { TriangleAlert, LayoutGrid, Layers, Settings } from '@lucide/svelte';
+
 interface Props {
   title: string;
 }
 
 const { title } = Astro.props;
+
+const nav = [
+  { icon: TriangleAlert, label: 'Alarms', href: '/', current: true },
+  { icon: LayoutGrid, label: 'Overview', href: '/overview', current: false },
+  { icon: Layers, label: 'Templates', href: '/templates', current: false },
+  { icon: Settings, label: 'Settings', href: '/settings', current: false },
+];
 ---
 
-<html lang="en">
+<html lang="en" data-theme="dark">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{title}</title>
   </head>
-  <body>
-    <slot />
+  <body class="min-h-dvh">
+    <div class="flex min-h-dvh">
+      <!-- icon rail: the UniFi signature -->
+      <nav class="flex w-14 shrink-0 flex-col items-center gap-1 bg-rail py-3" aria-label="Sections">
+        <div class="mb-3 font-mono text-lg leading-none" title="oarfish">🐟</div>
+        {nav.map(({ icon: Icon, label, href, current }) => (
+          <a
+            href={href}
+            title={label}
+            aria-label={label}
+            aria-current={current ? 'page' : undefined}
+            class:list={[
+              'grid size-10 place-items-center rounded-(--radius-ui) transition-colors',
+              current ? 'bg-accent text-accent-fg' : 'text-ink-3 hover:bg-panel hover:text-ink',
+            ]}
+          >
+            <Icon size={18} />
+          </a>
+        ))}
+      </nav>
+
+      <div class="flex min-w-0 flex-1 flex-col">
+        <slot />
+      </div>
+    </div>
   </body>
 </html>

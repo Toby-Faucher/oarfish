@@ -34,6 +34,27 @@ If you are about to make something run more often than it has to, stop.
 
 ## The board is a first-class feature
 
+`web/` is Astro 7 with Svelte 5 islands, Tailwind 4 and **bun** (not npm — there is
+no package-lock.json, only bun.lock).
+
+The rule that keeps it fast: **a component only gets a `client:` directive if it
+genuinely needs to run in the browser.** Without one it still renders, as static
+HTML, shipping no JavaScript. Default to no directive and add one when you need it.
+
+Layout and chrome are static. Islands so far: the connection indicator. Planned:
+the live alarm list (SSE) and the templates table.
+
+UI vocabulary is UniFi-flavoured — icon rail, near-black ground, panels barely
+lifted, one blue accent for interaction only. Severity colours are a **separate**
+ramp from the accent and must stay that way; if they compete the board stops being
+scannable. Tokens live in `web/src/styles/global.css`.
+
+Libraries: `bits-ui` for behaviour (headless, no visual opinion), `@lucide/svelte`
+for icons, `@tanstack/svelte-virtual` for the alarm list, `@tanstack/svelte-table`
+for the templates view only, `uplot` for sparklines.
+
+
+
 `web/` is not a bolt-on. It is the primary interface. Server-rendered Astro shell,
 one live island fed by SSE, minimal client JS. Changes to alarm shape need a
 corresponding change to the board.
@@ -48,8 +69,8 @@ cargo test --workspace
 cargo insta review          # after snapshot changes
 cargo bench -p oarfish-drain
 
-cd web && npm run dev      # board on :4321, proxies /api to the daemon on :4000
-cd web && npm run build
+cd web && bun run dev      # board on :4321, proxies /api to the daemon on :4000
+cd web && bun run build
 ```
 
 ## Testing approach

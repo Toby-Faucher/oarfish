@@ -1,10 +1,73 @@
 ---
 import Board from '../layouts/Board.astro';
+import ConnectionPulse from '../components/ConnectionPulse.svelte';
+
+// Placeholder rows. These become the SSE-fed alarm list; for now they exist so
+// the shell has something real to lay out.
+const alarms = [
+  { sev: 'critical', title: 'Filesystem errors on nas01',   host: 'nas01',   count: 14, at: '03:14' },
+  { sev: 'major',    title: 'SMB session teardown loop',    host: 'nas01',   count: 61, at: '03:14' },
+  { sev: 'minor',    title: 'Certificate expires in 6 days', host: 'proxy01', count: 1,  at: '01:02' },
+  { sev: 'info',     title: 'New template seen on pve01',    host: 'pve01',   count: 3,  at: '22:40' },
+] as const;
+
+const stripe = {
+  critical: 'bg-critical',
+  major: 'bg-major',
+  minor: 'bg-minor',
+  info: 'bg-info',
+} as const;
+
+const chip = {
+  critical: 'text-critical',
+  major: 'text-major',
+  minor: 'text-minor',
+  info: 'text-info',
+} as const;
 ---
 
-<Board title="oarfish">
-  <main>
-    <h1>oarfish</h1>
-    <p>The board is not built yet.</p>
+<Board title="oarfish — alarms">
+  <!--
+    STATIC. No `client:` directive anywhere below except ConnectionPulse, so
+    none of this ships JavaScript. It is HTML by the time it reaches the browser.
+  -->
+  <header class="flex items-center gap-4 border-b border-line bg-surface px-5 py-3">
+    <h1 class="text-sm font-semibold tracking-wide uppercase">Alarms</h1>
+    <span class="rounded-(--radius-ui) bg-panel px-2 py-0.5 font-mono text-xs text-ink-2">
+      {alarms.length} open
+    </span>
+
+    <!-- ISLAND. `client:load` is what makes this one interactive. -->
+    <div class="ml-auto">
+      <ConnectionPulse client:load />
+    </div>
+  </header>
+
+  <main class="min-w-0 flex-1 p-5">
+    <ul class="overflow-hidden rounded-(--radius-ui) border border-line bg-surface">
+      {alarms.map((a) => (
+        <li class="flex items-stretch gap-3 border-b border-line last:border-b-0">
+          <span class={`w-[3px] shrink-0 ${stripe[a.sev]}`} aria-hidden="true"></span>
+          <div class="min-w-0 flex-1 py-3">
+            <div class="truncate text-sm font-medium">{a.title}</div>
+            <div class="mt-0.5 flex gap-2 font-mono text-xs text-ink-3">
+              <span class={`font-semibold uppercase ${chip[a.sev]}`}>{a.sev}</span>
+              <span>{a.host}</span>
+              <span>{a.at}</span>
+            </div>
+          </div>
+          <div class="shrink-0 self-center pr-4 text-right">
+            <div class="font-mono text-base tabular-nums">{a.count}</div>
+            <div class="font-mono text-[10px] text-ink-3">in 5m</div>
+          </div>
+        </li>
+      ))}
+    </ul>
+
+    <p class="mt-4 max-w-prose text-xs text-ink-3">
+      Everything on this page is static HTML except the live indicator in the header.
+      That one carries <code class="font-mono text-ink-2">client:load</code>; nothing else does,
+      so nothing else ships JavaScript.
+    </p>
   </main>
 </Board>

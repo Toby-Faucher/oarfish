@@ -13,7 +13,17 @@
   },
   "dependencies": {
     "@astrojs/node": "^11.1.6",
-    "astro": "^7.3.3"
+    "@astrojs/svelte": "^9.0.1",
+    "@lucide/svelte": "^1.47.0",
+    "@tailwindcss/vite": "^4.3.3",
+    "@tanstack/svelte-table": "^9.2.4",
+    "@tanstack/svelte-virtual": "^3.13.39",
+    "astro": "^7.3.3",
+    "bits-ui": "^2.19.2",
+    "svelte": "^5.57.0",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^6.0.3",
+    "uplot": "^1.6.32"
   },
   "allowScripts": {
     "esbuild": true
