@@ -22,11 +22,15 @@ jobs:
       - run: cargo test --workspace
       # `cargo test` regenerates the board's bindings. If that produced a diff,
       # someone changed a shared type and did not commit the TypeScript, which is
-      # exactly the drift `ts-rs` is here to prevent.
+      # exactly the drift `ts-rs` is here to prevent. We check both modified
+      # tracked files (`git diff`) and new untracked ones (`git status`) — a
+      # brand-new exported type would only show up as untracked.
       - name: bindings are up to date
         run: |
           git diff --exit-code -- web/src/lib/bindings \
             || { echo "::error::web/src/lib/bindings is stale. Run 'cargo test --workspace' and commit the result."; exit 1; }
+          [ -z "$(git status --porcelain --untracked-files=all -- web/src/lib/bindings)" ] \
+            || { echo "::error::web/src/lib/bindings has untracked files. Run 'cargo test --workspace' and commit the result."; exit 1; }
 
   web:
     runs-on: ubuntu-latest
@@ -39,4 +43,5 @@ jobs:
         with:
           bun-version: latest
       - run: bun install --frozen-lockfile
+      - run: bun run check
       - run: bun run build

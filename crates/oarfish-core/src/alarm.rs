@@ -11,7 +11,6 @@ use crate::{Severity, TemplateId};
 
 /// A ULID, so the store gets chronological range scans for free.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize, TS)]
-#[serde(transparent)]
 #[ts(export, export_to = "oarfish.ts", type = "string")]
 pub struct AlarmId(Ulid);
 

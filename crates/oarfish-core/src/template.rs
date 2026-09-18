@@ -11,8 +11,13 @@ use ts_rs::TS;
 ///
 /// Derived from the masked text alone, so it is reproducible from the log
 /// corpus and nothing else. That is also the risk: change the mask bundle and
-/// every id moves, orphaning every verdict. Bundle changes are versioned and
-/// trigger a deliberate re-classification rather than a silent cache miss.
+/// every id moves, orphaning every verdict.
+///
+/// The bundle version has to be recorded alongside each cached verdict and
+/// checked on read; nothing enforces that yet. Get that wrong and the failure
+/// is not a cache miss, it is a false hit: if a bundle change makes one
+/// template mask down to text a different template already produced, the two
+/// ids collide and the store serves the wrong verdict without complaint.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, TS)]
 #[ts(export, export_to = "oarfish.ts", type = "string")]
 pub struct TemplateId([u8; 32]);
