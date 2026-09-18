@@ -15,6 +15,11 @@ blake3.workspace    = true
 thiserror.workspace = true
 
 [dev-dependencies]
-insta.workspace    = true
-rstest.workspace   = true
-proptest.workspace = true
+insta.workspace     = true
+rstest.workspace    = true
+proptest.workspace  = true
+criterion.workspace = true
+
+[[bench]]
+name    = "mask"
+harness = false
