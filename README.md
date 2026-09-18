@@ -221,16 +221,20 @@ Two invariants worth knowing before you touch anything:
 
 ## Roadmap
 
+Milestones and their acceptance criteria are specified in
+[`docs/specs/2026-09-17-oarfish-design.md`](docs/specs/2026-09-17-oarfish-design.md).
+
 - [x] Workspace scaffold, CI, licensing
-- [ ] `oarfish-core` domain types
-- [ ] Drain port, validated against drain3 on a shared corpus
-- [ ] Mask bundle format + synthesis CLI
-- [ ] Jev client
-- [ ] Ingest: syslog → journald → OTLP
-- [ ] Window + alarm state machine
-- [ ] **The board**
-- [ ] ntfy delivery
-- [ ] Decision records + replay
+- [x] Design system and the board shell
+- [ ] **M0** — `oarfish-core` types, exported to the board via `ts-rs`
+- [ ] **M1** — mask bundle format + curated default bundle
+- [ ] **M2** — Drain port, validated against drain3 on a shared corpus
+- [ ] **M3** — ingest: syslog → journald → OTLP
+- [ ] **M4** — Jev client + fjall store, with decision records
+- [ ] **M5** — window, alarm state machine, SSE
+- [ ] **M6** — the board on live data, ntfy delivery
+
+Not on the critical path: `oarfish masks synthesize`. The curated bundle carries M1–M6.
 
 ---
 
