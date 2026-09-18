@@ -1,0 +1,75 @@
+# oarfish — working notes for agents
+
+Log-driven alarms for homelabs. Rust daemon + Astro board. Pre-alpha: the scaffold
+builds, almost nothing is implemented.
+
+## The one idea
+
+Work is priced by how often it runs. Three rates, kept strictly separate:
+
+| Rate | What | Cached against |
+|---|---|---|
+| Once, at install | LLM synthesizes the regex mask bundle | `bundle_hash` |
+| Per new template | Static verdict (kind, severity, actionable) | `TemplateId` |
+| Per close pair | Merge review | `(id_a, id_b)` |
+| Per burst, flagged only | Contextual check | not cached |
+| Every line | mask → cluster → window → alarm engine | pure Rust |
+
+If you are about to make something run more often than it has to, stop.
+
+## Invariants
+
+1. **`oarfish-core` depends on nothing else in the workspace.** Every other crate
+   depends on it; a cycle here is a cycle everywhere.
+2. **Nothing on the every-line path makes a network call.** No exceptions. If a
+   feature seems to need one, it belongs on a cached path.
+3. **The raw log line is preserved verbatim, always.** At 3am the operator wants the
+   bytes that arrived, not our interpretation of them.
+4. **Drain runs at a conservative similarity threshold (0.90).** It should over-split
+   rather than merge `task succeeded` into `task failed` — a merge like that silently
+   deletes the alarm. Over-splits are repaired by merge review, not by lowering the
+   threshold.
+5. **`oarfish-jev` is transport only.** It holds no policy about which questions to
+   ask; that lives in `oarfish-engine`.
+
+## The board is a first-class feature
+
+`web/` is not a bolt-on. It is the primary interface. Server-rendered Astro shell,
+one live island fed by SSE, minimal client JS. Changes to alarm shape need a
+corresponding change to the board.
+
+## Commands
+
+```sh
+cargo check --workspace
+cargo clippy --workspace --all-targets -- -D warnings   # CI runs with -D warnings
+cargo fmt --all
+cargo test --workspace
+
+cd web && npm run dev      # board on :4321, proxies /api to the daemon on :4000
+cd web && npm run build
+```
+
+## Conventions
+
+- Rust 1.98, edition 2024, pinned in `rust-toolchain.toml`.
+- `#![forbid(unsafe_code)]` at the top of every crate. Keep it there.
+- Errors: `thiserror` in libraries, `anyhow` in the binary.
+- Each crate's `lib.rs` opens with a doc comment saying what it does, how you use it,
+  and what it depends on. Keep it accurate when you change the crate.
+- Tests live beside the code they test unless they need fixtures.
+
+## External APIs
+
+**Jev / TypeSafe System One** — `POST https://api.typesafe.ai/v1/systemone`, bearer
+auth via `TYPESAFE_API_KEY`. Body is `{state, model, questions}`; questions are
+`choice` / `score` / `noul` and all evaluate in parallel, so ask everything in one
+request. Request budget ~32k tokens shared between state and questions. Answers carry
+calibrated `probabilities` and `confidence`. Docs: https://docs.typesafe.ai
+
+## Don't
+
+- Don't add a dependency to `oarfish-core`.
+- Don't put an LLM call on the every-line path.
+- Don't lower the Drain threshold to "fix" fragmented templates.
+- Don't summarize or rewrite log lines. Oarfish classifies; it does not narrate.

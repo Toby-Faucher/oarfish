@@ -1,0 +1,21 @@
+[package]
+name = "oarfish-api"
+version.workspace      = true
+edition.workspace      = true
+rust-version.workspace = true
+license.workspace      = true
+repository.workspace   = true
+authors.workspace      = true
+
+[dependencies]
+oarfish-core.workspace   = true
+oarfish-engine.workspace = true
+oarfish-store.workspace  = true
+axum.workspace           = true
+tower-http.workspace     = true
+tokio.workspace          = true
+tokio-stream.workspace   = true
+futures.workspace        = true
+serde.workspace          = true
+serde_json.workspace     = true
+tracing.workspace        = true

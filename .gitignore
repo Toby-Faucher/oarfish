@@ -1,0 +1,21 @@
+# rust
+/target/
+**/*.rs.bk
+
+# node
+node_modules/
+web/dist/
+web/.astro/
+
+# oarfish runtime state
+/data/
+*.fjall/
+
+# secrets
+.env
+.env.*
+!.env.example
+
+# editors / os
+.DS_Store
+*.swp

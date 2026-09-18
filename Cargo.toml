@@ -1,0 +1,61 @@
+[workspace]
+resolver = "3"
+members = ["crates/*"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.98"
+license = "MIT"
+repository = "https://github.com/tfaucher/oarfish"
+authors = ["Toby Faucher <toby@tfaucher.com>"]
+
+[workspace.dependencies]
+# internal
+oarfish-core   = { path = "crates/oarfish-core" }
+oarfish-mask   = { path = "crates/oarfish-mask" }
+oarfish-drain  = { path = "crates/oarfish-drain" }
+oarfish-jev    = { path = "crates/oarfish-jev" }
+oarfish-store  = { path = "crates/oarfish-store" }
+oarfish-ingest = { path = "crates/oarfish-ingest" }
+oarfish-engine = { path = "crates/oarfish-engine" }
+oarfish-api    = { path = "crates/oarfish-api" }
+
+# runtime
+tokio        = { version = "1.53", features = ["rt-multi-thread", "macros", "net", "time", "sync", "signal", "io-util"] }
+tokio-stream = "0.1"
+futures      = "0.3"
+bytes        = "1"
+
+# data
+serde      = { version = "1", features = ["derive"] }
+serde_json = "1"
+toml       = "1.1"
+time       = { version = "0.3", features = ["serde", "formatting", "parsing", "macros"] }
+blake3     = "1"
+regex      = "1"
+
+# storage
+fjall = "3.1"
+
+# http
+axum       = { version = "0.8", features = ["macros"] }
+tower-http = { version = "0.7", features = ["trace", "fs", "cors"] }
+reqwest    = { version = "0.13", default-features = false, features = ["json", "rustls", "http2"] }
+
+# ingest
+syslog_loose = "0.23"
+
+# cli + diagnostics
+clap               = { version = "4", features = ["derive", "env"] }
+anyhow             = "1"
+thiserror          = "2"
+tracing            = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+[profile.release]
+opt-level     = 3
+lto           = "thin"
+codegen-units = 1
+panic         = "abort"
+strip         = true
