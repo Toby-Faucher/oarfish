@@ -3,14 +3,47 @@ import Board from '../layouts/Board.astro';
 import AlarmList from '../components/AlarmList.svelte';
 import Template from '../components/Template.svelte';
 import ConnectionPulse from '../components/ConnectionPulse.svelte';
-import type { Alarm } from '../components/AlarmRow.svelte';
+import type { Alarm } from '../lib/bindings/oarfish';
 
-// Placeholder data until oarfish-api exists. Shape matches what the daemon emits.
+// Placeholder data until oarfish-api exists. The shape is generated from
+// oarfish-core, so this breaks loudly if the daemon's Alarm ever changes.
 const alarms: Alarm[] = [
-  { id: 'a_2f81', level: 'critical', title: 'Filesystem errors on nas01',    host: 'nas01',   count: 14, at: '03:14' },
-  { id: 'a_2f82', level: 'major',    title: 'SMB session teardown loop',     host: 'nas01',   count: 61, at: '03:14' },
-  { id: 'a_2f83', level: 'minor',    title: 'Certificate expires in 6 days', host: 'proxy01', count: 1,  at: '01:02' },
-  { id: 'a_2f84', level: 'info',     title: 'New template seen on pve01',    host: 'pve01',   count: 3,  at: '22:40' },
+  {
+    id: '01K5ZG7Q2M0000000000000001',
+    template_id: 't_' + '8f3c21a9'.repeat(8),
+    template: 'EXT4-fs error (device <VAR:DEV>): inode #<VAR:NUM>: comm <VAR:PROC>',
+    severity: 'critical',
+    host: 'nas01',
+    count: 14,
+    opened_at: '2026-09-18T03:14:07Z',
+  },
+  {
+    id: '01K5ZG7Q2M0000000000000002',
+    template_id: 't_' + '4b19c7e2'.repeat(8),
+    template: 'smbd[<VAR:NUM>]: session teardown for <VAR:USER> from <VAR:IP>',
+    severity: 'major',
+    host: 'nas01',
+    count: 61,
+    opened_at: '2026-09-18T03:14:41Z',
+  },
+  {
+    id: '01K5ZG7Q2M0000000000000003',
+    template_id: 't_' + 'c70da155'.repeat(8),
+    template: 'certificate for <VAR:HOST> expires in <VAR:NUM> days',
+    severity: 'minor',
+    host: 'proxy01',
+    count: 1,
+    opened_at: '2026-09-18T01:02:19Z',
+  },
+  {
+    id: '01K5ZG7Q2M0000000000000004',
+    template_id: 't_' + 'a2e64b03'.repeat(8),
+    template: 'new template seen on <VAR:HOST>',
+    severity: 'info',
+    host: 'pve01',
+    count: 3,
+    opened_at: '2026-09-17T22:40:52Z',
+  },
 ];
 
 const template =

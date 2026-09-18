@@ -1,7 +1,8 @@
 <script lang="ts">
   import { fly } from 'svelte/transition';
   import { cubicOut } from 'svelte/easing';
-  import AlarmRow, { type Alarm } from './AlarmRow.svelte';
+  import AlarmRow from './AlarmRow.svelte';
+  import type { Alarm } from '../lib/bindings/oarfish';
   import DensityToggle from './DensityToggle.svelte';
   import type { Density } from '../lib/severity';
 

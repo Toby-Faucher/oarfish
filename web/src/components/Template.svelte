@@ -10,11 +10,7 @@
    * This is the one place the design is allowed to be loud. If a second
    * component starts competing with it, cut something.
    */
-  export interface Slot {
-    name: string;
-    pattern: string;
-    seen: number;
-  }
+  import type { Slot } from '../lib/bindings/oarfish';
 
   interface Props {
     /** Template text with `<VAR:NAME>` placeholders, straight from Drain. */
