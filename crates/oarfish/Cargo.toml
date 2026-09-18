@@ -23,3 +23,9 @@ serde.workspace              = true
 anyhow.workspace             = true
 tracing.workspace            = true
 tracing-subscriber.workspace = true
+console-subscriber = { workspace = true, optional = true }
+
+[features]
+default = []
+# Runtime debugging via tokio-console. Also needs RUSTFLAGS="--cfg tokio_unstable".
+console = ["dep:console-subscriber"]

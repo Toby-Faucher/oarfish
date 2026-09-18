@@ -211,6 +211,8 @@ and an Astro build — run those locally before opening a PR.
 - **[DeepParse](https://arxiv.org/html/2604.20553v1)** — for the offline mask synthesis idea.
 - **[TypeSafe](https://typesafe.ai)** — for Jev and the System One model class.
 - **[ntfy](https://ntfy.sh)** — for being the thing that actually reaches the phone.
+- **[tokio](https://tokio.rs)** — and `tokio-util`, whose `DelayQueue` runs every
+  alarm timer and whose codecs frame every syslog connection.
 
 ---
 

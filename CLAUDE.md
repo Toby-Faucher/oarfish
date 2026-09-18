@@ -59,6 +59,27 @@ cd web && npm run build
   and what it depends on. Keep it accurate when you change the crate.
 - Tests live beside the code they test unless they need fixtures.
 
+## Key dependencies — reach for the right one
+
+| Need | Use | Not |
+|---|---|---|
+| Framing syslog over TCP | `tokio-util` `codec` (`LinesCodec`, `Framed`) | hand-rolled byte scanning |
+| Alarm auto-clear / flap windows | `tokio-util` `time::DelayQueue` | a task per open alarm |
+| Coordinated shutdown | `tokio-util` `rt` (`CancellationToken`, `TaskTracker`) | ad-hoc channels |
+| OTLP ingest | `tonic` + `prost` + `opentelemetry-proto` | vendored `.proto` files |
+| Ingest backpressure | `governor` | dropping on the floor |
+| Hot verdict lookups | `moka` (in front of `fjall`) | hitting fjall per line |
+
+A runaway container emitting 100k lines/sec is a normal homelab failure, not an
+edge case. Ingest is rate-limited on purpose.
+
+## Optional features
+
+- `console` — runtime debugging via tokio-console. Needs the cfg flag too:
+  ```sh
+  RUSTFLAGS="--cfg tokio_unstable" cargo run -p oarfish --features console
+  ```
+
 ## External APIs
 
 **Jev / TypeSafe System One** — `POST https://api.typesafe.ai/v1/systemone`, bearer
