@@ -10,3 +10,10 @@
 //! repaired by the merge review in `oarfish-engine`.
 
 #![forbid(unsafe_code)]
+
+mod config;
+mod drain;
+mod tree;
+
+pub use config::Config;
+pub use drain::{Assignment, Cluster, Drain, DrainError};
