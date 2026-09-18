@@ -6,9 +6,23 @@
  * Hues come from the Wong palette. `info` is neutral rather than Wong's blue
  * because blue is reserved for interaction, and an info alarm should recede.
  */
-export const SEVERITIES = ['critical', 'major', 'minor', 'info', 'cleared'] as const;
+import type { Severity } from './bindings/oarfish';
 
-export type Severity = (typeof SEVERITIES)[number];
+export type { Severity };
+
+/**
+ * Display order, which is the reverse of the domain's escalation order: the
+ * worst thing belongs at the top of a list someone is scanning at 3am.
+ * Typed against the generated union, so dropping a variant in Rust breaks the
+ * board's build rather than silently rendering nothing.
+ */
+export const SEVERITIES: readonly Severity[] = [
+  'critical',
+  'major',
+  'minor',
+  'info',
+  'cleared',
+] as const;
 
 /** Filled bars out of three. Signal-strength vocabulary, for a tool that watches networks. */
 export const BARS: Record<Severity, number> = {

@@ -1830,6 +1830,7 @@ version = "0.1.0"
 dependencies = [
  "blake3",
  "insta",
+ "proptest",
  "rstest",
  "serde",
  "serde_json",

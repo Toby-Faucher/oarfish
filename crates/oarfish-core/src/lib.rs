@@ -8,6 +8,10 @@
 
 #![forbid(unsafe_code)]
 
+mod severity;
+
+pub use severity::Severity;
+
 #[cfg(test)]
 mod tests {
     use ulid::Ulid;

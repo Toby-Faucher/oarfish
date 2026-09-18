@@ -1,0 +1,5 @@
+# ts-rs writes the board's TypeScript during `cargo test`. It lands directly in the
+# board's source tree: there is one definition of `Alarm` in this repo, and it is the
+# Rust one. CI regenerates and fails on a diff, so the two cannot drift.
+[env]
+TS_RS_EXPORT_DIR = { value = "web/src/lib/bindings", relative = true }
