@@ -9,3 +9,11 @@
 //! In: `&str` body. Out: masked body plus the placeholders that matched.
 
 #![forbid(unsafe_code)]
+
+mod bundle;
+mod curated;
+mod masker;
+
+pub use bundle::{Bundle, BundleError, BundleHash, RESERVED_SLOT, SlotDef};
+pub use curated::curated;
+pub use masker::{Masked, SlotMatch};

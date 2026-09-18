@@ -1905,13 +1905,14 @@ dependencies = [
 name = "oarfish-mask"
 version = "0.1.0"
 dependencies = [
+ "blake3",
  "insta",
- "oarfish-core",
  "proptest",
  "regex",
  "rstest",
  "serde",
  "thiserror",
+ "toml",
 ]
 
 [[package]]
