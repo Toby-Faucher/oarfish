@@ -19,3 +19,6 @@ web/.astro/
 # editors / os
 .DS_Store
 *.swp
+
+# SDD scratch: ledgers, briefs, review packages
+.superpowers/
