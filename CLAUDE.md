@@ -229,11 +229,22 @@ edge case. Ingest is rate-limited on purpose.
 
 ## External APIs
 
-**Jev / TypeSafe System One** — `POST https://api.typesafe.ai/v1/systemone`, bearer
-auth via `TYPESAFE_API_KEY`. Body is `{state, model, questions}`; questions are
-`choice` / `score` / `noul` and all evaluate in parallel, so ask everything in one
-request. Request budget ~32k tokens shared between state and questions. Answers carry
-calibrated `probabilities` and `confidence`. Docs: https://docs.typesafe.ai
+**Jev / TypeSafe System One, via OpenRouter** — base URL
+`https://openrouter.ai/api/v1`, model `typesafe/jev-1.13` (pinned), bearer auth via
+`OPENROUTER_API_KEY`. One key for every model oarfish calls, and it keeps the
+local-model fallback a config change.
+
+Natively the body is `{state, model, questions}`; questions are `choice` / `score` /
+`noul` and all evaluate in parallel, so ask everything in one request. Request budget
+~32k tokens shared between state and questions. Answers carry calibrated
+`probabilities` and `confidence`.
+
+**Never synthesize a confidence value.** It is read from the provider payload or it
+does not exist — the routing table keys off it, and a made-up number is worse than
+none. OpenRouter fronts Jev with an OpenAI-compatible surface, so whether per-answer
+confidence survives that mapping is verified in M4 before the client is written; if it
+does not, `oarfish-jev` keeps its shape and points at `https://api.typesafe.ai/v1/systemone`
+instead. Docs: https://docs.typesafe.ai and https://openrouter.ai/typesafe
 
 ---
 
@@ -243,5 +254,6 @@ calibrated `probabilities` and `confidence`. Docs: https://docs.typesafe.ai
 - Don't put an LLM call on the every-line path.
 - Don't lower the Drain threshold to "fix" fragmented templates.
 - Don't summarize or rewrite log lines. Oarfish classifies; it does not narrate.
+- Don't synthesize a confidence value. Read it from the payload or don't have one.
 - Don't use the accent colour for status, or a severity colour for anything else.
 - Don't put a coloured accent bar down the left edge of anything.

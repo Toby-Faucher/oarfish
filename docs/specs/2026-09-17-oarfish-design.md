@@ -192,6 +192,26 @@ Window stats and any open alarms go in as state.
 the alarm already open on this host, or a second one?* `wake_someone` is the value the
 alarm engine routes on in 5.9.
 
+**Where the open-alarm state comes from.** The check never asks the alarm engine
+anything. The state machine is the only writer of open-alarm state; before a check
+runs, the engine captures an immutable snapshot — id, template id, severity, host,
+opened-at, one template excerpt — scoped to the burst's host and bounded so it fits the
+token budget. That snapshot is the state sent, and it is persisted verbatim in the
+decision record, so the correlation is replayable. `correlates_with` is a `choice` over
+the ids in that snapshot plus `none`, so the question cannot name an alarm the model
+was never shown.
+
+Data flows one way per evaluation: committed state → check → answer → engine mutation.
+The engine never blocks on the check, and the check never reads state the current
+evaluation is producing, so there is no cycle. Feedback *across* bursts is the point —
+that is the system tracking an incident.
+
+The engine re-validates on apply: a Jev call is not instantaneous, `DelayQueue`
+auto-clear runs independently, and an alarm that cleared during the round trip is
+treated as `none`. Internally the check depends on a read-only `OpenAlarmView` trait
+rather than on the state machine, which is also what lets the routing tests hand it
+chosen snapshots.
+
 ### 5.9 Alarm engine — hot path
 
 A plain Rust state machine, deliberately not a model. Raise, dedupe against open
@@ -212,6 +232,23 @@ are starting points to be tuned against real data, not claims.
 ### 5.10 Out
 
 SSE to the board; POST to ntfy.
+
+### 5.11 Transport
+
+Jev is reached **through OpenRouter**, not the native TypeSafe endpoint: one key and
+one billing relationship for any model oarfish ever calls, and it keeps the local-model
+fallback in §13 a config change rather than a second client. Base URL
+`https://openrouter.ai/api/v1`, model id `typesafe/jev-1.13`, auth via
+`OPENROUTER_API_KEY`.
+
+The cost is that OpenRouter fronts Jev with an OpenAI-compatible surface, while the
+native endpoint takes `{state, model, questions}` and returns per-answer
+`probabilities` and `confidence` directly. **That confidence is load-bearing** — it is
+the entire input to the routing table in 5.9 — and it is never synthesized locally; a
+made-up confidence is worse than none. So the M4 spike has one job, and it is a gate,
+not a formality: send a two-question request through OpenRouter and confirm calibrated
+per-answer confidence survives the mapping. If it does not, `oarfish-jev` keeps its
+shape and points at the native endpoint instead.
 
 ## 6. Data model
 
@@ -274,14 +311,14 @@ syslog = "0.0.0.0:514"
 journal = true
 
 [decide]
-model     = "jev-1.13"      # pinned, not jev-latest
+model     = "typesafe/jev-1.13"   # pinned, not jev-latest
 threshold = 0.90            # Drain similarity
 
 [notify]
 ntfy = "https://ntfy.sh/…"
 ```
 
-`TYPESAFE_API_KEY` comes from the environment only, never a config file.
+`OPENROUTER_API_KEY` comes from the environment only, never a config file.
 
 The model is **pinned**, not `jev-latest`. An alerting system's behaviour should not
 change because a vendor shipped a new revision overnight.
@@ -317,16 +354,13 @@ bundle covers M1 through M6, and synthesis lands after.
 
 ## 12. Open questions
 
-1. **OpenRouter or the native TypeSafe API.** The native endpoint takes
-   `{state, questions}`; OpenRouter exposes an OpenAI-compatible surface whose mapping
-   onto that shape is unverified. Native looks simpler. Ten-minute spike before the Jev
-   client is written.
-2. **Which model synthesizes masks.** DeepParse fine-tuned a local 8B model, which we
+1. **Which model synthesizes masks.** DeepParse fine-tuned a local 8B model, which we
    can't ship. A general LLM called once at install is the likely answer, but the
    prompt and its validation need designing.
-3. **Light theme.** Specified in tokens, not yet drawn or reviewed. Needs its own pass.
-4. **Where the contextual check gets its "open alarms" state** without the engine and
-   the decision layer becoming circular.
+2. **Light theme.** Specified in tokens, not yet drawn or reviewed. Needs its own pass.
+
+*Resolved 2026-09-18: transport is OpenRouter (§5.11); the contextual check reads a
+snapshot, not the engine (§5.8).*
 
 ## 13. Risks
 
@@ -338,7 +372,10 @@ cache misses.
 **Jev is a young, single-vendor dependency in beta.** The decision layer is isolated
 behind `oarfish-jev` for exactly this reason: the pipeline runs without it, it just
 stops knowing what anything means. A local-model backend of the same shape is a
-realistic fallback.
+realistic fallback, and going through OpenRouter (§5.11) makes swapping to one a config
+change. The exposure OpenRouter adds is the confidence passthrough: if calibrated
+confidence does not survive the OpenAI-compatible mapping, 5.9 has no input to route
+on. M4 verifies that before the client is written.
 
 **Confidence thresholds are guesses until there is data.** The numbers in 5.9 are
 starting points. Decision records and local corrections exist so they can be tuned
