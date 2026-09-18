@@ -1,0 +1,25 @@
+---
+source: crates/oarfish-drain/tests/corpus.rs
+assertion_line: 73
+---
+lines: 10 clusters: 10
+1 BUG: unable to handle kernel NULL pointer dereference at <VAR:HEX>
+  eg: BUG: unable to handle kernel NULL pointer dereference at 0xffff888100a41000
+1 CPU: <VAR:NUM> PID: <VAR:NUM> Comm: postgres Tainted: G OE <VAR:NUM>.<VAR:NUM>-arch1-<VAR:NUM>
+  eg: CPU: 3 PID: 28143 Comm: postgres Tainted: G           OE     6.11.4-arch1-1
+1 EXT4-fs (<VAR:DEV>): mounted filesystem with ordered data mode. Opts: (null)
+  eg: EXT4-fs (dm-3): mounted filesystem with ordered data mode. Opts: (null)
+1 EXT4-fs error (device <VAR:DEV>): ext4_find_entry:<VAR:NUM>: inode #<VAR:NUM>: comm ls: reading directory lblock <VAR:NUM>
+  eg: EXT4-fs error (device sda1): ext4_find_entry:1455: inode #98304: comm ls: reading directory lblock 0
+1 Out of memory: Killed process <VAR:NUM> (postgres) total-vm:<VAR:SIZE>, anon-rss:<VAR:SIZE>
+  eg: Out of memory: Killed process 28143 (postgres) total-vm:4194304kB, anon-rss:2097152kB
+1 TCP: request_sock_TCP: Possible SYN flooding on port <VAR:NUM>. Sending cookies.
+  eg: TCP: request_sock_TCP: Possible SYN flooding on port 443. Sending cookies.
+1 eth0: link up, <VAR:NUM> Mbps, full duplex
+  eg: eth0: link up, 1000 Mbps, full duplex
+1 nvme nvme0: Abort status: <VAR:HEX>
+  eg: nvme nvme0: Abort status: 0x0
+1 nvme nvme0: I/O <VAR:NUM> QID <VAR:NUM> timeout, aborting
+  eg: nvme nvme0: I/O 442 QID 3 timeout, aborting
+1 usb <VAR:NUM>-<VAR:NUM>: new high-speed USB device number <VAR:NUM> using xhci_hcd
+  eg: usb 1-4: new high-speed USB device number 7 using xhci_hcd

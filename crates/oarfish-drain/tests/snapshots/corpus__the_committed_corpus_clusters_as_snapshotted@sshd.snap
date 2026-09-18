@@ -1,0 +1,17 @@
+---
+source: crates/oarfish-drain/tests/corpus.rs
+assertion_line: 73
+---
+lines: 6 clusters: 6
+1 sshd<VAR:PID>: Accepted publickey for toby from <VAR:IP4> port <VAR:NUM> ssh2: ED25519 SHA256:<VAR:HEX>
+  eg: sshd[12345]: Accepted publickey for toby from 10.0.0.5 port 22 ssh2: ED25519 SHA256:abc123def456
+1 sshd<VAR:PID>: Connection closed by authenticating user root <VAR:IP4> port <VAR:NUM> [preauth]
+  eg: sshd[12347]: Connection closed by authenticating user root 203.0.113.9 port 40122 [preauth]
+1 sshd<VAR:PID>: Disconnected from <VAR:IP6> port <VAR:NUM>
+  eg: sshd[12349]: Disconnected from 2001:db8::1c2d port 33445
+1 sshd<VAR:PID>: Failed password for invalid user admin from <VAR:IP4> port <VAR:NUM> ssh2
+  eg: sshd[12346]: Failed password for invalid user admin from 192.168.1.44 port 54321 ssh2
+1 sshd<VAR:PID>: error: maximum authentication attempts exceeded for root from <VAR:IP4> port <VAR:NUM> ssh2
+  eg: sshd[12348]: error: maximum authentication attempts exceeded for root from 198.51.100.7 port 51234 ssh2
+1 sshd<VAR:PID>: pam_unix(sshd:session): session opened for user toby(uid=<VAR:NUM>) by (uid=<VAR:NUM>)
+  eg: sshd[12350]: pam_unix(sshd:session): session opened for user toby(uid=1000) by (uid=0)

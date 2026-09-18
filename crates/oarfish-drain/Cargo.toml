@@ -13,7 +13,8 @@ serde.workspace        = true
 thiserror.workspace    = true
 
 [dev-dependencies]
-insta.workspace = true
-rstest.workspace = true
-proptest.workspace = true
-criterion.workspace = true
+insta.workspace        = true
+rstest.workspace       = true
+proptest.workspace     = true
+criterion.workspace    = true
+oarfish-mask.workspace = true

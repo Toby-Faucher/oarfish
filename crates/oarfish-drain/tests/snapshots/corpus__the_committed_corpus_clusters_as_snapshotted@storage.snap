@@ -1,0 +1,21 @@
+---
+source: crates/oarfish-drain/tests/corpus.rs
+assertion_line: 73
+---
+lines: 8 clusters: 8
+1 docker: container <VAR:HEX> exited with code <VAR:NUM> after <VAR:DUR>
+  eg: docker: container 3f2a9c1e88b4 exited with code 137 after 1.5s
+1 docker: pulled image ghcr.io<VAR:PATH>@sha256:<VAR:HEX>
+  eg: docker: pulled image ghcr.io/tfaucher/oarfish@sha256:9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08
+1 postgres<VAR:PID>: FATAL: could not write to file "pg_wal/<VAR:HEX>": No space left on device
+  eg: postgres[4412]: FATAL: could not write to file "pg_wal/000000010000000000000042": No space left on device
+1 smartd: Device: <VAR:DEV> [SAT], <VAR:NUM> Currently unreadable (pending) sectors
+  eg: smartd: Device: /dev/sdb [SAT], 1 Currently unreadable (pending) sectors
+1 smartd: Device: <VAR:DEV> [SAT], SMART Usage Attribute: <VAR:NUM> Temperature_Celsius changed from <VAR:NUM> to <VAR:NUM>
+  eg: smartd: Device: /dev/sda [SAT], SMART Usage Attribute: 194 Temperature_Celsius changed from 38 to 41
+1 zed: eid=<VAR:NUM> class=statechange pool='tank' vdev=<VAR:DEV> vdev_state=DEGRADED
+  eg: zed: eid=42 class=statechange pool='tank' vdev=nvme0n1p2 vdev_state=DEGRADED
+1 zpool: pool 'backup' state is DEGRADED: One or more devices has experienced an unrecoverable error
+  eg: zpool: pool 'backup' state is DEGRADED: One or more devices has experienced an unrecoverable error
+1 zpool: pool 'tank' scrub repaired <VAR:SIZE> in <VAR:TS> with <VAR:NUM> errors
+  eg: zpool: pool 'tank' scrub repaired 0B in 01:22:43 with 0 errors
