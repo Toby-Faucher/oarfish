@@ -12,6 +12,10 @@ mod severity;
 
 pub use severity::Severity;
 
+mod template;
+
+pub use template::{Slot, TemplateId, TemplateIdError};
+
 #[cfg(test)]
 mod tests {
     use ulid::Ulid;

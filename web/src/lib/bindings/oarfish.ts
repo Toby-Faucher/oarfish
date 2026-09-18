@@ -12,3 +12,36 @@
  * the board's display order, which runs the other way.
  */
 export type Severity = "cleared" | "info" | "minor" | "major" | "critical";
+
+/**
+ * One variable slot in a masked template, with how often it has matched.
+ *
+ * This is what `Template.svelte` draws as a dimension line beneath the
+ * schematic, so `pattern` is carried verbatim for display.
+ */
+export type Slot = { 
+/**
+ * The placeholder name, without decoration: `DEV` for `<VAR:DEV>`.
+ */
+name: string, 
+/**
+ * The regex that matched, as written in the bundle.
+ */
+pattern: string, 
+/**
+ * Occurrences seen. Exported as a TypeScript `number` rather than ts-rs's
+ * default `bigint` for 64-bit integers, because it crosses the wire as a
+ * JSON number. Counts stay far below 2^53.
+ */
+seen: number, };
+
+/**
+ * The stable identity of one masked template, and the key every cached
+ * verdict hangs off.
+ *
+ * Derived from the masked text alone, so it is reproducible from the log
+ * corpus and nothing else. That is also the risk: change the mask bundle and
+ * every id moves, orphaning every verdict. Bundle changes are versioned and
+ * trigger a deliberate re-classification rather than a silent cache miss.
+ */
+export type TemplateId = string;
