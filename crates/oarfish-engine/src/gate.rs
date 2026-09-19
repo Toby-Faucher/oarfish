@@ -10,7 +10,7 @@
 
 use oarfish_core::{Severity, Verdict, VerdictAnswer};
 
-use crate::{ACTIONABLE_QUESTION, EngineConfig, SEVERITY_QUESTION};
+use crate::{ACTIONABLE_QUESTION, CONTEXTUAL_QUESTION, EngineConfig, SEVERITY_QUESTION};
 
 /// What a verdict lets through the gate: the severity the board renders.
 /// Actionability is consumed by the check itself — a `false` never becomes a
@@ -56,6 +56,16 @@ pub fn gate(verdict: &Verdict, config: &EngineConfig) -> Option<Gate> {
         return None;
     }
     Some(Gate { severity })
+}
+
+/// Whether the template is flagged for the contextual check: its `contextual`
+/// noul at or above threshold. A missing or misshapen answer leaves the
+/// template unflagged — it settles on the static verdict alone, the M5 path.
+pub fn is_contextual(verdict: &Verdict, threshold: f64) -> bool {
+    match verdict.answers.get(CONTEXTUAL_QUESTION) {
+        Some(VerdictAnswer::Noul { noul }) => *noul >= threshold,
+        _ => false,
+    }
 }
 
 #[cfg(test)]

@@ -21,6 +21,11 @@
 //! in lines of ten or more tokens still merge — that is what 0.90 means — and
 //! the reviewed instances live next to the comparison harness.
 //!
+//! [`Drain::neighbours`] is an oarfish addition outside the port: a read-only
+//! token-count index and Jaccard query that refers structurally close pairs
+//! for merge review. It touches no clustering decision, so the snapshot
+//! equivalence against drain3 is unaffected.
+//!
 //! In: masked text as `&str` (never raw lines, never `Event`). Out: an
 //! `Assignment` carrying the internal sequence, the `TemplateId` of the
 //! cluster's template, and the cluster size. Depends on `oarfish-core` for
@@ -34,4 +39,4 @@ mod drain;
 mod tree;
 
 pub use config::Config;
-pub use drain::{Assignment, Cluster, Drain, DrainError};
+pub use drain::{Assignment, Candidate, Cluster, Drain, DrainError, NeighbourQuery};

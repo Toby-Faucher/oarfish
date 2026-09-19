@@ -80,6 +80,18 @@ fn questions() -> BTreeMap<String, Question> {
     ])
 }
 
+/// The standing merge question set: the single `noul` the merge judge reads
+/// back, keyed by [`oarfish_store::MERGE_QUESTION`].
+fn merge_questions() -> BTreeMap<String, Question> {
+    BTreeMap::from([(
+        oarfish_store::MERGE_QUESTION.to_owned(),
+        Question::noul(
+            serde_json::json!("Do these two log templates describe the same event type?"),
+            None,
+        ),
+    )])
+}
+
 /// A gate-faithful success payload: dated model, chosen confidences,
 /// token usage.
 fn ok_body() -> serde_json::Value {
@@ -156,6 +168,7 @@ async fn judged_once_and_cached() {
         &dir,
         Client::new(server.uri(), "test-key", "typesafe/jev-1.13"),
         questions(),
+        merge_questions(),
         bundle(),
     )
     .expect("open");
@@ -189,6 +202,7 @@ async fn confidence_survives_the_round_trip() {
         &dir,
         Client::new(server.uri(), "test-key", "typesafe/jev-1.13"),
         questions(),
+        merge_questions(),
         bundle(),
     )
     .expect("open");
@@ -236,6 +250,7 @@ async fn a_missing_confidence_never_synthesizes_one() {
         &dir,
         Client::new(server.uri(), "test-key", "typesafe/jev-1.13"),
         questions(),
+        merge_questions(),
         bundle(),
     )
     .expect("open");
@@ -274,6 +289,7 @@ async fn a_changed_question_set_rejudges() {
         &dir,
         Client::new(server.uri(), "test-key", "typesafe/jev-1.13"),
         questions(),
+        merge_questions(),
         bundle(),
     )
     .expect("open");
@@ -296,6 +312,7 @@ async fn a_changed_question_set_rejudges() {
         &dir,
         Client::new(server.uri(), "test-key", "typesafe/jev-1.13"),
         reworded,
+        merge_questions(),
         bundle(),
     )
     .expect("reopen");
@@ -323,6 +340,7 @@ async fn an_edited_bundle_misses_the_key() {
         &dir,
         Client::new(server.uri(), "test-key", "typesafe/jev-1.13"),
         questions(),
+        merge_questions(),
         bundle(),
     )
     .expect("open");
@@ -334,6 +352,7 @@ async fn an_edited_bundle_misses_the_key() {
         &dir,
         Client::new(server.uri(), "test-key", "typesafe/jev-1.13"),
         questions(),
+        merge_questions(),
         BundleHash::from_bytes([8u8; 32]),
     )
     .expect("reopen");
@@ -358,6 +377,7 @@ async fn a_changed_resolved_model_misses_the_key() {
         &dir,
         Client::new(server.uri(), "test-key", "typesafe/jev-1.13"),
         questions(),
+        merge_questions(),
         bundle(),
     )
     .expect("open");
@@ -409,6 +429,7 @@ async fn failure_is_survivable_and_reenqueueable() {
         &dir,
         Client::new(server.uri(), "test-key", "typesafe/jev-1.13"),
         questions(),
+        merge_questions(),
         bundle(),
     )
     .expect("open");
@@ -442,6 +463,7 @@ async fn every_cached_verdict_has_a_record() {
         &dir,
         Client::new(server.uri(), "test-key", "typesafe/jev-1.13"),
         questions(),
+        merge_questions(),
         bundle(),
     )
     .expect("open");
@@ -482,6 +504,7 @@ async fn replay_returns_every_verdict_the_template_has_held() {
         &dir,
         Client::new(server.uri(), "test-key", "typesafe/jev-1.13"),
         questions(),
+        merge_questions(),
         bundle(),
     )
     .expect("open");
@@ -501,6 +524,7 @@ async fn replay_returns_every_verdict_the_template_has_held() {
         &dir,
         Client::new(server.uri(), "test-key", "typesafe/jev-1.13"),
         reworded,
+        merge_questions(),
         bundle(),
     )
     .expect("reopen");

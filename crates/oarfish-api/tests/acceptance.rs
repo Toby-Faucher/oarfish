@@ -159,12 +159,14 @@ async fn an_alarm_raises_dedupes_clears_and_every_transition_reaches_sse() {
             &dir,
             Client::new(server.uri(), "test-key", "typesafe/jev-1.13"),
             oarfish_engine::static_questions(),
+            oarfish_engine::merge_questions(),
             oarfish_mask::curated().hash(),
         )
         .expect("open"),
     );
     let engine = Engine::new(
         Arc::clone(&verdicts),
+        Client::new(server.uri(), "test-key", "typesafe/jev-1.13"),
         EngineConfig {
             silence: Duration::from_secs(2),
             flap_cooldown: Duration::from_secs(2),

@@ -7,9 +7,12 @@
 //! the daemon acceptance is a line in on a socket becoming a `TemplateId` out
 //! of one shared Drain table.
 
+use std::sync::Arc;
+
 use oarfish_core::{EngineInput, Event};
-use oarfish_drain::{Assignment, Drain};
+use oarfish_drain::{Assignment, Drain, NeighbourQuery};
 use oarfish_mask::Bundle;
+use oarfish_store::Merges;
 use tokio::sync::mpsc;
 
 /// What one pipeline run did. Reported when the channel closes and the queued
@@ -25,13 +28,32 @@ pub struct PipelineReport {
 pub struct Pipeline {
     bundle: Bundle,
     drain: Drain,
+    /// Where close pairs go for merge review. `None` until the daemon wires
+    /// the store in: without it the pipeline still masks and clusters, and
+    /// over-splits simply stay split.
+    merges: Option<Arc<Merges>>,
+    referral_floor: f64,
 }
 
 impl Pipeline {
     /// Build the pipeline over one shared table. The `Drain` is the table the
     /// acceptance talks about: every line the daemon ingests clusters here.
     pub fn new(bundle: Bundle, drain: Drain) -> Self {
-        Self { bundle, drain }
+        let referral_floor = drain.referral_floor();
+        Self {
+            bundle,
+            drain,
+            merges: None,
+            referral_floor,
+        }
+    }
+
+    /// Refer close pairs for merge review: the pipeline owns the `Drain` and
+    /// is the only thing that knows a cluster is new, so the search lives
+    /// here too. Takes the store the daemon opened beside the pipeline.
+    pub fn with_merges(mut self, merges: Arc<Merges>) -> Self {
+        self.merges = Some(merges);
+        self
     }
 
     /// Mask one event and train the table on it. The mask boundary converts
@@ -46,6 +68,10 @@ impl Pipeline {
     /// Mask one event, train the table, and bundle everything the engine
     /// needs: the event, the assigned id, and the cluster text at train
     /// time, which is what the verdict cache judges and keys on.
+    ///
+    /// A genuinely new cluster — its first line — also refers its
+    /// structurally close pairs for merge review. Candidate scanning runs
+    /// only here, perhaps a dozen times a day, never per line.
     pub fn assign(&mut self, event: &Event) -> (Assignment, EngineInput) {
         let lossy = event.raw_lossy();
         let masked = self.bundle.mask(&lossy);
@@ -55,7 +81,37 @@ impl Pipeline {
             template_id: assignment.template,
             template: cluster.template.clone(),
         };
+        if assignment.size == 1 {
+            self.refer_neighbours(assignment.seq, &input.template, assignment.template);
+        }
         (assignment, input)
+    }
+
+    /// Refer one new cluster's neighbours for merge review. Read-only on the
+    /// table, synchronous on the store's cache-aside read, and silent without
+    /// a wired store. Decided pairs — either answer — are not re-enqueued.
+    fn refer_neighbours(&self, seq: u64, template: &str, template_id: oarfish_core::TemplateId) {
+        let merges = match &self.merges {
+            Some(merges) => merges,
+            None => return,
+        };
+        let query = NeighbourQuery {
+            floor: self.referral_floor,
+        };
+        for candidate in self.drain.neighbours(seq, &query) {
+            let Some(cluster) = self.drain.get(candidate.seq) else {
+                continue;
+            };
+            // Ids and texts come from the live clusters, not the referral:
+            // generalization moves ids, and the judge needs the state, not
+            // just the key.
+            merges.refer(
+                template_id,
+                template,
+                cluster.template_id,
+                &cluster.template,
+            );
+        }
     }
 
     /// Drain the channel to close, forwarding every classified line to the

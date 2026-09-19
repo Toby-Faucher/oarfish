@@ -26,6 +26,11 @@ pub struct Config {
     /// Lines past this many tokens cluster on their prefix. 128: bounds
     /// per-cluster memory while keeping the function total.
     pub max_tokens: usize,
+    /// The floor of the merge-referral band in [`Drain::neighbours`](crate::Drain::neighbours).
+    /// 0.65: pairs scoring below this are different events, not close ones.
+    /// The ceiling is [`Config::similarity`] itself, not a tuning choice — at
+    /// or above it the two lines would already be one cluster.
+    pub referral_floor: f64,
 }
 
 impl Default for Config {
@@ -37,6 +42,7 @@ impl Default for Config {
             max_clusters: 65_536,
             param: "<*>".to_owned(),
             max_tokens: 128,
+            referral_floor: 0.65,
         }
     }
 }
@@ -57,6 +63,7 @@ mod tests {
         assert_eq!(config.max_clusters, 65_536);
         assert_eq!(config.param, "<*>");
         assert_eq!(config.max_tokens, 128);
+        assert_eq!(config.referral_floor, 0.65);
     }
 
     #[test]

@@ -19,8 +19,12 @@ thiserror.workspace     = true
 tracing.workspace       = true
 tokio-util.workspace = true
 futures.workspace = true
+ulid.workspace = true
 
 [dev-dependencies]
 bytes.workspace = true
 oarfish-mask.workspace = true
+oarfish-drain.workspace = true
+oarfish-ingest.workspace = true
 tokio = { version = "1.53", features = ["test-util"] }
+wiremock.workspace = true

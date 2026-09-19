@@ -1,6 +1,7 @@
 //! An open alarm: the thing the whole daemon exists to avoid raising.
 
 use std::fmt;
+use std::str::FromStr;
 
 use serde::{Deserialize, Serialize};
 use time::OffsetDateTime;
@@ -37,6 +38,43 @@ impl fmt::Display for AlarmId {
     }
 }
 
+/// Why a string could not be read as an [`AlarmId`].
+#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
+pub enum AlarmIdError {
+    #[error("alarm id is not a ULID: {0}")]
+    NotUlid(String),
+}
+
+impl FromStr for AlarmId {
+    type Err = AlarmIdError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        s.parse::<Ulid>()
+            .map(Self)
+            .map_err(|_| AlarmIdError::NotUlid(s.to_owned()))
+    }
+}
+
+/// Where an alarm would surface. Thresholds scale with the stakes: waking
+/// someone needs more certainty than drawing a card on a dashboard.
+///
+/// This rides on [`Alarm`] rather than beside it so the raise publishes where
+/// it routed: M5 raises land [`Lane::Dashboard`], and M5.5's contextual check
+/// makes [`Lane::Page`] reachable with a real `wake_someone` behind it.
+/// Nothing is on the other side of the page lane until delivery lands — the
+/// signal and its delivery are separable, and landing the signal first means
+/// delivery builds against a value it can observe.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export, export_to = "oarfish.ts")]
+pub enum Lane {
+    /// `wake_someone >= 0.90`: page via ntfy (delivery lands after M5.5).
+    Page,
+    /// `0.60 - 0.90`, and everything that never saw a contextual check.
+    Dashboard,
+    /// `< 0.60`: record, no surface.
+    Record,
+}
+
 /// One alarm, in the shape the board reads it.
 ///
 /// There is no `title` and no summary field, by design: oarfish classifies, it
@@ -51,6 +89,9 @@ pub struct Alarm {
     pub template: String,
     pub severity: Severity,
     pub host: String,
+    /// Where this alarm routed. M5 raises land here as `Dashboard`; the
+    /// contextual check routes flagged bursts by `wake_someone`.
+    pub lane: Lane,
     /// Occurrences folded into this alarm. Exported as a TypeScript `number`
     /// rather than ts-rs's default `bigint`, because it crosses the wire as a
     /// JSON number.
@@ -91,6 +132,7 @@ mod tests {
             template: "EXT4-fs error (device <VAR:DEV>)".to_owned(),
             severity: Severity::Critical,
             host: "nas01".to_owned(),
+            lane: Lane::Dashboard,
             count: 14,
             opened_at: OffsetDateTime::UNIX_EPOCH,
         }
@@ -123,6 +165,27 @@ mod tests {
         assert_eq!(json["opened_at"], serde_json::json!("1970-01-01T00:00:00Z"));
     }
 
+    #[test]
+    fn alarm_ids_round_trip_through_their_string_form() {
+        let id = AlarmId::generate();
+        assert_eq!(id.to_string().parse::<AlarmId>().expect("parse"), id);
+        assert!("not-a-ulid".parse::<AlarmId>().is_err());
+    }
+
+    #[test]
+    fn lanes_serialize_as_plain_strings() {
+        for (lane, json) in [
+            (Lane::Page, r#""Page""#),
+            (Lane::Dashboard, r#""Dashboard""#),
+            (Lane::Record, r#""Record""#),
+        ] {
+            assert_eq!(serde_json::to_string(&lane).expect("serialize"), json);
+            assert_eq!(
+                serde_json::from_str::<Lane>(json).expect("deserialize"),
+                lane
+            );
+        }
+    }
     #[test]
     fn alarm_ids_round_trip_through_storage_bytes() {
         let id = AlarmId::generate();

@@ -3,8 +3,8 @@
 //! Depends on nothing else in the workspace, by design: every other crate
 //! depends on this one, so a cycle here would be a cycle everywhere.
 //!
-//! Owns `TemplateId`, `Severity`, `Slot`, `AlarmId`, `Alarm`,
-//! `AlarmChange`, `Snapshot`, `Source`, `Event`, `EngineInput`, `Verdict`,
+//! Owns `TemplateId`, `Severity`, `Slot`, `AlarmId`, `AlarmIdError`, `Alarm`,
+//! `AlarmChange`, `Lane`, `Snapshot`, `Source`, `Event`, `EngineInput`, `Verdict`,
 //! `VerdictAnswer` and `QuestionsHash`, and exports them to the board with
 //! `ts-rs` so the two never drift. Nothing here does I/O.
 //!
@@ -31,7 +31,7 @@ pub use verdict::{QuestionsHash, QuestionsHashError, Verdict, VerdictAnswer};
 
 mod alarm;
 
-pub use alarm::{Alarm, AlarmChange, AlarmId};
+pub use alarm::{Alarm, AlarmChange, AlarmId, AlarmIdError, Lane};
 
 mod snapshot;
 

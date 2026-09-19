@@ -26,7 +26,8 @@ use oarfish_mask::BundleHash;
 use crate::alarm_store::AlarmStore;
 use crate::alarms::ALARMS_KEYSPACE;
 use crate::judge::Judge;
-use crate::record::DecisionRecord;
+use crate::merges::{MERGES_KEYSPACE, Merges};
+use crate::record::{DecisionRecord, record_key};
 use crate::shared::{Keyspaces, Shared};
 use crate::verdict_cache::VerdictCache;
 
@@ -88,12 +89,16 @@ pub enum Error {
 /// policy owned by `oarfish-engine`, taken here as a parameter and hashed
 /// into every key — as is the mask bundle's identity: a bundle edit must
 /// miss the cache and re-judge rather than serve a verdict meant for text
-/// another bundle produced.
+/// another bundle produced. The merge question set rides along the same way:
+/// this opens the `merges` keyspace on the same database and builds the
+/// [`Merges`] sibling the pipeline refers pairs to and the engine resolves
+/// through.
 pub struct Verdicts {
     shared: Arc<Shared>,
     cache: VerdictCache,
     alarms: AlarmStore,
     judge: Judge,
+    merges: Arc<Merges>,
 }
 
 impl Verdicts {
@@ -102,12 +107,14 @@ impl Verdicts {
         path: impl AsRef<Path>,
         client: Client,
         questions: BTreeMap<String, Question>,
+        merge_questions: BTreeMap<String, Question>,
         bundle_hash: BundleHash,
     ) -> Result<Self, Error> {
         Self::open_with(
             path,
             client,
             questions,
+            merge_questions,
             bundle_hash,
             VerdictsConfig::default(),
         )
@@ -118,6 +125,7 @@ impl Verdicts {
         path: impl AsRef<Path>,
         client: Client,
         questions: BTreeMap<String, Question>,
+        merge_questions: BTreeMap<String, Question>,
         bundle_hash: BundleHash,
         config: VerdictsConfig,
     ) -> Result<Self, Error> {
@@ -133,12 +141,13 @@ impl Verdicts {
         let records = keyspace(RECORDS_KEYSPACE)?;
         let records_by_template = keyspace(RECORDS_BY_TEMPLATE_KEYSPACE)?;
         let alarms = keyspace(ALARMS_KEYSPACE)?;
+        let merges_space = keyspace(MERGES_KEYSPACE)?;
 
         let questions_hash = oarfish_jev::questions_hash(&questions);
         let keys = Keyspaces {
             verdicts,
-            records,
-            records_by_template,
+            records: records.clone(),
+            records_by_template: records_by_template.clone(),
         };
         let shared = Shared::new(
             db,
@@ -150,17 +159,39 @@ impl Verdicts {
         );
         let judge = Judge::spawn(
             Arc::clone(&shared),
-            client,
+            client.clone(),
             config.queue_capacity,
             config.judge_concurrency,
         );
+        let merges = Arc::new(Merges::open(
+            merges_space,
+            records,
+            records_by_template,
+            client,
+            merge_questions,
+            bundle_hash,
+        ));
 
         Ok(Self {
             cache: VerdictCache::new(Arc::clone(&shared)),
             alarms: AlarmStore::new(alarms),
             judge,
+            merges,
             shared,
         })
+    }
+
+    /// The merge store: the pipeline refers close pairs here, and the engine
+    /// resolves through its alias table before touching windows.
+    pub fn merges(&self) -> &Merges {
+        &self.merges
+    }
+
+    /// A shared handle to the merge store, for the pipeline: it refers close
+    /// pairs from its own task while the engine resolves through the same
+    /// table.
+    pub fn merges_handle(&self) -> Arc<Merges> {
+        Arc::clone(&self.merges)
     }
 
     /// The question-set hash this instance judges under. A reworded question
@@ -211,6 +242,20 @@ impl Verdicts {
         self.cache.records_for_template(template_id)
     }
 
+    /// Persist one decision record built elsewhere — the contextual check's,
+    /// which the engine assembles rather than the judge. Writes the record
+    /// and its secondary-index entry; a failure surfaces so the caller can
+    /// degrade to the failure lane instead of trusting an unrecorded answer.
+    pub fn save_record(&self, record: &DecisionRecord) -> Result<(), fjall::Error> {
+        let bytes = postcard::to_stdvec(record).expect("a DecisionRecord in memory always encodes");
+        self.shared.records.insert(record_key(&record.id), bytes)?;
+        self.shared.records_by_template.insert(
+            crate::verdict_cache::record_by_template_key(&record.template_id, &record.id),
+            [],
+        )?;
+        Ok(())
+    }
+
     /// Save one open alarm. The engine calls this on raise and on every
     /// dedupe bump, so what the board reads and what a restart reloads are
     /// the same record. A write failure surfaces: unlike a verdict read,
@@ -238,10 +283,19 @@ impl Verdicts {
         self.shared.db.persist(fjall::PersistMode::SyncAll)
     }
 
-    /// Shut the judge down and flush. Consumes the store; the database
-    /// persists on drop.
+    /// Shut the judges down and flush. Consumes the store; the database
+    /// persists on drop. When the pipeline still holds a merge handle the
+    /// explicit merge-judge shutdown is skipped — the task ends once the
+    /// last handle drops — and the database still persists on drop.
     pub async fn close(self) -> Result<(), Error> {
-        self.judge.close().await
+        self.judge.close().await?;
+        match Arc::try_unwrap(self.merges) {
+            Ok(merges) => merges.close().await,
+            Err(_) => {
+                tracing::debug!("merge handle still shared; the merge judge ends on drop");
+                Ok(())
+            }
+        }
     }
 }
 

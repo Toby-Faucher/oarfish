@@ -20,6 +20,27 @@ pub struct EngineConfig {
     /// actionable. A coin flip is actionable; below it the template is
     /// treated as noise.
     pub actionable_threshold: f64,
+    /// The `contextual` noul value at or above which a template is flagged:
+    /// its bursts wait for the contextual check instead of raising outright.
+    /// A coin flip is flagged; below it the template settles on the static
+    /// verdict alone.
+    pub contextual_threshold: f64,
+    /// The `matters_now` noul value at or above which a checked burst is
+    /// worth surfacing. Below it the burst resolves to `Lane::Record` and
+    /// never surfaces — nothing that has surfaced is ever withdrawn, so the
+    /// raise is what waits.
+    pub matters_now_threshold: f64,
+    /// How long a contextual check may take before the engine stops waiting
+    /// and raises at `Dashboard`. A check that cannot answer must not be able
+    /// to suppress an alarm the window already decided was worth raising.
+    pub check_timeout: Duration,
+    /// Open alarms carried into one contextual check's state, host-scoped.
+    /// Bounds the token budget; oldest first.
+    pub max_context_alarms: usize,
+    /// `mpsc` capacity for returning contextual-check answers. Checks run
+    /// per burst on flagged templates only, so the queue is small; a lagging
+    /// engine still drains, never replays.
+    pub pending_capacity: usize,
     /// Events in the five-minute window that raise a gated, non-bypassed
     /// template on count alone.
     pub window_count_threshold: u64,
@@ -52,6 +73,20 @@ pub const DEFAULT_FLAP_COOLDOWN_SECS: u64 = 1800;
 pub const DEFAULT_BROADCAST_CAPACITY: usize = 256;
 /// Sized with the Drain table and the verdict cache: one fewer thing to tune.
 pub const DEFAULT_MAX_WINDOWS: usize = 65_536;
+/// A coin flip is flagged: the template alone cannot settle whether its
+/// bursts matter.
+pub const DEFAULT_CONTEXTUAL_THRESHOLD: f64 = 0.5;
+/// A coin flip matters: the check already narrowed the field to flagged
+/// templates over threshold, so the bar here is confirmation, not proof.
+pub const DEFAULT_MATTERS_NOW_THRESHOLD: f64 = 0.5;
+/// Ten seconds: past several Jev round trips, before the engine raises
+/// without the answer.
+pub const DEFAULT_CHECK_TIMEOUT_SECS: u64 = 10;
+/// Eight open alarms fit the token budget beside window stats and questions.
+pub const DEFAULT_MAX_CONTEXT_ALARMS: usize = 8;
+/// Pending check outcomes buffer this many answers. Checks run per burst on
+/// flagged templates only — dozens a day, not hundreds a second.
+pub const DEFAULT_PENDING_CAPACITY: usize = 256;
 
 impl Default for EngineConfig {
     fn default() -> Self {
@@ -59,11 +94,16 @@ impl Default for EngineConfig {
             gate_floor: Severity::Minor,
             bypass_severity: Severity::Critical,
             actionable_threshold: 0.5,
+            contextual_threshold: DEFAULT_CONTEXTUAL_THRESHOLD,
+            matters_now_threshold: DEFAULT_MATTERS_NOW_THRESHOLD,
+            check_timeout: Duration::from_secs(DEFAULT_CHECK_TIMEOUT_SECS),
+            max_context_alarms: DEFAULT_MAX_CONTEXT_ALARMS,
             window_count_threshold: DEFAULT_WINDOW_COUNT_THRESHOLD,
             rate_multiple: DEFAULT_RATE_MULTIPLE,
             silence: Duration::from_secs(DEFAULT_SILENCE_SECS),
             flap_cooldown: Duration::from_secs(DEFAULT_FLAP_COOLDOWN_SECS),
             broadcast_capacity: DEFAULT_BROADCAST_CAPACITY,
+            pending_capacity: DEFAULT_PENDING_CAPACITY,
             max_windows: DEFAULT_MAX_WINDOWS,
         }
     }
@@ -78,9 +118,15 @@ mod tests {
         let config = EngineConfig::default();
         assert_eq!(config.gate_floor, Severity::Minor);
         assert_eq!(config.bypass_severity, Severity::Critical);
+        assert_eq!(config.actionable_threshold, 0.5);
+        assert_eq!(config.contextual_threshold, 0.5);
+        assert_eq!(config.matters_now_threshold, 0.5);
+        assert_eq!(config.check_timeout, Duration::from_secs(10));
+        assert_eq!(config.max_context_alarms, 8);
         assert_eq!(config.window_count_threshold, 5);
         assert_eq!(config.rate_multiple, 3.0);
         assert_eq!(config.silence, Duration::from_secs(900));
         assert_eq!(config.flap_cooldown, Duration::from_secs(1800));
+        assert_eq!(config.pending_capacity, 256);
     }
 }
