@@ -3,9 +3,10 @@
 //! Depends on nothing else in the workspace, by design: every other crate
 //! depends on this one, so a cycle here would be a cycle everywhere.
 //!
-//! Owns `TemplateId`, `Severity`, `Slot`, `AlarmId`, `Alarm`, `Source`,
-//! `Event`, `Verdict`, `VerdictAnswer` and `QuestionsHash`, and exports them
-//! to the board with `ts-rs` so the two never drift. Nothing here does I/O.
+//! Owns `TemplateId`, `Severity`, `Slot`, `AlarmId`, `Alarm`,
+//! `AlarmChange`, `Source`, `Event`, `EngineInput`, `Verdict`,
+//! `VerdictAnswer` and `QuestionsHash`, and exports them to the board with
+//! `ts-rs` so the two never drift. Nothing here does I/O.
 //!
 //! `Event` lives here — not beside its producers — because it is the contract
 //! between them: syslog, OTLP and the journal all normalize into it, and the
@@ -30,11 +31,15 @@ pub use verdict::{QuestionsHash, QuestionsHashError, Verdict, VerdictAnswer};
 
 mod alarm;
 
-pub use alarm::{Alarm, AlarmId};
+pub use alarm::{Alarm, AlarmChange, AlarmId};
 
 mod event;
 
 pub use event::{Event, Source};
+
+mod handoff;
+
+pub use handoff::EngineInput;
 
 #[cfg(test)]
 mod tests {

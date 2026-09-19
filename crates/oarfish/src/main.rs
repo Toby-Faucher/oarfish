@@ -1,11 +1,11 @@
 //! `oarfish` - the daemon and its CLI.
 //!
 //! Wiring only: this binary composes the crates and owns no pipeline logic of
-//! its own. It binds the three listeners, spawns them and the one pipeline
-//! task on a `TaskTracker`, and on Ctrl-C cancels the listeners first — they
-//! drop their `Sender`s, the channel closes, and the pipeline drains what is
-//! still queued before the daemon exits. A clean stop loses nothing that was
-//! already accepted.
+//! its own. It binds the three listeners, the pipeline, the engine and the
+//! API server on a `TaskTracker`, and on Ctrl-C cancels the listeners first —
+//! they drop their `Sender`s, the channels close, and the pipeline and the
+//! engine drain what is still queued before the daemon exits. A clean stop
+//! loses nothing that was already accepted.
 //!
 //! The daemon's own log writes go through a non-blocking appender, so logging
 //! never stalls the ingest path it reports on.
@@ -13,6 +13,8 @@
 #![forbid(unsafe_code)]
 
 use std::net::SocketAddr;
+use std::path::PathBuf;
+use std::sync::Arc;
 
 use anyhow::Context;
 use clap::Parser;
@@ -54,6 +56,19 @@ struct Args {
     /// Tail the systemd journal. Needs the `journald` build.
     #[arg(long, default_value_t = false)]
     journal: bool,
+
+    /// Address for the JSON API, the SSE stream and the board.
+    #[arg(long, default_value = "127.0.0.1:4000")]
+    api: SocketAddr,
+
+    /// Where the verdict cache, decision records and open alarms live.
+    #[arg(long, default_value = "oarfish-data")]
+    data_dir: PathBuf,
+
+    /// Directory holding the built board, served around `/api`. Unset until
+    /// the board lands: the API and the stream work without it.
+    #[arg(long)]
+    static_dir: Option<PathBuf>,
 }
 
 #[tokio::main]
@@ -129,6 +144,43 @@ async fn main() -> anyhow::Result<()> {
         None
     };
 
+    // The verdict cache and the open alarms. The question set is the
+    // engine's static policy; the key is optional, and without one the
+    // pipeline still runs end to end — templates stay unjudged, the gate
+    // holds, and nothing raises until a key arrives.
+    let client = match oarfish_jev::Client::from_env() {
+        Ok(client) => client,
+        Err(error) => {
+            tracing::warn!(
+                %error,
+                "templates will stay unjudged and nothing will raise; set OPENROUTER_API_KEY"
+            );
+            oarfish_jev::Client::new(
+                "http://127.0.0.1:9/unreachable",
+                "unset",
+                oarfish_jev::DEFAULT_MODEL,
+            )
+        }
+    };
+    let verdicts = Arc::new(
+        oarfish_store::Verdicts::open(&args.data_dir, client, oarfish_engine::static_questions())
+            .with_context(|| format!("cannot open store at {}", args.data_dir.display()))?,
+    );
+
+    // One engine task owns the windows, the state machine and the timers.
+    // The pipeline forwards it every classified line; the API reads its
+    // snapshot and subscribes to its changes.
+    let engine = oarfish_engine::Engine::new(
+        Arc::clone(&verdicts),
+        oarfish_engine::EngineConfig::default(),
+    );
+    let api_state = oarfish_api::ApiState::new(
+        engine.snapshot_handle(),
+        engine.sender(),
+        args.static_dir.clone(),
+    );
+    let (engine_tx, engine_rx) = mpsc::channel(1024);
+
     // The daemon's copy is dropped here: once the listeners exit on cancel,
     // no Sender remains and the channel closes for the pipeline to drain.
     drop(tx);
@@ -138,22 +190,39 @@ async fn main() -> anyhow::Result<()> {
         oarfish_drain::Drain::new(oarfish_drain::Config::default())?,
     );
     tracker.spawn(async move {
-        let report = pipeline.run(rx).await;
+        let report = pipeline.run_forwarding(rx, engine_tx).await;
         tracing::info!(processed = report.processed, "pipeline drained");
     });
+    tracker.spawn(engine.run(engine_rx, cancel.child_token()));
+    tracker.spawn(oarfish_api::serve(
+        api_state,
+        args.api,
+        cancel.child_token(),
+    ));
 
     tracing::info!(
         syslog = %args.syslog,
         otlp = %args.otlp,
         journal = args.journal,
+        api = %args.api,
+        data_dir = %args.data_dir.display(),
         "oarfish listening"
     );
 
     shutdown_signal().await;
-    tracing::info!("shutting down: listeners stop, the pipeline drains");
+    tracing::info!("shutting down: listeners stop, the pipeline and the engine drain");
     cancel.cancel();
     tracker.close();
     tracker.wait().await;
+
+    // Shut the judge down and flush. If anything still holds the store the
+    // explicit close is skipped and the database persists on drop.
+    match Arc::try_unwrap(verdicts) {
+        Ok(verdicts) => verdicts.close().await.context("cannot close store")?,
+        Err(verdicts) => verdicts
+            .persist()
+            .context("cannot flush store on shutdown")?,
+    }
     #[cfg(feature = "journald")]
     if let Some(thread) = journal_thread {
         thread

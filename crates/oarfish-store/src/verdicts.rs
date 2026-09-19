@@ -37,12 +37,13 @@ use std::path::Path;
 use std::sync::Arc;
 
 use moka::sync::Cache;
-use oarfish_core::{QuestionsHash, TemplateId, Verdict};
+use oarfish_core::{Alarm, AlarmId, QuestionsHash, TemplateId, Verdict};
 use oarfish_jev::{Client, Question};
 use time::OffsetDateTime;
 use tokio::sync::{Mutex, Semaphore, mpsc};
 use ulid::Ulid;
 
+use crate::alarms::{ALARMS_KEYSPACE, alarm_key, decode_alarm, encode_alarm};
 use crate::keys::{verdict_key, verdict_questions_prefix, verdict_template_prefix};
 use crate::record::{DecisionRecord, record_key};
 
@@ -102,6 +103,7 @@ struct Inner {
     db: fjall::Database,
     verdicts: fjall::Keyspace,
     records: fjall::Keyspace,
+    alarms: fjall::Keyspace,
     cache: Cache<TemplateId, Verdict>,
     questions: BTreeMap<String, Question>,
     questions_hash: QuestionsHash,
@@ -146,12 +148,16 @@ impl Verdicts {
         let records = db
             .keyspace(RECORDS_KEYSPACE, fjall::KeyspaceCreateOptions::default)
             .map_err(|e| Error::Open(path.display().to_string(), e))?;
+        let alarms = db
+            .keyspace(ALARMS_KEYSPACE, fjall::KeyspaceCreateOptions::default)
+            .map_err(|e| Error::Open(path.display().to_string(), e))?;
 
         let questions_hash = oarfish_jev::questions_hash(&questions);
         let inner = Arc::new(Inner {
             db,
             verdicts,
             records,
+            alarms,
             cache: Cache::new(config.cache_capacity),
             questions,
             questions_hash,
@@ -300,6 +306,46 @@ impl Verdicts {
                 .cmp(&b.recorded_at_unix)
                 .then_with(|| a.id.to_string().cmp(&b.id.to_string()))
         });
+        out
+    }
+
+    /// Save one open alarm. The engine calls this on raise and on every
+    /// dedupe bump, so what the board reads and what a restart reloads are
+    /// the same record. A write failure surfaces: unlike a verdict read,
+    /// losing an open alarm is a silent failure, never a safe lane.
+    pub fn save_alarm(&self, alarm: &Alarm) -> Result<(), fjall::Error> {
+        let bytes = encode_alarm(alarm).expect("an Alarm in memory always encodes");
+        self.inner.alarms.insert(alarm_key(&alarm.id), bytes)?;
+        Ok(())
+    }
+
+    /// Delete one open alarm. Called on clear, paired with every save.
+    pub fn remove_alarm(&self, id: &AlarmId) -> Result<(), fjall::Error> {
+        self.inner.alarms.remove(alarm_key(id))?;
+        Ok(())
+    }
+
+    /// Every open alarm, oldest first. The engine reloads these on boot and
+    /// re-arms their timers; unreadable entries are skipped with a warning
+    /// rather than failing the boot.
+    pub fn load_open_alarms(&self) -> Vec<Alarm> {
+        let mut out = Vec::new();
+        for guard in self.inner.alarms.range([0u8; 16]..=[0xFF; 16]) {
+            let bytes = match guard.value() {
+                Ok(bytes) => bytes,
+                Err(error) => {
+                    tracing::warn!(%error, "alarm scan hit an unreadable entry");
+                    continue;
+                }
+            };
+            match decode_alarm(bytes.as_ref()) {
+                Ok(alarm) => out.push(alarm),
+                Err(error) => {
+                    tracing::warn!(%error, "stored alarm would not decode; skipping");
+                }
+            }
+        }
+        out.sort_by_key(|alarm| alarm.opened_at);
         out
     }
 

@@ -26,6 +26,17 @@ count: number,
 opened_at: string, };
 
 /**
+ * What changed, in the shape the board reads: one alarm raised, updated
+ * or cleared, plus the `Resync` marker.
+ *
+ * The engine publishes these on a `broadcast` channel that SSE handlers
+ * subscribe to. `Resync` carries no payload: a lagging receiver skipped an
+ * unknowable set of messages — possibly a `Cleared` — so the board
+ * re-fetches `/api/alarms` rather than trusting a stream it knows skipped.
+ */
+export type AlarmChange = { "Raised": Alarm } | { "Updated": Alarm } | { "Cleared": AlarmId } | "Resync";
+
+/**
  * A ULID, so the store gets chronological range scans for free.
  */
 export type AlarmId = string;
