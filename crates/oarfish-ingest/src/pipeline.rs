@@ -91,12 +91,15 @@ impl Pipeline {
 
     /// Drain the channel to close. Returns after `recv()` yields `None` —
     /// which is once every listener has dropped its `Sender` — so a clean
-    /// stop loses nothing that was already accepted.
+    /// stop loses nothing that was already accepted. Per-line work stays at
+    /// `debug!`: an `info!` per event would put structured log formatting on
+    /// the every-line path and drown the lossy non-blocking appender at
+    /// 100k lines/sec.
     pub async fn run(mut self, mut rx: mpsc::Receiver<Event>) -> PipelineReport {
         let mut processed = 0;
         while let Some(event) = rx.recv().await {
             let assignment = self.train_one(&event);
-            tracing::info!(
+            tracing::debug!(
                 template_id = %assignment.template,
                 host = %event.host,
                 source = ?event.source,

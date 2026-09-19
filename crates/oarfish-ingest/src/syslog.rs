@@ -43,6 +43,49 @@ const MAX_LINE_BYTES: usize = 64 * 1024;
 /// over IPv4; anything larger cannot arrive whole.
 const MAX_DATAGRAM_BYTES: usize = 65_507;
 
+/// Resolve the missing RFC 3164 year against intake time. The frame carries
+/// no year, so the naive stamp uses the intake year — except across the New
+/// Year boundary, where that dates a Dec 31 frame a year in the future (seen
+/// Jan 1) or a Jan 1 frame a year in the past (seen Dec 31). The fix tries
+/// the intake year and its neighbours and takes the closest to `received_at`:
+/// normal transit is seconds, so the right year is always the nearest.
+fn resolve_year(received_at: OffsetDateTime, idate: syslog_loose::IncompleteDate) -> i32 {
+    let (month, day, hour, minute, second) = idate;
+    let received_year = received_at.year();
+    let Ok(month_num) = u8::try_from(month) else {
+        return received_year;
+    };
+    let Ok(month) = time::Month::try_from(month_num) else {
+        return received_year;
+    };
+    let Ok(day) = u8::try_from(day) else {
+        return received_year;
+    };
+    let mut best_year = received_year;
+    let mut best_distance = i128::MAX;
+    for year in [received_year - 1, received_year, received_year + 1] {
+        let candidate = time::Date::from_calendar_date(year, month, day)
+            .and_then(|date| {
+                time::Time::from_hms(
+                    hour.min(23) as u8,
+                    minute.min(59) as u8,
+                    second.min(59) as u8,
+                )
+                .map(|time| date.with_time(time))
+            })
+            .ok()
+            .map(|naive| naive.assume_utc());
+        if let Some(candidate) = candidate {
+            let distance = (candidate - received_at).whole_nanoseconds().abs();
+            if distance < best_distance {
+                best_distance = distance;
+                best_year = year;
+            }
+        }
+    }
+    best_year
+}
+
 /// Turn one frame's bytes into an `Event`. Pure, so the snapshot harness can
 /// pin it: same bytes in, same event out.
 ///
@@ -62,7 +105,12 @@ const MAX_DATAGRAM_BYTES: usize = 65_507;
 pub fn frame_to_event(raw: &[u8], peer: &SocketAddr, received_at: OffsetDateTime) -> Event {
     let text = std::str::from_utf8(raw).ok();
     let parsed = text.and_then(|line| {
-        parse_message_with_year_exact(line, |_| received_at.year(), Variant::Either).ok()
+        parse_message_with_year_exact(
+            line,
+            |idate| resolve_year(received_at, idate),
+            Variant::Either,
+        )
+        .ok()
     });
     match parsed {
         Some(message) => {
@@ -331,6 +379,35 @@ mod tests {
         // 3164 carries no year; the parser fills in the intake year.
         let timestamp = event.timestamp.expect("3164 still yields a timestamp");
         assert_eq!(timestamp.year(), received_at().year());
+    }
+
+    #[test]
+    fn a_december_frame_seen_in_january_belongs_to_the_previous_year() {
+        let raw = b"<34>Dec 31 23:59:58 web01 sshd[1234]: year boundary";
+        // 2027-01-01T00:00:01Z.
+        let received = time::OffsetDateTime::from_unix_timestamp(1_798_761_601).expect("jan 1");
+        let event = frame_to_event(raw, &peer(), received);
+        let timestamp = event.timestamp.expect("3164 still yields a timestamp");
+        // Within hours, not a year in the future. The comparison is a
+        // duration so it holds whatever the local timezone parses in: Dec 31
+        // evening in Denver is Jan 1 in UTC.
+        assert!(
+            (timestamp - received).abs() < time::Duration::hours(24),
+            "timestamp {timestamp} is a year off from intake {received}"
+        );
+    }
+
+    #[test]
+    fn a_january_frame_seen_in_december_belongs_to_the_next_year() {
+        let raw = b"<34>Jan 1 00:00:01 web01 sshd[1234]: year boundary";
+        // 2026-12-31T23:59:59Z.
+        let received = time::OffsetDateTime::from_unix_timestamp(1_798_761_599).expect("dec 31");
+        let event = frame_to_event(raw, &peer(), received);
+        let timestamp = event.timestamp.expect("3164 still yields a timestamp");
+        assert!(
+            (timestamp - received).abs() < time::Duration::hours(24),
+            "timestamp {timestamp} is a year off from intake {received}"
+        );
     }
 
     #[test]

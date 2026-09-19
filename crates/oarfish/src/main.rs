@@ -109,40 +109,12 @@ async fn main() -> anyhow::Result<()> {
     let otlp = Otlp::bind(args.otlp)
         .await
         .with_context(|| format!("cannot bind OTLP gRPC on {}", args.otlp))?;
-
-    tracker.spawn(udp.run(tx.clone(), cancel.child_token()));
-    tracker.spawn(tcp.run(tx.clone(), cancel.child_token()));
-    tracker.spawn(otlp.run(tx.clone(), cancel.child_token()));
-
-    #[cfg(feature = "journald")]
-    let journal_thread = if args.journal {
-        // The journal handle is !Send: it is opened and read on one dedicated
-        // OS thread, never moved. The thread reports its open result back, so
-        // a journal failure is still a clear startup error.
-        let tx = tx.clone();
-        let cancel = cancel.child_token();
-        let (open_tx, open_rx) =
-            tokio::sync::oneshot::channel::<Result<(), oarfish_ingest::IngestError>>();
-        let thread = std::thread::Builder::new()
-            .name("oarfish-journal".to_owned())
-            .spawn(move || match oarfish_ingest::JournalReader::open() {
-                Ok(reader) => {
-                    let _ = open_tx.send(Ok(()));
-                    reader.run_blocking(tx, cancel);
-                }
-                Err(e) => {
-                    let _ = open_tx.send(Err(e));
-                }
-            })
-            .context("cannot start journal thread")?;
-        open_rx
-            .await
-            .context("journal thread died while opening the journal")?
-            .context("cannot open systemd journal")?;
-        Some(thread)
-    } else {
-        None
-    };
+    // Bind the API before spawning anything: a taken port is a startup
+    // error, never a task that fails silently while the daemon claims to
+    // listen.
+    let api_listener = tokio::net::TcpListener::bind(args.api)
+        .await
+        .with_context(|| format!("cannot bind API on {}", args.api))?;
 
     // The verdict cache and the open alarms. The question set is the
     // engine's static policy; the key is optional, and without one the
@@ -178,27 +150,67 @@ async fn main() -> anyhow::Result<()> {
         engine.snapshot_handle(),
         engine.sender(),
         args.static_dir.clone(),
+        cancel.child_token(),
     );
     let (engine_tx, engine_rx) = mpsc::channel(1024);
-
-    // The daemon's copy is dropped here: once the listeners exit on cancel,
-    // no Sender remains and the channel closes for the pipeline to drain.
-    drop(tx);
 
     let pipeline = Pipeline::new(
         oarfish_mask::curated().clone(),
         oarfish_drain::Drain::new(oarfish_drain::Config::default())?,
     );
+    // Consumers first: the pipeline and the engine are running before any
+    // socket starts reading, so startup never sheds into a channel with no
+    // reader.
     tracker.spawn(async move {
         let report = pipeline.run_forwarding(rx, engine_tx).await;
         tracing::info!(processed = report.processed, "pipeline drained");
     });
     tracker.spawn(engine.run(engine_rx, cancel.child_token()));
-    tracker.spawn(oarfish_api::serve(
+    tracker.spawn(oarfish_api::serve_on_listener(
         api_state,
-        args.api,
+        api_listener,
         cancel.child_token(),
     ));
+
+    // Producers last: binding stayed early so failures abort startup, but
+    // the `run` loops start only once the consumer above is listening.
+    tracker.spawn(udp.run(tx.clone(), cancel.child_token()));
+    tracker.spawn(tcp.run(tx.clone(), cancel.child_token()));
+    tracker.spawn(otlp.run(tx.clone(), cancel.child_token()));
+
+    #[cfg(feature = "journald")]
+    let journal_thread = if args.journal {
+        // The journal handle is !Send: it is opened and read on one dedicated
+        // OS thread, never moved. The thread reports its open result back, so
+        // a journal failure is still a clear startup error.
+        let tx = tx.clone();
+        let cancel = cancel.child_token();
+        let (open_tx, open_rx) =
+            tokio::sync::oneshot::channel::<Result<(), oarfish_ingest::IngestError>>();
+        let thread = std::thread::Builder::new()
+            .name("oarfish-journal".to_owned())
+            .spawn(move || match oarfish_ingest::JournalReader::open() {
+                Ok(reader) => {
+                    let _ = open_tx.send(Ok(()));
+                    reader.run_blocking(tx, cancel);
+                }
+                Err(e) => {
+                    let _ = open_tx.send(Err(e));
+                }
+            })
+            .context("cannot start journal thread")?;
+        open_rx
+            .await
+            .context("journal thread died while opening the journal")?
+            .context("cannot open systemd journal")?;
+        Some(thread)
+    } else {
+        None
+    };
+
+    // The daemon's copy is dropped here: once the listeners exit on cancel,
+    // no Sender remains and the channel closes for the pipeline to drain.
+    drop(tx);
 
     tracing::info!(
         syslog = %args.syslog,

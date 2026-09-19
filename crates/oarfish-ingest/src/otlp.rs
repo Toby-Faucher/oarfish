@@ -126,7 +126,10 @@ pub fn log_record_to_event(
     for (key, value) in resource_attrs {
         attrs.insert(format!("resource.{key}"), value.clone());
     }
-    flatten_attributes(&mut attrs, "", &record.attributes);
+    // Record attributes ride under `attr.`, mirroring the `resource.` prefix
+    // above: a user attribute named `scope` must never collide with the
+    // reserved instrumentation keys inserted below.
+    flatten_attributes(&mut attrs, "attr.", &record.attributes);
     if !record.severity_text.is_empty() {
         attrs.insert("severity_text".to_owned(), record.severity_text.clone());
     }
@@ -309,9 +312,9 @@ mod tests {
           "host": "web01",
           "source": "otlp",
           "attrs": {
+            "attr.service.name": "api",
             "resource.host.name": "web01",
             "scope": "app",
-            "service.name": "api",
             "severity_text": "ERROR"
           }
         }
@@ -345,6 +348,22 @@ mod tests {
         let event = log_record_to_event(&rec, &BTreeMap::new(), "", "peer", received_at());
         assert!(event.raw.is_empty());
         assert_eq!(event.timestamp, None);
+    }
+
+    #[test]
+    fn a_user_attribute_named_scope_does_not_overwrite_the_reserved_key() {
+        let mut rec = record("hello");
+        rec.attributes.push(KeyValue {
+            key: "scope".to_owned(),
+            value: Some(string_value("checkout")),
+            ..Default::default()
+        });
+        let event = log_record_to_event(&rec, &BTreeMap::new(), "app", "peer", received_at());
+        assert_eq!(event.attrs.get("scope").map(String::as_str), Some("app"));
+        assert_eq!(
+            event.attrs.get("attr.scope").map(String::as_str),
+            Some("checkout")
+        );
     }
 
     /// Stand the tonic server up, drive it with the generated client.

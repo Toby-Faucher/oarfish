@@ -30,5 +30,5 @@ pub use keys::{
 pub use record::{DecisionRecord, record_key};
 pub use verdicts::{
     DEFAULT_CACHE_CAPACITY, DEFAULT_JUDGE_CONCURRENCY, DEFAULT_QUEUE_CAPACITY, Error,
-    RECORDS_KEYSPACE, VERDICTS_KEYSPACE, Verdicts, VerdictsConfig,
+    RECORDS_BY_TEMPLATE_KEYSPACE, RECORDS_KEYSPACE, VERDICTS_KEYSPACE, Verdicts, VerdictsConfig,
 };

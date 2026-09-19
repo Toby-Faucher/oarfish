@@ -51,6 +51,11 @@ use crate::record::{DecisionRecord, record_key};
 pub const VERDICTS_KEYSPACE: &str = "verdicts";
 /// The `records` keyspace: [`record_key`] → `postcard` [`DecisionRecord`].
 pub const RECORDS_KEYSPACE: &str = "records";
+/// The `records_by_template` secondary index: `template_id ++ record_ulid`
+/// → empty. One extra write per judged template — never per line — turns
+/// [`Verdicts::records_for_template`] from a full keyspace scan into a
+/// prefix scan that stays flat for the life of the install.
+pub const RECORDS_BY_TEMPLATE_KEYSPACE: &str = "records_by_template";
 
 /// Moka entries. Sized by "templates a homelab has", shared with the Drain
 /// table's 65_536: one fewer thing to tune. Eviction costs a fjall read,
@@ -103,6 +108,7 @@ struct Inner {
     db: fjall::Database,
     verdicts: fjall::Keyspace,
     records: fjall::Keyspace,
+    records_by_template: fjall::Keyspace,
     alarms: fjall::Keyspace,
     cache: Cache<TemplateId, Verdict>,
     questions: BTreeMap<String, Question>,
@@ -148,6 +154,12 @@ impl Verdicts {
         let records = db
             .keyspace(RECORDS_KEYSPACE, fjall::KeyspaceCreateOptions::default)
             .map_err(|e| Error::Open(path.display().to_string(), e))?;
+        let records_by_template = db
+            .keyspace(
+                RECORDS_BY_TEMPLATE_KEYSPACE,
+                fjall::KeyspaceCreateOptions::default,
+            )
+            .map_err(|e| Error::Open(path.display().to_string(), e))?;
         let alarms = db
             .keyspace(ALARMS_KEYSPACE, fjall::KeyspaceCreateOptions::default)
             .map_err(|e| Error::Open(path.display().to_string(), e))?;
@@ -157,6 +169,7 @@ impl Verdicts {
             db,
             verdicts,
             records,
+            records_by_template,
             alarms,
             cache: Cache::new(config.cache_capacity),
             questions,
@@ -277,11 +290,61 @@ impl Verdicts {
         out
     }
 
-    /// Every decision record for one template, oldest first. A bounded scan
-    /// of the 16-byte ULID keyspace, filtered in memory — fine for replay
-    /// and tests, never on a hot path.
+    /// Every decision record for one template, oldest first. A prefix scan
+    /// over the `records_by_template` secondary index (`template_id ++
+    /// record_ulid`), so the cost stays flat for the life of the install.
+    /// Pre-index databases fall back to the legacy full scan once.
     pub fn records_for_template(&self, template_id: &TemplateId) -> Vec<DecisionRecord> {
         let mut out = Vec::new();
+        let mut indexed = false;
+        for guard in self
+            .inner
+            .records_by_template
+            .prefix(template_id.as_bytes())
+        {
+            indexed = true;
+            let key = match guard.key() {
+                Ok(key) => key,
+                Err(error) => {
+                    tracing::warn!(%error, "record index hit an unreadable key");
+                    continue;
+                }
+            };
+            let bytes = key.as_ref();
+            if bytes.len() != 48 {
+                continue;
+            }
+            let mut ulid_bytes = [0u8; 16];
+            ulid_bytes.copy_from_slice(&bytes[32..]);
+            let record_bytes = match self.inner.records.get(ulid_bytes) {
+                Ok(Some(record_bytes)) => record_bytes,
+                Ok(None) => continue,
+                Err(error) => {
+                    tracing::warn!(%error, "record read hit an unreadable entry");
+                    continue;
+                }
+            };
+            match postcard::from_bytes::<DecisionRecord>(record_bytes.as_ref()) {
+                Ok(record) => {
+                    if record.template_id == *template_id {
+                        out.push(record);
+                    }
+                }
+                Err(error) => {
+                    tracing::warn!(%error, "decision record would not decode; skipping");
+                }
+            }
+        }
+        if indexed {
+            out.sort_by(|a, b| {
+                a.recorded_at_unix
+                    .cmp(&b.recorded_at_unix)
+                    .then_with(|| a.id.to_string().cmp(&b.id.to_string()))
+            });
+            return out;
+        }
+        // No index entries: a database written before the secondary index.
+        // One legacy full scan keeps those installs readable.
         for guard in self.inner.records.range([0u8; 16]..=[0xFF; 16]) {
             let bytes = match guard.value() {
                 Ok(bytes) => bytes,
@@ -380,6 +443,17 @@ impl Verdicts {
             );
         }
     }
+}
+
+/// The secondary-index key for one decision record: `template_id (32B) ++
+/// record ULID (16B)`. A prefix scan on the template id lists that
+/// template's records in chronological order, because ULID bytes sort by
+/// time.
+fn record_by_template_key(template_id: &TemplateId, id: &Ulid) -> [u8; 48] {
+    let mut key = [0u8; 48];
+    key[..32].copy_from_slice(template_id.as_bytes());
+    key[32..].copy_from_slice(&id.to_bytes());
+    key
 }
 
 /// The newest verdict for one template under this instance's question set, if
@@ -564,6 +638,16 @@ async fn judge_one(inner: &Inner, client: &Client, job: JudgeJob) {
             "decision record write failed; skipping the verdict so nothing is cached without provenance"
         );
         return;
+    }
+    if let Err(error) = inner
+        .records_by_template
+        .insert(record_by_template_key(&record.template_id, &record.id), [])
+    {
+        tracing::warn!(
+            template_id = %job.template_id,
+            %error,
+            "record index write failed; the record stays readable via the legacy scan"
+        );
     }
     let verdict_bytes = match postcard::to_stdvec(&verdict) {
         Ok(bytes) => bytes,

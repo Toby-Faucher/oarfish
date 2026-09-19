@@ -243,16 +243,34 @@ impl Engine {
             return;
         }
 
-        if let Some(tombstone) = self.tombstones.remove(&key)
-            && now.saturating_duration_since(tombstone.cleared_at) <= self.config.flap_cooldown
+        // Revive is still subject to the raise rule: a single gated event
+        // inside the cooldown must not re-open what took a window to open.
+        if let Some(cleared_at) = self
+            .tombstones
+            .get(&key)
+            .map(|tombstone| tombstone.cleared_at)
+            && now.saturating_duration_since(cleared_at) <= self.config.flap_cooldown
+            && (severity >= self.config.bypass_severity || window_triggered(&stats, &self.config))
         {
+            let tombstone = self
+                .tombstones
+                .remove(&key)
+                .expect("tombstone observed above");
             let mut alarm = tombstone.alarm;
             alarm.count += 1;
             alarm.severity = alarm.severity.max(severity);
             tracing::debug!(alarm_id = %alarm.id, "flap cooldown revived a closed alarm");
             self.insert_open(alarm.clone(), self.config.silence);
-            self.publish(AlarmChange::Updated(alarm));
+            self.publish(AlarmChange::Raised(alarm));
             return;
+        }
+        // A stale tombstone outside the cooldown is dead weight: drop it so
+        // the map does not grow with one entry per cleared alarm forever.
+        // (The periodic retain in `clear` only runs on a later clear.)
+        if let Some(tombstone) = self.tombstones.get(&key)
+            && now.saturating_duration_since(tombstone.cleared_at) > self.config.flap_cooldown
+        {
+            self.tombstones.remove(&key);
         }
 
         if severity < self.config.bypass_severity && !window_triggered(&stats, &self.config) {
@@ -265,7 +283,7 @@ impl Engine {
             template: template.to_owned(),
             severity,
             host: event.host.clone(),
-            count: stats.short_total.max(1),
+            count: 1,
             opened_at: OffsetDateTime::now_utc(),
         };
         tracing::info!(alarm_id = %alarm.id, ?severity, "alarm raised");
@@ -324,18 +342,29 @@ impl Engine {
     }
 
     /// Track one open alarm everywhere it lives: the maps, the timer, the
-    /// snapshot and the store.
+    /// snapshot and the store. Overwriting a live key cancels the displaced
+    /// timer and drops its id mappings, so a leaked timer can never clear
+    /// the alarm that replaced it.
     fn insert_open(&mut self, alarm: Alarm, silence: std::time::Duration) {
         let key = (alarm.template_id, alarm.host.clone());
         let timer = self.timers.insert(alarm.id, silence);
         self.by_id.insert(alarm.id, key.clone());
-        self.open.insert(
+        if let Some(old) = self.open.insert(
             key,
             OpenEntry {
                 alarm: alarm.clone(),
                 timer,
             },
-        );
+        ) {
+            self.timers.remove(&old.timer);
+            self.by_id.remove(&old.alarm.id);
+            if let Ok(mut snapshot) = self.snapshot.write() {
+                snapshot.remove(&old.alarm.id);
+            }
+            if let Err(error) = self.verdicts.remove_alarm(&old.alarm.id) {
+                tracing::error!(alarm_id = %old.alarm.id, %error, "displaced open alarm could not be deleted; it may reload on restart");
+            }
+        }
         self.save_and_snapshot(&alarm);
     }
 
@@ -356,12 +385,18 @@ impl Engine {
     }
 
     /// Own the windows, the machine and the timers until shutdown: the
-    /// channel closes once the pipeline drains, or the token cancels. Open
-    /// alarms stay persisted either way, so a restart re-arms them.
+    /// channel closes once the pipeline drains, and draining is what exits
+    /// this loop. The cancellation token is deliberately not an exit path:
+    /// breaking on it would drop whatever is still queued, contradicting the
+    /// clean-stop property that a stop loses nothing already accepted.
+    /// Open alarms stay persisted either way, so a restart re-arms them.
     pub async fn run(mut self, mut rx: mpsc::Receiver<EngineInput>, cancel: CancellationToken) {
+        // Keep the token alive for graceful timer shutdown coordination
+        // without letting it cut the drain short: dropping it here would be
+        // equivalent, but holding it documents the intent.
+        let _cancel_guard = cancel.clone();
         loop {
             tokio::select! {
-                _ = cancel.cancelled() => break,
                 input = rx.recv() => {
                     match input {
                         Some(input) => self.on_event(input),
