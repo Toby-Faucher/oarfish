@@ -4,7 +4,7 @@
 //! depends on this one, so a cycle here would be a cycle everywhere.
 //!
 //! Owns `TemplateId`, `Severity`, `Slot`, `AlarmId`, `Alarm`,
-//! `AlarmChange`, `Source`, `Event`, `EngineInput`, `Verdict`,
+//! `AlarmChange`, `Snapshot`, `Source`, `Event`, `EngineInput`, `Verdict`,
 //! `VerdictAnswer` and `QuestionsHash`, and exports them to the board with
 //! `ts-rs` so the two never drift. Nothing here does I/O.
 //!
@@ -32,6 +32,10 @@ pub use verdict::{QuestionsHash, QuestionsHashError, Verdict, VerdictAnswer};
 mod alarm;
 
 pub use alarm::{Alarm, AlarmChange, AlarmId};
+
+mod snapshot;
+
+pub use snapshot::Snapshot;
 
 mod event;
 

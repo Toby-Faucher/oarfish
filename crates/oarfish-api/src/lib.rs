@@ -16,9 +16,9 @@
 //! always correct, where a ring buffer would be another thing to get subtly
 //! wrong.
 //!
-//! Depends on `oarfish-core` for `Alarm` and `AlarmChange`, on
-//! `oarfish-engine` for the change stream and the open-alarm snapshot, and
-//! on nothing else in the workspace.
+//! Depends on `oarfish-core` for `Alarm` and the open-alarm snapshot, on
+//! `oarfish-engine` for the change stream, and on nothing else in the
+//! workspace.
 
 #![forbid(unsafe_code)]
 
@@ -32,8 +32,8 @@ use axum::extract::State;
 use axum::http::StatusCode;
 use axum::response::sse::{Event as SseEvent, KeepAlive, Sse};
 use axum::routing::get;
-use oarfish_core::Alarm;
-use oarfish_engine::{AlarmChange, Snapshot};
+use oarfish_core::{Alarm, Snapshot};
+use oarfish_engine::AlarmChange;
 use tokio::sync::broadcast;
 use tokio_util::sync::CancellationToken;
 use tower_http::services::ServeDir;
@@ -67,20 +67,11 @@ impl ApiState {
 }
 
 /// Open alarms as JSON — the board's server-rendered first paint, and every
-/// resync after a reconnect or a lagged stream. A poisoned lock serves the
-/// last-known state with an error log, never a silent empty list: an empty
-/// list with a 200 is indistinguishable from a quiet night.
+/// resync after a reconnect or a lagged stream. The read crosses the
+/// [`Snapshot`] interface, which owns the poison policy and the sort: a
+/// poisoned lock serves the last-known state, never a silent empty list.
 async fn alarms(State(state): State<ApiState>) -> Json<Vec<Alarm>> {
-    let alarms: Vec<Alarm> = match state.snapshot.read() {
-        Ok(snapshot) => snapshot.values().cloned().collect(),
-        Err(poisoned) => {
-            tracing::error!("alarm snapshot lock poisoned; serving last-known state");
-            poisoned.into_inner().values().cloned().collect()
-        }
-    };
-    let mut alarms = alarms;
-    alarms.sort_by_key(|alarm| alarm.opened_at);
-    Json(alarms)
+    Json(state.snapshot.snapshot())
 }
 
 /// One [`AlarmChange`] as one SSE event. Serialization cannot fail for these
@@ -145,12 +136,18 @@ async fn not_found() -> StatusCode {
     StatusCode::NOT_FOUND
 }
 
-/// The router: JSON, SSE, and the built board around them.
-pub fn router(state: ApiState) -> axum::Router {
-    let router = axum::Router::new()
+/// The alarm routes: JSON first paint plus the SSE stream. The static board
+/// is a separate adapter, composed in [`router`].
+pub fn alarm_router(state: ApiState) -> axum::Router {
+    axum::Router::new()
         .route("/api/alarms", get(alarms))
         .route("/api/alarms/stream", get(stream))
-        .with_state(state.clone());
+        .with_state(state)
+}
+
+/// The router: JSON, SSE, and the built board around them.
+pub fn router(state: ApiState) -> axum::Router {
+    let router = alarm_router(state.clone());
     match state.static_dir {
         Some(dir) => router.fallback_service(ServeDir::new(dir)),
         None => router.fallback(not_found),

@@ -317,13 +317,7 @@ async fn silence_past_the_interval_clears_and_publishes() {
 
     assert!(engine.open_alarms().is_empty());
     assert!(store.load_open_alarms().is_empty());
-    assert!(
-        engine
-            .snapshot_handle()
-            .read()
-            .expect("snapshot")
-            .is_empty()
-    );
+    assert!(engine.snapshot_handle().snapshot().is_empty());
     match published(&mut rx).as_slice() {
         [AlarmChange::Raised(_), AlarmChange::Cleared(cleared)] => {
             assert_eq!(*cleared, alarm_id);

@@ -35,7 +35,7 @@ pub use config::{
     DEFAULT_RATE_MULTIPLE, DEFAULT_SILENCE_SECS, DEFAULT_WINDOW_COUNT_THRESHOLD, EngineConfig,
 };
 pub use gate::{Gate, gate};
-pub use machine::{Engine, Lane, Snapshot, route};
+pub use machine::{Engine, Lane, route};
 /// Re-exported for publishers and servers: defined — and `ts-rs` exported —
 /// in `oarfish-core`, the only crate that may write into `oarfish.ts`.
 pub use oarfish_core::AlarmChange;

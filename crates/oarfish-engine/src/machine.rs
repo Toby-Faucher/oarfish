@@ -23,10 +23,10 @@
 
 use std::collections::HashMap;
 use std::future::poll_fn;
-use std::sync::{Arc, RwLock};
+use std::sync::Arc;
 use std::task::Poll;
 
-use oarfish_core::{Alarm, AlarmChange, AlarmId, EngineInput, Event, TemplateId, Verdict};
+use oarfish_core::{Alarm, AlarmChange, AlarmId, EngineInput, Event, Snapshot, TemplateId, Verdict};
 use oarfish_store::Verdicts;
 use time::OffsetDateTime;
 use tokio::sync::{broadcast, mpsc};
@@ -81,11 +81,6 @@ struct Tombstone {
     cleared_at: tokio::time::Instant,
 }
 
-/// The live open-alarm set, shared with the API read-only. The engine task
-/// is the only writer; serving `GET /api/alarms` from this instead of the
-/// store keeps the board on the same record the state machine holds.
-pub type Snapshot = Arc<RwLock<HashMap<AlarmId, Alarm>>>;
-
 /// The owning task's state: windows, open alarms, tombstones, timers.
 pub struct Engine {
     verdicts: Arc<Verdicts>,
@@ -113,7 +108,7 @@ impl Engine {
             tombstones: HashMap::new(),
             timers: DelayQueue::new(),
             tx,
-            snapshot: Arc::new(RwLock::new(HashMap::new())),
+            snapshot: Snapshot::new(),
             config,
         };
         for alarm in engine.verdicts.load_open_alarms() {
@@ -136,7 +131,7 @@ impl Engine {
 
     /// The live open-alarm set for `GET /api/alarms`.
     pub fn snapshot_handle(&self) -> Snapshot {
-        Arc::clone(&self.snapshot)
+        self.snapshot.clone()
     }
 
     /// Open alarms, oldest first. A test and debugging read, not a hot path.
@@ -282,9 +277,7 @@ impl Engine {
         if let Err(error) = self.verdicts.remove_alarm(&id) {
             tracing::error!(alarm_id = %id, %error, "open alarm could not be deleted; it will reload on restart");
         }
-        if let Ok(mut snapshot) = self.snapshot.write() {
-            snapshot.remove(&id);
-        }
+        self.snapshot.remove(&id);
         self.tombstones.retain(|_, tombstone| {
             tombstone
                 .cleared_at
@@ -319,9 +312,7 @@ impl Engine {
         ) {
             self.timers.remove(&old.timer);
             self.by_id.remove(&old.alarm.id);
-            if let Ok(mut snapshot) = self.snapshot.write() {
-                snapshot.remove(&old.alarm.id);
-            }
+            self.snapshot.remove(&old.alarm.id);
             if let Err(error) = self.verdicts.remove_alarm(&old.alarm.id) {
                 tracing::error!(alarm_id = %old.alarm.id, %error, "displaced open alarm could not be deleted; it may reload on restart");
             }
@@ -335,9 +326,7 @@ impl Engine {
         if let Err(error) = self.verdicts.save_alarm(alarm) {
             tracing::error!(alarm_id = %alarm.id, %error, "open alarm could not be saved; a restart would lose it");
         }
-        if let Ok(mut snapshot) = self.snapshot.write() {
-            snapshot.insert(alarm.id, alarm.clone());
-        }
+        self.snapshot.insert(alarm.clone());
     }
 
     fn publish(&self, change: AlarmChange) {
