@@ -1,17 +1,16 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
-import node from '@astrojs/node';
 
 import svelte from '@astrojs/svelte';
 import tailwindcss from '@tailwindcss/vite';
 
-// The board is server-rendered so alarm state is correct on first paint, with
-// the live list hydrated as an island fed by the daemon's SSE stream.
-// `oarfish-api` proxies /api/* to the Rust daemon in production; in dev the
-// daemon is expected on :4000.
+// A static build: the daemon serves it directly over `tower-http::ServeDir`
+// via `--static-dir`, one binary and one port in production. The static
+// shell paints instantly; `AlarmList` and `ConnectionPulse` fetch
+// `/api/alarms` and open the SSE stream themselves once mounted. In dev,
+// `astro dev` proxies `/api` to the daemon expected on :4000.
 export default defineConfig({
-  output: 'server',
-  adapter: node({ mode: 'standalone' }),
+  output: 'static',
   server: { port: 4321 },
 
   vite: {

@@ -1,17 +1,15 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
   import { fly } from 'svelte/transition';
   import { cubicOut } from 'svelte/easing';
   import AlarmRow from './AlarmRow.svelte';
-  import type { Alarm } from '../lib/bindings/oarfish';
   import DensityToggle from './DensityToggle.svelte';
   import type { Density } from '../lib/severity';
+  import { connect, connectionAlarms } from '../lib/connection.svelte';
 
-  interface Props {
-    alarms: Alarm[];
-  }
+  onMount(connect);
 
-  let { alarms }: Props = $props();
-
+  let alarms = $derived(connectionAlarms());
   let density = $state<Density>('compact');
 
   /*
