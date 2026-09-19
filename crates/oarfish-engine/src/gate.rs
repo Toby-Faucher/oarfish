@@ -70,8 +70,10 @@ mod tests {
     #[test]
     fn severity_scores_round_to_the_x733_subset() {
         // The floor at `Info` so this tests the mapping, not the floor.
-        let mut config = EngineConfig::default();
-        config.gate_floor = Severity::Info;
+        let config = EngineConfig {
+            gate_floor: Severity::Info,
+            ..EngineConfig::default()
+        };
         assert_eq!(
             gate(&verdict_with(2.6, 0.9), &config).map(|gate| gate.severity),
             Some(Severity::Critical)
@@ -92,8 +94,10 @@ mod tests {
 
     #[test]
     fn cleared_is_never_reachable_from_a_score() {
-        let mut config = EngineConfig::default();
-        config.gate_floor = Severity::Info;
+        let config = EngineConfig {
+            gate_floor: Severity::Info,
+            ..EngineConfig::default()
+        };
         for score in [0.0, 1.0, 2.0, 3.0, 100.0, -100.0] {
             assert_ne!(
                 gate(&verdict_with(score, 0.9), &config).map(|gate| gate.severity),
@@ -114,8 +118,10 @@ mod tests {
 
     #[test]
     fn below_the_floor_or_threshold_nothing_passes() {
-        let mut config = EngineConfig::default();
-        config.gate_floor = Severity::Critical;
+        let config = EngineConfig {
+            gate_floor: Severity::Critical,
+            ..EngineConfig::default()
+        };
         assert_eq!(gate(&verdict_with(2.0, 0.9), &config), None);
         assert_eq!(
             gate(&verdict_with(3.0, 0.1), &EngineConfig::default()),

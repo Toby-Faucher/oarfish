@@ -26,7 +26,9 @@ use std::future::poll_fn;
 use std::sync::Arc;
 use std::task::Poll;
 
-use oarfish_core::{Alarm, AlarmChange, AlarmId, EngineInput, Event, Snapshot, TemplateId, Verdict};
+use oarfish_core::{
+    Alarm, AlarmChange, AlarmId, EngineInput, Event, Snapshot, TemplateId, Verdict,
+};
 use oarfish_store::Verdicts;
 use time::OffsetDateTime;
 use tokio::sync::{broadcast, mpsc};

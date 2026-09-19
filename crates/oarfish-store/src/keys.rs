@@ -69,9 +69,7 @@ pub fn verdict_questions_prefix(
 
 /// Split a storage key back into its four components. `None` for a key that
 /// is too short or whose model tail is not UTF-8.
-pub fn parse_verdict_key(
-    key: &[u8],
-) -> Option<(TemplateId, QuestionsHash, BundleHash, String)> {
+pub fn parse_verdict_key(key: &[u8]) -> Option<(TemplateId, QuestionsHash, BundleHash, String)> {
     if key.len() < TEMPLATE_ID_LEN + QUESTIONS_HASH_LEN + BUNDLE_HASH_LEN {
         return None;
     }
@@ -81,7 +79,8 @@ pub fn parse_verdict_key(
     hash_bytes.copy_from_slice(&key[TEMPLATE_ID_LEN..TEMPLATE_ID_LEN + QUESTIONS_HASH_LEN]);
     let mut bundle_bytes = [0u8; BUNDLE_HASH_LEN];
     bundle_bytes.copy_from_slice(
-        &key[TEMPLATE_ID_LEN + QUESTIONS_HASH_LEN..TEMPLATE_ID_LEN + QUESTIONS_HASH_LEN + BUNDLE_HASH_LEN],
+        &key[TEMPLATE_ID_LEN + QUESTIONS_HASH_LEN
+            ..TEMPLATE_ID_LEN + QUESTIONS_HASH_LEN + BUNDLE_HASH_LEN],
     );
     let model =
         std::str::from_utf8(&key[TEMPLATE_ID_LEN + QUESTIONS_HASH_LEN + BUNDLE_HASH_LEN..]).ok()?;
@@ -117,12 +116,7 @@ mod tests {
     #[test]
     fn a_changed_question_set_bundle_or_model_each_moves_the_key() {
         let id = TemplateId::of("task <VAR:NUM> failed");
-        let base = verdict_key(
-            &id,
-            &QuestionsHash::of(b"a"),
-            &bundle(),
-            "model-a",
-        );
+        let base = verdict_key(&id, &QuestionsHash::of(b"a"), &bundle(), "model-a");
         assert_ne!(
             base,
             verdict_key(&id, &QuestionsHash::of(b"b"), &bundle(), "model-a")

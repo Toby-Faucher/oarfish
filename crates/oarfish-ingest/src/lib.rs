@@ -32,9 +32,9 @@ pub mod pipeline;
 pub mod shed;
 pub mod syslog;
 
+pub use host::{peer_ip, resolve};
 #[cfg(feature = "journald")]
 pub use journal::JournalReader;
-pub use host::{peer_ip, resolve};
 pub use journal::{DEFAULT_EXCLUDE_UNIT, record_to_event};
 pub use otlp::{Otlp, log_record_to_event, request_to_events};
 pub use pipeline::{Pipeline, PipelineReport};
