@@ -37,7 +37,10 @@ pub(crate) fn max_node_depth(config: &Config) -> usize {
 }
 
 /// Walk to the leaf whose candidates may match, or `None` when no path fits.
-pub(crate) fn search<'a>(root: &'a Node, tokens: &[String], config: &Config) -> Option<&'a Node> {
+///
+/// Takes borrowed `&str` slices: the every-line path tokenizes the input as
+/// views into the masked line, so search must not require owned strings.
+pub(crate) fn search<'a>(root: &'a Node, tokens: &[&str], config: &Config) -> Option<&'a Node> {
     let count = root.child(&tokens.len().to_string())?;
     if tokens.len() < 2 {
         return Some(count);
@@ -56,18 +59,14 @@ pub(crate) fn search<'a>(root: &'a Node, tokens: &[String], config: &Config) -> 
 /// Equal tokens over total, parameter positions in the cluster skipped rather
 /// than counted. Returns the similarity and the parameter count (for
 /// tie-breaking); lengths are equal by construction.
-pub(crate) fn similarity(
-    cluster_tokens: &[String],
-    tokens: &[String],
-    param: &str,
-) -> (f64, usize) {
+pub(crate) fn similarity(cluster_tokens: &[String], tokens: &[&str], param: &str) -> (f64, usize) {
     debug_assert_eq!(cluster_tokens.len(), tokens.len());
     let mut similar = 0;
     let mut params = 0;
     for (ct, t) in cluster_tokens.iter().zip(tokens) {
         if ct == param {
             params += 1;
-        } else if ct == t {
+        } else if ct.as_str() == *t {
             similar += 1;
         }
     }
@@ -76,13 +75,23 @@ pub(crate) fn similarity(
 
 /// Differing positions become the parameter string, in place. Monotonic: a
 /// position generalizes at most once, which bounds the id churn in design §5.
-pub(crate) fn generalize(cluster_tokens: &mut [String], tokens: &[String], param: &str) {
+///
+/// Returns whether any position changed, so the caller only rebuilds the
+/// template text (and its id) when something actually moved. Positions
+/// already at `param` stay put without reallocating.
+pub(crate) fn generalize(cluster_tokens: &mut [String], tokens: &[&str], param: &str) -> bool {
     debug_assert_eq!(cluster_tokens.len(), tokens.len());
+    let mut changed = false;
     for (ct, t) in cluster_tokens.iter_mut().zip(tokens) {
-        if ct != t {
+        if ct.as_str() == *t {
+            continue;
+        }
+        if ct.as_str() != param {
             *ct = param.to_owned();
+            changed = true;
         }
     }
+    changed
 }
 
 fn has_numbers(token: &str) -> bool {
@@ -93,7 +102,7 @@ fn has_numbers(token: &str) -> bool {
 /// specific nodes; tokens with digits (including `<VAR:IP4>`) descend the
 /// parameter path when one exists. (Loki's source comments label these two
 /// branches backwards; the conditions are what is ported.)
-pub(crate) fn insert(root: &mut Node, cluster_id: u64, template: &[String], config: &Config) {
+pub(crate) fn insert(root: &mut Node, cluster_id: u64, template: &[&str], config: &Config) {
     let count_key = template.len().to_string();
     if root.child(&count_key).is_none() {
         root.children.push((count_key.clone(), Node::new()));
@@ -116,14 +125,14 @@ pub(crate) fn insert(root: &mut Node, cluster_id: u64, template: &[String], conf
             let has_param = node.child(&config.param).is_some();
             if has_param {
                 if node.children.len() < config.max_children {
-                    node.children.push((token.clone(), Node::new()));
+                    node.children.push(((*token).to_owned(), Node::new()));
                     node = node.child_mut(token).expect("just inserted");
                 } else {
                     let param = config.param.clone();
                     node = node.child_mut(&param).expect("checked");
                 }
             } else if node.children.len() + 1 < config.max_children {
-                node.children.push((token.clone(), Node::new()));
+                node.children.push(((*token).to_owned(), Node::new()));
                 node = node.child_mut(token).expect("just inserted");
             } else if node.children.len() + 1 == config.max_children {
                 node.children.push((config.param.clone(), Node::new()));

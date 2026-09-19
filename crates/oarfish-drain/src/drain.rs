@@ -14,11 +14,18 @@ use serde::{Deserialize, Serialize};
 use crate::{Config, tree};
 
 /// One cluster: the template text lines generalize into, and how many lines
-/// have joined it. `template` holds tokens joined with single spaces.
+/// have joined it. `template` holds tokens joined with single spaces;
+/// `tokens` holds the same positions split, so the every-line path compares
+/// in place instead of re-parsing `template` per candidate. `template_id` is
+/// the hash of `template`, cached here because the steady state re-matches
+/// unchanged templates. All three are updated together, exactly when
+/// `generalize` reports a change.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Cluster {
     pub seq: u64,
     pub template: String,
+    pub tokens: Vec<String>,
+    pub template_id: TemplateId,
     pub size: u64,
 }
 
@@ -41,16 +48,6 @@ pub struct Assignment {
 pub enum DrainError {
     #[error("depth must be at least 3 (a count level and a token level), got {0}")]
     DepthBelowMinimum(usize),
-}
-
-/// Split a stored template back into tokens. The empty template holds zero
-/// tokens, not one empty string: `"".split(' ')` would say otherwise.
-fn split_template(template: &str) -> Vec<String> {
-    if template.is_empty() {
-        Vec::new()
-    } else {
-        template.split(' ').map(str::to_owned).collect()
-    }
 }
 
 /// The clusterer. Single-threaded by construction: `train` takes `&mut self`.
@@ -96,11 +93,10 @@ impl Drain {
     /// Pure apart from the table write; no network, never.
     pub fn train(&mut self, masked: &str) -> Assignment {
         let max_tokens = self.config.max_tokens;
-        let tokens: Vec<String> = masked
-            .split_whitespace()
-            .take(max_tokens)
-            .map(str::to_owned)
-            .collect();
+        // Borrowed views into `masked`: the every-line path allocates one
+        // `Vec` here and no per-token `String`. Owned copies are made only
+        // when a new cluster is created.
+        let tokens: Vec<&str> = masked.split_whitespace().take(max_tokens).collect();
 
         self.tick = self.tick.wrapping_add(1);
         let tick = self.tick;
@@ -108,9 +104,10 @@ impl Drain {
             Some(seq) => {
                 let old_tick = {
                     let entry = self.table.get_mut(&seq).expect("search yields live ids");
-                    let mut template_tokens = split_template(&entry.cluster.template);
-                    tree::generalize(&mut template_tokens, &tokens, &self.config.param);
-                    entry.cluster.template = template_tokens.join(" ");
+                    if tree::generalize(&mut entry.cluster.tokens, &tokens, &self.config.param) {
+                        entry.cluster.template = entry.cluster.tokens.join(" ");
+                        entry.cluster.template_id = TemplateId::of(&entry.cluster.template);
+                    }
                     entry.cluster.size += 1;
                     entry.tick
                 };
@@ -123,12 +120,16 @@ impl Drain {
                 let seq = self.next_seq;
                 self.next_seq += 1;
                 let template = tokens.join(" ");
+                let owned: Vec<String> = tokens.iter().map(|s| (*s).to_owned()).collect();
+                let template_id = TemplateId::of(&template);
                 self.table.insert(
                     seq,
                     Entry {
                         cluster: Cluster {
                             seq,
                             template,
+                            tokens: owned,
+                            template_id,
                             size: 1,
                         },
                         tick,
@@ -144,7 +145,7 @@ impl Drain {
         let cluster = &self.table.get(&seq).expect("just assigned").cluster;
         Assignment {
             seq,
-            template: TemplateId::of(&cluster.template),
+            template: cluster.template_id,
             size: cluster.size,
         }
     }
@@ -169,7 +170,8 @@ impl Drain {
     }
 
     /// Best candidate at or above threshold among the leaf's live clusters.
-    fn search(&self, tokens: &[String]) -> Option<u64> {
+    /// Compares the stored token vectors in place: no re-parsing.
+    fn search(&self, tokens: &[&str]) -> Option<u64> {
         let leaf = tree::search(&self.root, tokens, &self.config)?;
         if tokens.len() < 2 {
             return leaf
@@ -185,11 +187,10 @@ impl Drain {
                 Some(entry) => &entry.cluster,
                 None => continue, // evicted since insertion; filtered here
             };
-            let cluster_tokens = split_template(&cluster.template);
-            if cluster_tokens.len() != tokens.len() {
+            if cluster.tokens.len() != tokens.len() {
                 continue;
             }
-            let (sim, params) = tree::similarity(&cluster_tokens, tokens, &self.config.param);
+            let (sim, params) = tree::similarity(&cluster.tokens, tokens, &self.config.param);
             if sim > best_sim || (sim == best_sim && params > best_params) {
                 best_sim = sim;
                 best_params = params;
