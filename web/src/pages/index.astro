@@ -3,52 +3,7 @@ import Board from '../layouts/Board.astro';
 import AlarmList from '../components/AlarmList.svelte';
 import Template from '../components/Template.svelte';
 import ConnectionPulse from '../components/ConnectionPulse.svelte';
-import type { Alarm, Slot } from '../lib/bindings/oarfish';
-
-// Placeholder data until oarfish-api exists. The shape is generated from
-// oarfish-core, so this breaks loudly if the daemon's Alarm ever changes.
-const alarms: Alarm[] = [
-  {
-    id: '01K5ZG7Q2M0000000000000001',
-    template_id: 't_' + '8f3c21a9'.repeat(8),
-    template: 'EXT4-fs error (device <VAR:DEV>): inode #<VAR:NUM>: comm <VAR:PROC>',
-    severity: 'critical',
-    host: 'nas01',
-    lane: 'Dashboard',
-    count: 14,
-    opened_at: '2026-09-18T03:14:07Z',
-  },
-  {
-    id: '01K5ZG7Q2M0000000000000002',
-    template_id: 't_' + '4b19c7e2'.repeat(8),
-    template: 'smbd[<VAR:NUM>]: session teardown for <VAR:USER> from <VAR:IP>',
-    severity: 'major',
-    host: 'nas01',
-    lane: 'Dashboard',
-    count: 61,
-    opened_at: '2026-09-18T03:14:41Z',
-  },
-  {
-    id: '01K5ZG7Q2M0000000000000003',
-    template_id: 't_' + 'c70da155'.repeat(8),
-    template: 'certificate for <VAR:HOST> expires in <VAR:NUM> days',
-    severity: 'minor',
-    host: 'proxy01',
-    lane: 'Dashboard',
-    count: 1,
-    opened_at: '2026-09-18T01:02:19Z',
-  },
-  {
-    id: '01K5ZG7Q2M0000000000000004',
-    template_id: 't_' + 'a2e64b03'.repeat(8),
-    template: 'new template seen on <VAR:HOST>',
-    severity: 'info',
-    host: 'pve01',
-    lane: 'Dashboard',
-    count: 3,
-    opened_at: '2026-09-17T22:40:52Z',
-  },
-];
+import type { Slot } from '../lib/bindings/oarfish';
 
 const template =
   'EXT4-fs error (device <VAR:DEV>): ext4_find_entry:<VAR:NUM>: inode #<VAR:NUM>: ' +
@@ -68,9 +23,9 @@ const slots: Slot[] = [
   </header>
 
   <main class="grid min-w-0 flex-1 gap-4 p-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
-    <!-- island: holds density state, and takes SSE once the daemon is wired -->
+    <!-- island: holds density state, and opens the board's SSE stream -->
     <section class="self-start overflow-hidden rounded-(--radius-ui) border border-line bg-l1">
-      <AlarmList {alarms} client:load />
+      <AlarmList client:load />
     </section>
 
     <!-- static: the signature component, server-rendered, no JavaScript -->
