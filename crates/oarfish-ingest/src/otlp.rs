@@ -27,7 +27,7 @@ use tokio::sync::mpsc;
 use tokio_stream::wrappers::TcpListenerStream;
 use tokio_util::sync::CancellationToken;
 
-use crate::IngestError;
+use crate::{IngestError, peer_ip, resolve};
 
 /// Render an OTLP attribute value as text. Scalars stringify; arrays and maps
 /// join recursively; bytes stay bytes-shaped only through [`log_record_body`].
@@ -112,7 +112,8 @@ fn hex_string(bytes: &[u8]) -> String {
 ///
 /// `resource_attrs` are the resource's flattened attributes, `scope` the
 /// instrumentation scope name, `peer` the gRPC peer IP as text. The host is
-/// `host.name` when the resource names one, else the peer. The source
+/// `host.name` when the resource names one, else the peer, resolved through
+/// [`crate::host`]. The source
 /// timestamp prefers `time_unix_nano`, then `observed_time_unix_nano`, then
 /// nothing — a zero timestamp means unknown, not 1970.
 pub fn log_record_to_event(
@@ -126,7 +127,10 @@ pub fn log_record_to_event(
     for (key, value) in resource_attrs {
         attrs.insert(format!("resource.{key}"), value.clone());
     }
-    flatten_attributes(&mut attrs, "", &record.attributes);
+    // Record attributes ride under `attr.`, mirroring the `resource.` prefix
+    // above: a user attribute named `scope` must never collide with the
+    // reserved instrumentation keys inserted below.
+    flatten_attributes(&mut attrs, "attr.", &record.attributes);
     if !record.severity_text.is_empty() {
         attrs.insert("severity_text".to_owned(), record.severity_text.clone());
     }
@@ -150,11 +154,7 @@ pub fn log_record_to_event(
         received_at,
         timestamp: nanos_to_timestamp(record.time_unix_nano)
             .or_else(|| nanos_to_timestamp(record.observed_time_unix_nano)),
-        host: resource_attrs
-            .get("host.name")
-            .filter(|name| !name.is_empty())
-            .cloned()
-            .unwrap_or_else(|| peer.to_owned()),
+        host: resolve(resource_attrs.get("host.name"), peer),
         source: Source::Otlp,
         attrs,
     }
@@ -207,7 +207,7 @@ impl LogsService for OtlpService {
         // fallback host must be stable for per-host grouping downstream.
         let peer = request
             .remote_addr()
-            .map(|addr| addr.ip().to_string())
+            .map(|addr| peer_ip(&addr))
             .unwrap_or_default();
         let received_at = OffsetDateTime::now_utc();
         let inner = request.into_inner();
@@ -309,9 +309,9 @@ mod tests {
           "host": "web01",
           "source": "otlp",
           "attrs": {
+            "attr.service.name": "api",
             "resource.host.name": "web01",
             "scope": "app",
-            "service.name": "api",
             "severity_text": "ERROR"
           }
         }
@@ -345,6 +345,22 @@ mod tests {
         let event = log_record_to_event(&rec, &BTreeMap::new(), "", "peer", received_at());
         assert!(event.raw.is_empty());
         assert_eq!(event.timestamp, None);
+    }
+
+    #[test]
+    fn a_user_attribute_named_scope_does_not_overwrite_the_reserved_key() {
+        let mut rec = record("hello");
+        rec.attributes.push(KeyValue {
+            key: "scope".to_owned(),
+            value: Some(string_value("checkout")),
+            ..Default::default()
+        });
+        let event = log_record_to_event(&rec, &BTreeMap::new(), "app", "peer", received_at());
+        assert_eq!(event.attrs.get("scope").map(String::as_str), Some("app"));
+        assert_eq!(
+            event.attrs.get("attr.scope").map(String::as_str),
+            Some("checkout")
+        );
     }
 
     /// Stand the tonic server up, drive it with the generated client.

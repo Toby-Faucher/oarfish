@@ -109,7 +109,78 @@ async fn main() -> anyhow::Result<()> {
     let otlp = Otlp::bind(args.otlp)
         .await
         .with_context(|| format!("cannot bind OTLP gRPC on {}", args.otlp))?;
+    // Bind the API before spawning anything: a taken port is a startup
+    // error, never a task that fails silently while the daemon claims to
+    // listen.
+    let api_listener = tokio::net::TcpListener::bind(args.api)
+        .await
+        .with_context(|| format!("cannot bind API on {}", args.api))?;
 
+    // The verdict cache and the open alarms. The question set is the
+    // engine's static policy; the bundle hash is the mask identity the
+    // verdicts are keyed under, so an edited bundle re-judges instead of
+    // false-hitting. The key is optional, and without one the
+    // pipeline still runs end to end — templates stay unjudged, the gate
+    // holds, and nothing raises until a key arrives.
+    let client = match oarfish_jev::Client::from_env() {
+        Ok(client) => client,
+        Err(error) => {
+            tracing::warn!(
+                %error,
+                "templates will stay unjudged and nothing will raise; set OPENROUTER_API_KEY"
+            );
+            oarfish_jev::Client::new(
+                "http://127.0.0.1:9/unreachable",
+                "unset",
+                oarfish_jev::DEFAULT_MODEL,
+            )
+        }
+    };
+    let verdicts = Arc::new(
+        oarfish_store::Verdicts::open(
+            &args.data_dir,
+            client,
+            oarfish_engine::static_questions(),
+            oarfish_mask::curated().hash(),
+        )
+        .with_context(|| format!("cannot open store at {}", args.data_dir.display()))?,
+    );
+
+    // One engine task owns the windows, the state machine and the timers.
+    // The pipeline forwards it every classified line; the API reads its
+    // snapshot and subscribes to its changes.
+    let engine = oarfish_engine::Engine::new(
+        Arc::clone(&verdicts),
+        oarfish_engine::EngineConfig::default(),
+    );
+    let api_state = oarfish_api::ApiState::new(
+        engine.snapshot_handle(),
+        engine.sender(),
+        args.static_dir.clone(),
+        cancel.child_token(),
+    );
+    let (engine_tx, engine_rx) = mpsc::channel(1024);
+
+    let pipeline = Pipeline::new(
+        oarfish_mask::curated().clone(),
+        oarfish_drain::Drain::new(oarfish_drain::Config::default())?,
+    );
+    // Consumers first: the pipeline and the engine are running before any
+    // socket starts reading, so startup never sheds into a channel with no
+    // reader.
+    tracker.spawn(async move {
+        let report = pipeline.run_forwarding(rx, engine_tx).await;
+        tracing::info!(processed = report.processed, "pipeline drained");
+    });
+    tracker.spawn(engine.run(engine_rx, cancel.child_token()));
+    tracker.spawn(oarfish_api::serve_on_listener(
+        api_state,
+        api_listener,
+        cancel.child_token(),
+    ));
+
+    // Producers last: binding stayed early so failures abort startup, but
+    // the `run` loops start only once the consumer above is listening.
     tracker.spawn(udp.run(tx.clone(), cancel.child_token()));
     tracker.spawn(tcp.run(tx.clone(), cancel.child_token()));
     tracker.spawn(otlp.run(tx.clone(), cancel.child_token()));
@@ -144,61 +215,9 @@ async fn main() -> anyhow::Result<()> {
         None
     };
 
-    // The verdict cache and the open alarms. The question set is the
-    // engine's static policy; the key is optional, and without one the
-    // pipeline still runs end to end — templates stay unjudged, the gate
-    // holds, and nothing raises until a key arrives.
-    let client = match oarfish_jev::Client::from_env() {
-        Ok(client) => client,
-        Err(error) => {
-            tracing::warn!(
-                %error,
-                "templates will stay unjudged and nothing will raise; set OPENROUTER_API_KEY"
-            );
-            oarfish_jev::Client::new(
-                "http://127.0.0.1:9/unreachable",
-                "unset",
-                oarfish_jev::DEFAULT_MODEL,
-            )
-        }
-    };
-    let verdicts = Arc::new(
-        oarfish_store::Verdicts::open(&args.data_dir, client, oarfish_engine::static_questions())
-            .with_context(|| format!("cannot open store at {}", args.data_dir.display()))?,
-    );
-
-    // One engine task owns the windows, the state machine and the timers.
-    // The pipeline forwards it every classified line; the API reads its
-    // snapshot and subscribes to its changes.
-    let engine = oarfish_engine::Engine::new(
-        Arc::clone(&verdicts),
-        oarfish_engine::EngineConfig::default(),
-    );
-    let api_state = oarfish_api::ApiState::new(
-        engine.snapshot_handle(),
-        engine.sender(),
-        args.static_dir.clone(),
-    );
-    let (engine_tx, engine_rx) = mpsc::channel(1024);
-
     // The daemon's copy is dropped here: once the listeners exit on cancel,
     // no Sender remains and the channel closes for the pipeline to drain.
     drop(tx);
-
-    let pipeline = Pipeline::new(
-        oarfish_mask::curated().clone(),
-        oarfish_drain::Drain::new(oarfish_drain::Config::default())?,
-    );
-    tracker.spawn(async move {
-        let report = pipeline.run_forwarding(rx, engine_tx).await;
-        tracing::info!(processed = report.processed, "pipeline drained");
-    });
-    tracker.spawn(engine.run(engine_rx, cancel.child_token()));
-    tracker.spawn(oarfish_api::serve(
-        api_state,
-        args.api,
-        cancel.child_token(),
-    ));
 
     tracing::info!(
         syslog = %args.syslog,

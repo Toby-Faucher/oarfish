@@ -10,6 +10,7 @@ authors.workspace      = true
 [dependencies]
 oarfish-core.workspace = true
 oarfish-jev.workspace  = true
+oarfish-mask.workspace = true
 fjall.workspace        = true
 serde.workspace        = true
 serde_json.workspace   = true

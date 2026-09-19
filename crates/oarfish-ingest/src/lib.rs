@@ -9,7 +9,9 @@
 //!
 //! Each listener is a concrete type with a two-phase lifecycle — bind, then
 //! run — and no trait: there are exactly three, they are not pluggable, and a
-//! trait would buy indirection nobody calls through. Listeners write into one
+//! trait would buy indirection nobody calls through. What the three share —
+//! which host an event belongs to — lives in [`host`], not restated per
+//! transport. Listeners write into one
 //! bounded `mpsc<Event>`; one [`Pipeline`] task owns the mask bundle and the
 //! Drain table and drains it.
 //!
@@ -23,12 +25,14 @@
 
 use std::net::SocketAddr;
 
+pub mod host;
 pub mod journal;
 pub mod otlp;
 pub mod pipeline;
 pub mod shed;
 pub mod syslog;
 
+pub use host::{peer_ip, resolve};
 #[cfg(feature = "journald")]
 pub use journal::JournalReader;
 pub use journal::{DEFAULT_EXCLUDE_UNIT, record_to_event};

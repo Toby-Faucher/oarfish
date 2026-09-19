@@ -18,6 +18,12 @@ use oarfish_engine::{AlarmChange, Engine, EngineConfig};
 use oarfish_jev::Client;
 use oarfish_store::Verdicts;
 
+/// A pinned bundle identity. These tests never judge — the client points
+/// at a dead port — so any fixed hash stands in for the curated bundle.
+fn bundle() -> oarfish_mask::BundleHash {
+    oarfish_mask::BundleHash::from_bytes([7u8; 32])
+}
+
 static COUNTER: AtomicU64 = AtomicU64::new(0);
 
 fn tempdir() -> PathBuf {
@@ -43,6 +49,7 @@ fn verdicts(dir: &PathBuf) -> Arc<Verdicts> {
                 "typesafe/jev-1.13",
             ),
             oarfish_engine::static_questions(),
+            bundle(),
         )
         .expect("open"),
     )
@@ -224,13 +231,15 @@ async fn a_burst_over_three_times_the_trailing_hour_raises_on_rate() {
 
     // Twenty events at once: the five-minute rate jumps past three times
     // the baseline while the count rule stays out of reach. The burst past
-    // the raise dedupes into `Updated`s — one alarm, not twenty.
+    // the raise dedupes into `Updated`s — one alarm, not twenty. The count
+    // folds events for this host since the raise, not the fleet-wide
+    // template total.
     for _ in 0..20 {
         engine.on_classified(&event("web01"), id, &text, Some(&judged));
     }
     let open = engine.open_alarms();
     assert_eq!(open.len(), 1);
-    assert!(open[0].count >= 20);
+    assert!((1..=20).contains(&open[0].count), "got {}", open[0].count);
     let changes = published(&mut rx);
     assert!(matches!(changes.first(), Some(AlarmChange::Raised(_))));
     assert!(
@@ -315,13 +324,7 @@ async fn silence_past_the_interval_clears_and_publishes() {
 
     assert!(engine.open_alarms().is_empty());
     assert!(store.load_open_alarms().is_empty());
-    assert!(
-        engine
-            .snapshot_handle()
-            .read()
-            .expect("snapshot")
-            .is_empty()
-    );
+    assert!(engine.snapshot_handle().snapshot().is_empty());
     match published(&mut rx).as_slice() {
         [AlarmChange::Raised(_), AlarmChange::Cleared(cleared)] => {
             assert_eq!(*cleared, alarm_id);
@@ -331,8 +334,9 @@ async fn silence_past_the_interval_clears_and_publishes() {
     let _ = std::fs::remove_dir_all(&dir);
 }
 
-/// Flap suppression: a re-raise inside the cooldown updates the alarm that
-/// just closed rather than opening a new one — same id, no second Raised.
+/// Flap suppression: a re-raise inside the cooldown reuses the alarm that
+/// just closed rather than opening a new one — same id, published as
+/// `Raised` so consumers that removed it on `Cleared` re-add it.
 #[tokio::test]
 async fn a_re_raise_inside_the_cooldown_updates_rather_than_re_raises() {
     tokio::time::pause();
@@ -358,7 +362,7 @@ async fn a_re_raise_inside_the_cooldown_updates_rather_than_re_raises() {
         [
             AlarmChange::Raised(_),
             AlarmChange::Cleared(_),
-            AlarmChange::Updated(_)
+            AlarmChange::Raised(_)
         ]
     ));
 
@@ -374,6 +378,37 @@ async fn a_re_raise_inside_the_cooldown_updates_rather_than_re_raises() {
         published(&mut rx).as_slice(),
         [AlarmChange::Cleared(_), AlarmChange::Raised(_)]
     ));
+    let _ = std::fs::remove_dir_all(&dir);
+}
+
+/// A lone gated event inside the cooldown does not revive: re-raising still
+/// needs the window (or a bypass), or one line every twenty minutes would
+/// pin the alarm flapping forever.
+#[tokio::test]
+async fn a_lone_gated_event_inside_the_cooldown_does_not_revive() {
+    tokio::time::pause();
+    let dir = tempdir();
+    let (mut engine, _store) = engine_at(&dir);
+    let mut rx = engine.subscribe();
+    let (id, text) = template();
+    let judged = verdict(1.0, 0.9);
+
+    for _ in 0..5 {
+        engine.on_classified(&event("web01"), id, &text, Some(&judged));
+    }
+    assert_eq!(engine.open_alarms().len(), 1);
+    tokio::time::advance(Duration::from_secs(301)).await;
+    engine.expire_ready();
+    assert!(engine.open_alarms().is_empty());
+    let _ = published(&mut rx);
+
+    tokio::time::advance(Duration::from_secs(100)).await;
+    engine.on_classified(&event("web01"), id, &text, Some(&judged));
+    assert!(
+        engine.open_alarms().is_empty(),
+        "one gated line must not re-open what took five to raise"
+    );
+    assert!(published(&mut rx).is_empty());
     let _ = std::fs::remove_dir_all(&dir);
 }
 

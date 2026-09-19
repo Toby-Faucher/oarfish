@@ -150,6 +150,22 @@ impl Drain {
         }
     }
 
+    /// Train on one masked line and hand back the live cluster with the
+    /// assignment. The sequence just trained is live by construction: a join
+    /// yields a live id by construction, and a new insert is the newest
+    /// entry, so eviction cannot have taken it in the same call. Owning that
+    /// invariant here keeps every caller from restating — and re-proving — it
+    /// beside its own `expect`.
+    pub fn train_get(&mut self, masked: &str) -> (Assignment, &Cluster) {
+        let assignment = self.train(masked);
+        let cluster = &self
+            .table
+            .get(&assignment.seq)
+            .expect("the sequence just trained is live")
+            .cluster;
+        (assignment, cluster)
+    }
+
     /// Move `seq` to the current tick.
     fn touch(&mut self, seq: u64, old_tick: u64, new_tick: u64) {
         self.stamps.remove(&old_tick);

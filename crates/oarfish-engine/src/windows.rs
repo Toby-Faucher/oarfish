@@ -39,6 +39,10 @@ const LONG_BUCKET_SECS: i64 = 60;
 pub(crate) const SHORT_WINDOW_SECS: u64 = 300;
 const SHORT_WINDOW_SECS_I64: i64 = SHORT_WINDOW_SECS as i64;
 const IDLE_EVICT_SECS: u64 = 3600;
+/// At most one idle sweep per interval: eviction is housekeeping, not exact,
+/// and the every-line path must stay O(1) even while a runaway container
+/// mints a new template per line.
+const IDLE_SWEEP_INTERVAL: Duration = Duration::from_secs(60);
 
 /// One fixed ring of counters. A bucket is identified by its absolute number
 /// (`t / width`); a slot holding an older number is stale and zeroes on
@@ -114,14 +118,17 @@ pub struct WindowTable {
     start: Instant,
     windows: HashMap<TemplateId, TemplateWindow>,
     max_windows: usize,
+    last_idle_sweep: Instant,
 }
 
 impl WindowTable {
     pub fn new(max_windows: usize) -> Self {
+        let now = Instant::now();
         Self {
-            start: Instant::now(),
+            start: now,
             windows: HashMap::new(),
             max_windows: max_windows.max(1),
+            last_idle_sweep: now,
         }
     }
 
@@ -158,10 +165,16 @@ impl WindowTable {
     }
 
     /// Drop templates idle for over an hour, then — if a runaway minter is
-    /// still over the cap — the stalest first. Runs only when a new template
-    /// arrives, so the steady state pays one hash lookup per line.
+    /// still over the cap — the stalest first. The idle sweep runs at most
+    /// once a minute: under the cap a miss costs one hash lookup, and the
+    /// full retain only fires as housekeeping. The over-cap cut still runs
+    /// immediately, because the bound must hold even mid-runaway.
     fn evict_idle(&mut self, now: Instant) {
         if self.windows.len() < self.max_windows {
+            if now.saturating_duration_since(self.last_idle_sweep) < IDLE_SWEEP_INTERVAL {
+                return;
+            }
+            self.last_idle_sweep = now;
             let before = self.windows.len();
             self.windows.retain(|_, window| {
                 now.saturating_duration_since(window.last_seen)

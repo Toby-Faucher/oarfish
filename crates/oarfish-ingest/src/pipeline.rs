@@ -47,20 +47,13 @@ impl Pipeline {
     /// needs: the event, the assigned id, and the cluster text at train
     /// time, which is what the verdict cache judges and keys on.
     pub fn assign(&mut self, event: &Event) -> (Assignment, EngineInput) {
-        let assignment = self.train_one(event);
-        // The sequence just trained is always live: a join yields a live id
-        // by construction, and a new insert is the newest entry, so eviction
-        // cannot have taken it in the same call.
-        let template = self
-            .drain
-            .get(assignment.seq)
-            .expect("the sequence just trained is live")
-            .template
-            .clone();
+        let lossy = event.raw_lossy();
+        let masked = self.bundle.mask(&lossy);
+        let (assignment, cluster) = self.drain.train_get(masked.template());
         let input = EngineInput {
             event: event.clone(),
             template_id: assignment.template,
-            template,
+            template: cluster.template.clone(),
         };
         (assignment, input)
     }
@@ -72,37 +65,55 @@ impl Pipeline {
     /// done, so the engine drains what is still queued before the daemon
     /// exits.
     pub async fn run_forwarding(
-        mut self,
-        mut rx: mpsc::Receiver<Event>,
+        self,
+        rx: mpsc::Receiver<Event>,
         tx: mpsc::Sender<EngineInput>,
     ) -> PipelineReport {
-        let mut processed = 0;
-        while let Some(event) = rx.recv().await {
-            let (_assignment, input) = self.assign(&event);
-            tracing::debug!(template_id = %input.template_id, "classified");
-            processed += 1;
-            if tx.send(input).await.is_err() {
-                tracing::warn!("engine is gone; stopping the pipeline");
-                break;
-            }
-        }
-        PipelineReport { processed }
+        self.drive(rx, Some(tx)).await
     }
 
     /// Drain the channel to close. Returns after `recv()` yields `None` —
     /// which is once every listener has dropped its `Sender` — so a clean
-    /// stop loses nothing that was already accepted.
-    pub async fn run(mut self, mut rx: mpsc::Receiver<Event>) -> PipelineReport {
+    /// stop loses nothing that was already accepted. Per-line work stays at
+    /// `debug!`: an `info!` per event would put structured log formatting on
+    /// the every-line path and drown the lossy non-blocking appender at
+    /// 100k lines/sec.
+    pub async fn run(self, rx: mpsc::Receiver<Event>) -> PipelineReport {
+        self.drive(rx, None).await
+    }
+
+    /// The one drain loop behind both runners: `run` is `run_forwarding`
+    /// with a logging sink. One loop to prove the clean-stop property on,
+    /// not two: they differed only by `train_one` versus `assign`
+    /// plus `tx.send`.
+    async fn drive(
+        mut self,
+        mut rx: mpsc::Receiver<Event>,
+        tx: Option<mpsc::Sender<EngineInput>>,
+    ) -> PipelineReport {
         let mut processed = 0;
         while let Some(event) = rx.recv().await {
-            let assignment = self.train_one(&event);
-            tracing::info!(
-                template_id = %assignment.template,
-                host = %event.host,
-                source = ?event.source,
-                "ingested"
-            );
-            processed += 1;
+            match &tx {
+                Some(tx) => {
+                    let (_assignment, input) = self.assign(&event);
+                    tracing::debug!(template_id = %input.template_id, "classified");
+                    processed += 1;
+                    if tx.send(input).await.is_err() {
+                        tracing::warn!("engine is gone; stopping the pipeline");
+                        break;
+                    }
+                }
+                None => {
+                    let assignment = self.train_one(&event);
+                    tracing::debug!(
+                        template_id = %assignment.template,
+                        host = %event.host,
+                        source = ?event.source,
+                        "ingested"
+                    );
+                    processed += 1;
+                }
+            }
         }
         PipelineReport { processed }
     }

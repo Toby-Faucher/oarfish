@@ -159,6 +159,7 @@ async fn an_alarm_raises_dedupes_clears_and_every_transition_reaches_sse() {
             &dir,
             Client::new(server.uri(), "test-key", "typesafe/jev-1.13"),
             oarfish_engine::static_questions(),
+            oarfish_mask::curated().hash(),
         )
         .expect("open"),
     );
@@ -173,10 +174,15 @@ async fn an_alarm_raises_dedupes_clears_and_every_transition_reaches_sse() {
     let template = probe_template();
     let template_id = TemplateId::of(&template);
 
-    let api_state = oarfish_api::ApiState::new(engine.snapshot_handle(), engine.sender(), None);
+    let cancel = CancellationToken::new();
+    let api_state = oarfish_api::ApiState::new(
+        engine.snapshot_handle(),
+        engine.sender(),
+        None,
+        cancel.child_token(),
+    );
     let mut changes = engine.subscribe();
 
-    let cancel = CancellationToken::new();
     let (ingest_tx, ingest_rx) = mpsc::channel(1024);
     let (engine_tx, engine_rx) = mpsc::channel(1024);
 
@@ -187,21 +193,30 @@ async fn an_alarm_raises_dedupes_clears_and_every_transition_reaches_sse() {
     let pipe_handle = tokio::spawn(pipeline.run_forwarding(ingest_rx, engine_tx));
     let engine_handle = tokio::spawn(engine.run(engine_rx, cancel.child_token()));
 
-    let port = tokio::net::TcpListener::bind("127.0.0.1:0")
+    // Bind the real listener up front and hand it to `serve`: no port-reuse
+    // gap, and the port is known without re-binding.
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
         .await
-        .expect("bind")
-        .local_addr()
-        .expect("addr")
-        .port();
-    // The probe bind above only reserves the port momentarily; localhost
-    // makes the race a non-issue in practice.
-    let api_handle = tokio::spawn(oarfish_api::serve(
+        .expect("bind");
+    let port = listener.local_addr().expect("addr").port();
+    let api_handle = tokio::spawn(oarfish_api::serve_on_listener(
         api_state,
-        format!("127.0.0.1:{port}").parse().expect("addr"),
+        listener,
         cancel.child_token(),
     ));
-    // Give the server a moment to bind before the board connects.
-    tokio::time::sleep(Duration::from_millis(200)).await;
+    // Poll until the server accepts: readiness is a connection, not a sleep.
+    let alarms_url = format!("http://127.0.0.1:{port}/api/alarms");
+    let deadline = tokio::time::Instant::now() + Duration::from_secs(10);
+    loop {
+        if reqwest::get(&alarms_url).await.is_ok() {
+            break;
+        }
+        assert!(
+            tokio::time::Instant::now() < deadline,
+            "timed out waiting for the API to accept"
+        );
+        tokio::time::sleep(Duration::from_millis(20)).await;
+    }
 
     let sse_handle = tokio::spawn(collect_sse(format!(
         "http://127.0.0.1:{port}/api/alarms/stream"
@@ -233,14 +248,13 @@ async fn an_alarm_raises_dedupes_clears_and_every_transition_reaches_sse() {
     assert_eq!(open.as_array().expect("array").len(), 1);
     assert_eq!(open[0]["host"], serde_json::json!("acc01"));
 
-    // Same pair: a count bump, not a second alarm. The count folds every
-    // event the template has seen: two before and during the raise, plus
-    // this one.
+    // Same pair: a count bump, not a second alarm. The count folds events
+    // for this host: one at raise, plus this one.
     ingest_tx.send(probe_event()).await.expect("send");
     match next_change(&mut changes).await {
         AlarmChange::Updated(alarm) => {
             assert_eq!(alarm.id, alarm_id);
-            assert_eq!(alarm.count, 3);
+            assert_eq!(alarm.count, 2);
         }
         other => panic!("expected Updated, got {other:?}"),
     }

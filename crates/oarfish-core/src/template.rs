@@ -13,11 +13,11 @@ use ts_rs::TS;
 /// corpus and nothing else. That is also the risk: change the mask bundle and
 /// every id moves, orphaning every verdict.
 ///
-/// The bundle version has to be recorded alongside each cached verdict and
-/// checked on read; nothing enforces that yet. Get that wrong and the failure
-/// is not a cache miss, it is a false hit: if a bundle change makes one
-/// template mask down to text a different template already produced, the two
-/// ids collide and the store serves the wrong verdict without complaint.
+/// The bundle identity is recorded in each cached verdict's storage key and
+/// checked on read by prefix scoping, so a bundle change misses and
+/// re-judges instead of false-hitting: if a bundle change makes one template
+/// mask down to text a different template already produced, the two verdicts
+/// hold different keys and the store never serves one for the other.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, TS)]
 #[ts(export, export_to = "oarfish.ts", type = "string")]
 pub struct TemplateId([u8; 32]);

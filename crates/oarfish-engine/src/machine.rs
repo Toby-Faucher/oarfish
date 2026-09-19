@@ -23,11 +23,11 @@
 
 use std::collections::HashMap;
 use std::future::poll_fn;
-use std::sync::{Arc, RwLock};
+use std::sync::Arc;
 use std::task::Poll;
 
 use oarfish_core::{
-    Alarm, AlarmChange, AlarmId, EngineInput, Event, Severity, TemplateId, Verdict, VerdictAnswer,
+    Alarm, AlarmChange, AlarmId, EngineInput, Event, Snapshot, TemplateId, Verdict,
 };
 use oarfish_store::Verdicts;
 use time::OffsetDateTime;
@@ -37,6 +37,7 @@ use tokio_util::time::DelayQueue;
 
 use crate::{
     EngineConfig, WindowTable,
+    gate::{Gate, gate},
     windows::{SHORT_WINDOW_SECS, WindowStats},
 };
 
@@ -68,44 +69,6 @@ pub fn route(wake_someone: Option<f64>) -> Lane {
     }
 }
 
-/// Read the severity score answer as the X.733 severity the board renders.
-/// The mapping is a rounding of the 0–3 score: `3 -> critical`, `2 ->
-/// major`, `1 -> minor`, `0 -> info`. `cleared` is never reachable from a
-/// score — it is a state the machine assigns, never a judgement Jev makes.
-fn severity_of(verdict: &Verdict) -> Option<Severity> {
-    match verdict.answers.get("severity")? {
-        VerdictAnswer::Score { score, .. } => Some(match score.round() as i64 {
-            3.. => Severity::Critical,
-            2 => Severity::Major,
-            1 => Severity::Minor,
-            _ => Severity::Info,
-        }),
-        _ => None,
-    }
-}
-
-/// Whether the `actionable` noul value clears the threshold. A missing or
-/// misshapen answer closes the gate: an unjudged template never raises,
-// no matter how hard it bursts.
-fn is_actionable(verdict: &Verdict, threshold: f64) -> Option<bool> {
-    match verdict.answers.get("actionable")? {
-        VerdictAnswer::Noul { noul } => Some(*noul >= threshold),
-        _ => None,
-    }
-}
-
-/// The gate: actionable at or above the severity floor, else nothing raises.
-fn gate(verdict: &Verdict, config: &EngineConfig) -> Option<Severity> {
-    let severity = severity_of(verdict)?;
-    if severity < config.gate_floor {
-        return None;
-    }
-    if !is_actionable(verdict, config.actionable_threshold)? {
-        return None;
-    }
-    Some(severity)
-}
-
 /// Dedupe key: one alarm per template per host. The window stays per
 /// template so the fleet-wide view survives; correlation stays per host.
 type AlarmKey = (TemplateId, String);
@@ -119,11 +82,6 @@ struct Tombstone {
     alarm: Alarm,
     cleared_at: tokio::time::Instant,
 }
-
-/// The live open-alarm set, shared with the API read-only. The engine task
-/// is the only writer; serving `GET /api/alarms` from this instead of the
-/// store keeps the board on the same record the state machine holds.
-pub type Snapshot = Arc<RwLock<HashMap<AlarmId, Alarm>>>;
 
 /// The owning task's state: windows, open alarms, tombstones, timers.
 pub struct Engine {
@@ -152,7 +110,7 @@ impl Engine {
             tombstones: HashMap::new(),
             timers: DelayQueue::new(),
             tx,
-            snapshot: Arc::new(RwLock::new(HashMap::new())),
+            snapshot: Snapshot::new(),
             config,
         };
         for alarm in engine.verdicts.load_open_alarms() {
@@ -175,7 +133,7 @@ impl Engine {
 
     /// The live open-alarm set for `GET /api/alarms`.
     pub fn snapshot_handle(&self) -> Snapshot {
-        Arc::clone(&self.snapshot)
+        self.snapshot.clone()
     }
 
     /// Open alarms, oldest first. A test and debugging read, not a hot path.
@@ -228,7 +186,7 @@ impl Engine {
         let now = tokio::time::Instant::now();
         let stats = self.windows.record(&template_id, &event.host, now);
         let Some(verdict) = verdict else { return };
-        let Some(severity) = gate(verdict, &self.config) else {
+        let Some(Gate { severity }) = gate(verdict, &self.config) else {
             return;
         };
         let key: AlarmKey = (template_id, event.host.clone());
@@ -243,16 +201,34 @@ impl Engine {
             return;
         }
 
-        if let Some(tombstone) = self.tombstones.remove(&key)
-            && now.saturating_duration_since(tombstone.cleared_at) <= self.config.flap_cooldown
+        // Revive is still subject to the raise rule: a single gated event
+        // inside the cooldown must not re-open what took a window to open.
+        if let Some(cleared_at) = self
+            .tombstones
+            .get(&key)
+            .map(|tombstone| tombstone.cleared_at)
+            && now.saturating_duration_since(cleared_at) <= self.config.flap_cooldown
+            && (severity >= self.config.bypass_severity || window_triggered(&stats, &self.config))
         {
+            let tombstone = self
+                .tombstones
+                .remove(&key)
+                .expect("tombstone observed above");
             let mut alarm = tombstone.alarm;
             alarm.count += 1;
             alarm.severity = alarm.severity.max(severity);
             tracing::debug!(alarm_id = %alarm.id, "flap cooldown revived a closed alarm");
             self.insert_open(alarm.clone(), self.config.silence);
-            self.publish(AlarmChange::Updated(alarm));
+            self.publish(AlarmChange::Raised(alarm));
             return;
+        }
+        // A stale tombstone outside the cooldown is dead weight: drop it so
+        // the map does not grow with one entry per cleared alarm forever.
+        // (The periodic retain in `clear` only runs on a later clear.)
+        if let Some(tombstone) = self.tombstones.get(&key)
+            && now.saturating_duration_since(tombstone.cleared_at) > self.config.flap_cooldown
+        {
+            self.tombstones.remove(&key);
         }
 
         if severity < self.config.bypass_severity && !window_triggered(&stats, &self.config) {
@@ -265,7 +241,7 @@ impl Engine {
             template: template.to_owned(),
             severity,
             host: event.host.clone(),
-            count: stats.short_total.max(1),
+            count: 1,
             opened_at: OffsetDateTime::now_utc(),
         };
         tracing::info!(alarm_id = %alarm.id, ?severity, "alarm raised");
@@ -303,9 +279,7 @@ impl Engine {
         if let Err(error) = self.verdicts.remove_alarm(&id) {
             tracing::error!(alarm_id = %id, %error, "open alarm could not be deleted; it will reload on restart");
         }
-        if let Ok(mut snapshot) = self.snapshot.write() {
-            snapshot.remove(&id);
-        }
+        self.snapshot.remove(&id);
         self.tombstones.retain(|_, tombstone| {
             tombstone
                 .cleared_at
@@ -324,18 +298,27 @@ impl Engine {
     }
 
     /// Track one open alarm everywhere it lives: the maps, the timer, the
-    /// snapshot and the store.
+    /// snapshot and the store. Overwriting a live key cancels the displaced
+    /// timer and drops its id mappings, so a leaked timer can never clear
+    /// the alarm that replaced it.
     fn insert_open(&mut self, alarm: Alarm, silence: std::time::Duration) {
         let key = (alarm.template_id, alarm.host.clone());
         let timer = self.timers.insert(alarm.id, silence);
         self.by_id.insert(alarm.id, key.clone());
-        self.open.insert(
+        if let Some(old) = self.open.insert(
             key,
             OpenEntry {
                 alarm: alarm.clone(),
                 timer,
             },
-        );
+        ) {
+            self.timers.remove(&old.timer);
+            self.by_id.remove(&old.alarm.id);
+            self.snapshot.remove(&old.alarm.id);
+            if let Err(error) = self.verdicts.remove_alarm(&old.alarm.id) {
+                tracing::error!(alarm_id = %old.alarm.id, %error, "displaced open alarm could not be deleted; it may reload on restart");
+            }
+        }
         self.save_and_snapshot(&alarm);
     }
 
@@ -345,9 +328,7 @@ impl Engine {
         if let Err(error) = self.verdicts.save_alarm(alarm) {
             tracing::error!(alarm_id = %alarm.id, %error, "open alarm could not be saved; a restart would lose it");
         }
-        if let Ok(mut snapshot) = self.snapshot.write() {
-            snapshot.insert(alarm.id, alarm.clone());
-        }
+        self.snapshot.insert(alarm.clone());
     }
 
     fn publish(&self, change: AlarmChange) {
@@ -356,12 +337,18 @@ impl Engine {
     }
 
     /// Own the windows, the machine and the timers until shutdown: the
-    /// channel closes once the pipeline drains, or the token cancels. Open
-    /// alarms stay persisted either way, so a restart re-arms them.
+    /// channel closes once the pipeline drains, and draining is what exits
+    /// this loop. The cancellation token is deliberately not an exit path:
+    /// breaking on it would drop whatever is still queued, contradicting the
+    /// clean-stop property that a stop loses nothing already accepted.
+    /// Open alarms stay persisted either way, so a restart re-arms them.
     pub async fn run(mut self, mut rx: mpsc::Receiver<EngineInput>, cancel: CancellationToken) {
+        // Keep the token alive for graceful timer shutdown coordination
+        // without letting it cut the drain short: dropping it here would be
+        // equivalent, but holding it documents the intent.
+        let _cancel_guard = cancel.clone();
         loop {
             tokio::select! {
-                _ = cancel.cancelled() => break,
                 input = rx.recv() => {
                     match input {
                         Some(input) => self.on_event(input),
@@ -403,39 +390,6 @@ fn window_triggered(stats: &WindowStats, config: &EngineConfig) -> bool {
 mod tests {
     use super::*;
 
-    #[test]
-    fn severity_scores_round_to_the_x733_subset() {
-        assert_eq!(
-            severity_of(&verdict_with(2.6, 0.9)),
-            Some(Severity::Critical)
-        );
-        assert_eq!(severity_of(&verdict_with(2.4, 0.9)), Some(Severity::Major));
-        assert_eq!(severity_of(&verdict_with(1.4, 0.9)), Some(Severity::Minor));
-        assert_eq!(
-            severity_of(&verdict_with(3.0, 0.9)),
-            Some(Severity::Critical)
-        );
-        assert_eq!(severity_of(&verdict_with(0.2, 0.9)), Some(Severity::Info));
-    }
-
-    #[test]
-    fn cleared_is_never_reachable_from_a_score() {
-        for score in [0.0, 1.0, 2.0, 3.0, 100.0, -100.0] {
-            assert_ne!(
-                severity_of(&verdict_with(score, 0.9)),
-                Some(Severity::Cleared)
-            );
-        }
-    }
-
-    #[test]
-    fn a_missing_or_misshapen_answer_closes_the_gate() {
-        let mut verdict = verdict_with(3.0, 0.9);
-        verdict.answers.remove("severity");
-        assert_eq!(severity_of(&verdict), None);
-        assert_eq!(gate(&verdict, &EngineConfig::default()), None);
-    }
-
     /// The routing table as written: 0.93 pages, 0.61 does not, and nothing
     /// in M5 reaches the page lane.
     #[test]
@@ -444,30 +398,5 @@ mod tests {
         assert_eq!(route(Some(0.61)), Lane::Dashboard);
         assert_eq!(route(Some(0.30)), Lane::Record);
         assert_eq!(route(None), Lane::Dashboard);
-    }
-
-    fn verdict_with(score: f64, actionable: f64) -> Verdict {
-        use std::collections::BTreeMap;
-        Verdict {
-            template_id: TemplateId::of("task <VAR:NUM> failed"),
-            questions_hash: oarfish_core::QuestionsHash::of(b"{}"),
-            model: "typesafe/jev-1.13-20260917".to_owned(),
-            answers: BTreeMap::from([
-                (
-                    "severity".to_owned(),
-                    VerdictAnswer::Score {
-                        score,
-                        confidence: 0.61,
-                        probabilities: BTreeMap::new(),
-                        legend: None,
-                    },
-                ),
-                (
-                    "actionable".to_owned(),
-                    VerdictAnswer::Noul { noul: actionable },
-                ),
-            ]),
-            judged_at: OffsetDateTime::UNIX_EPOCH,
-        }
     }
 }
