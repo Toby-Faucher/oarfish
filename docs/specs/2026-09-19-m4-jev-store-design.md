@@ -45,20 +45,29 @@ untouched, because `oarfish-jev` still holds no policy about which questions to 
 
 ## 4. The verdict key
 
-§7 keys `verdicts` by `TemplateId` alone and caches "forever". That is wrong in two
-directions: a verdict is only valid for the question set that produced it, and only for
-the model that answered. The gate proved the second concretely — a request for
-`typesafe/jev-1.13` was answered by `typesafe/jev-1.13-20260917`.
+§7 keys `verdicts` by `TemplateId` alone and caches "forever". That is wrong in three
+directions: a verdict is only valid for the question set that produced it, the bundle
+that masked its template, and the model that answered. The gate proved the third
+concretely — a request for `typesafe/jev-1.13` was answered by
+`typesafe/jev-1.13-20260917`.
 
-The key is therefore three components, fixed-width parts leading:
+The key is therefore four components, fixed-width parts leading:
 
 ```
-template_id (32B) ++ questions_hash (16B) ++ resolved_model_id (variable)
+template_id (32B) ++ questions_hash (16B) ++ bundle_hash (32B) ++ resolved_model_id (variable)
 ```
 
 `questions_hash` is blake3 over the canonicalised question set, truncated to 16 bytes — the discipline
-`bundle_hash` already gives masking. A reworded question misses the cache and re-judges,
-rather than silently serving an answer to a question nobody asks any more.
+`bundle_hash` already gives masking. A reworded question, an edited bundle, or a moved
+build misses the cache and re-judges, rather than silently serving an answer to a
+question nobody asks any more. The bundle component is what turns a bundle edit into
+a miss rather than a false hit: two different raw lines masking down to the same text
+under different bundles hold different keys.
+
+The ordering is load-bearing. With the fixed-width components first, a prefix scan on
+`template_id` returns every verdict that template has ever received, across question
+revisions, bundle edits and model builds. "Why did this wake me three weeks ago" is then answerable at
+the template level, not only by finding the individual decision record.
 
 The ordering is load-bearing. With the fixed-width components first, a prefix scan on
 `template_id` returns every verdict that template has ever received, across question
@@ -161,7 +170,7 @@ dated `model` field, so they are a record of the wire rather than a guess at it.
 | Judged once | A second identical template fires **zero** further requests, asserted on wiremock's request count. This is the milestone's acceptance |
 | Confidence survives | Chosen `0.93` and `0.61` reach `Verdict` unchanged |
 | Never synthesized | A payload missing `confidence` fails to parse, rather than defaulting |
-| Re-judge on change | A changed question set, and a changed resolved model, each miss the cache |
+| Re-judge on change | A changed question set, an edited bundle, and a changed resolved model, each miss the cache |
 | Failure is survivable | A 500 leaves the cache empty and the template re-enqueueable |
 | Record before verdict | A record exists for every cached verdict; the reverse may not hold |
 | Replay | A `template_id` prefix scan returns every verdict that template has held |
@@ -181,5 +190,5 @@ dated `model` field, so they are a record of the wire rather than a guess at it.
 - `crates/oarfish-core/src/lib.rs` — the doc comment says `Verdict` arrives with
   `oarfish-jev`; it lives in core, for the same reason `Event` does.
 - `README.md` — tick M4 when §8's acceptance holds.
-- `docs/specs/2026-09-17-oarfish-design.md` §7 — the `verdicts` key is three components,
+- `docs/specs/2026-09-17-oarfish-design.md` §7 — the `verdicts` key is four components,
   not one. Update the keyspace table.

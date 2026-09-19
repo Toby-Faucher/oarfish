@@ -327,15 +327,15 @@ verdict lookups don't touch disk per line.
 
 | Keyspace | Key | Value |
 |---|---|---|
-| `verdicts` | `template_id (32B) ++ questions_hash (16B) ++ resolved_model_id` | static verdict + model + timestamp |
+| `verdicts` | `template_id (32B) ++ questions_hash (16B) ++ bundle_hash (32B) ++ resolved_model_id` | static verdict + model + timestamp |
 | `merges` | `(id_a, id_b)` | merge decision |
 | `alarms` | `Ulid` | alarm record and state |
 | `records` | `Ulid` | decision record: exact state, questions, answers |
 | `corrections` | `TemplateId` | local operator corrections |
 
-The `verdicts` key is three components, not one (M4, `docs/specs/2026-09-19-m4-jev-store-design.md`
-§4): a verdict is only valid for the question set that produced it and the model build
-that answered. The fixed-width components lead so a prefix scan on `template_id`
+The `verdicts` key is four components, not one (M4, `docs/specs/2026-09-19-m4-jev-store-design.md`
+§4): a verdict is only valid for the question set that produced it, the bundle that
+masked its template, and the model build that answered. The fixed-width components lead so a prefix scan on `template_id`
 returns every verdict a template has ever received.
 
 **Decision records are the trust feature.** Every Jev call is persisted with its exact
