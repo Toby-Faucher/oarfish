@@ -7,7 +7,7 @@
 //! the daemon acceptance is a line in on a socket becoming a `TemplateId` out
 //! of one shared Drain table.
 
-use oarfish_core::Event;
+use oarfish_core::{EngineInput, Event};
 use oarfish_drain::{Assignment, Drain};
 use oarfish_mask::Bundle;
 use tokio::sync::mpsc;
@@ -41,6 +41,52 @@ impl Pipeline {
         let lossy = event.raw_lossy();
         let masked = self.bundle.mask(&lossy);
         self.drain.train(masked.template())
+    }
+
+    /// Mask one event, train the table, and bundle everything the engine
+    /// needs: the event, the assigned id, and the cluster text at train
+    /// time, which is what the verdict cache judges and keys on.
+    pub fn assign(&mut self, event: &Event) -> (Assignment, EngineInput) {
+        let assignment = self.train_one(event);
+        // The sequence just trained is always live: a join yields a live id
+        // by construction, and a new insert is the newest entry, so eviction
+        // cannot have taken it in the same call.
+        let template = self
+            .drain
+            .get(assignment.seq)
+            .expect("the sequence just trained is live")
+            .template
+            .clone();
+        let input = EngineInput {
+            event: event.clone(),
+            template_id: assignment.template,
+            template,
+        };
+        (assignment, input)
+    }
+
+    /// Drain the channel to close, forwarding every classified line to the
+    /// engine. The pipeline still does mask → drain and nothing else: the
+    /// verdict lookup and the gating live in the engine, which owns the
+    /// channel's far end. Closes the engine channel when the listeners are
+    /// done, so the engine drains what is still queued before the daemon
+    /// exits.
+    pub async fn run_forwarding(
+        mut self,
+        mut rx: mpsc::Receiver<Event>,
+        tx: mpsc::Sender<EngineInput>,
+    ) -> PipelineReport {
+        let mut processed = 0;
+        while let Some(event) = rx.recv().await {
+            let (_assignment, input) = self.assign(&event);
+            tracing::debug!(template_id = %input.template_id, "classified");
+            processed += 1;
+            if tx.send(input).await.is_err() {
+                tracing::warn!("engine is gone; stopping the pipeline");
+                break;
+            }
+        }
+        PipelineReport { processed }
     }
 
     /// Drain the channel to close. Returns after `recv()` yields `None` —
@@ -90,6 +136,46 @@ mod tests {
         let again = pipeline.train_one(&test_event(1));
         assert_eq!(again.template, assignment.template);
         assert_eq!(again.size, 2);
+    }
+
+    #[test]
+    fn assign_bundles_the_event_id_and_template_text() {
+        let mut pipeline = Pipeline::new(
+            oarfish_mask::curated().clone(),
+            Drain::new(oarfish_drain::Config::default()).expect("default config is valid"),
+        );
+        let event = test_event(1);
+        let (assignment, input) = pipeline.assign(&event);
+        assert_eq!(input.template_id, assignment.template);
+        assert_eq!(input.event, event);
+        assert_eq!(
+            input.template_id,
+            oarfish_core::TemplateId::of(&input.template)
+        );
+    }
+
+    #[tokio::test]
+    async fn forwarding_sends_every_classified_line_to_the_engine() {
+        let (tx, rx) = mpsc::channel(16);
+        let (engine_tx, mut engine_rx) = mpsc::channel(16);
+        let pipeline = Pipeline::new(
+            oarfish_mask::curated().clone(),
+            Drain::new(oarfish_drain::Config::default()).expect("default config is valid"),
+        );
+        let pipe_handle = tokio::spawn(pipeline.run_forwarding(rx, engine_tx));
+        for n in 0..3 {
+            tx.send(test_event(n))
+                .await
+                .expect("the channel holds sixteen");
+        }
+        drop(tx);
+        let report = pipe_handle.await.expect("join");
+        assert_eq!(report.processed, 3);
+        let mut received = 0;
+        while engine_rx.recv().await.is_some() {
+            received += 1;
+        }
+        assert_eq!(received, 3);
     }
 
     /// The §6 property, made executable: cancel mid-flight, and what was

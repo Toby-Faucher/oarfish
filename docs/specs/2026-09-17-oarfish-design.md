@@ -222,6 +222,22 @@ A plain Rust state machine, deliberately not a model. Raise, dedupe against open
 alarms, suppress flapping, auto-clear after silence. `DelayQueue` from `tokio-util`
 runs every timer; there is no task per alarm.
 
+What causes a raise, in order (M5, `docs/specs/2026-09-19-m5-engine-design.md`):
+
+1. **The verdict gates.** A template may alarm only if judged actionable at or
+   above the severity floor (`minor`). No verdict yet means no raise.
+2. **High severity bypasses the window.** A template judged `critical` raises
+   on first sight.
+3. **Otherwise the window triggers**, on count (5 events in five minutes) or
+   rate (three times the baseline over the template's history span) over
+   threshold.
+
+The severity score answers map by rounding to the X.733 subset (`3 ->
+critical`, `2 -> major`, `1 -> minor`, `0 -> info`). Dedupe keys on
+`(template_id, host)`; flap suppression is a cooldown after clear during
+which a re-raise updates the closed alarm instead of opening a new one.
+Starting values throughout, to be tuned against real data.
+
 **Confidence picks the lane, and thresholds scale with stakes:**
 
 | `wake_someone` | Action |
@@ -388,6 +404,7 @@ milestones, each independently testable and each leaving the tree green.
 | M3 | `oarfish-ingest`: syslog → journald → OTLP | lines from all three arrive as `Event` |
 | M4 | `oarfish-jev` + `oarfish-store` | a template is judged once and cached, proven against wiremock |
 | M5 | `oarfish-engine` + `oarfish-api` | an alarm raises, dedupes, clears, and reaches SSE |
+| M5.5 | Merge review + the contextual check | a close pair is judged once, and a flagged burst resolves to `wake_someone` |
 | M6 | The board on live data, ntfy delivery | a real log line reaches a real phone |
 
 Order is deliberate: masking before clustering because template ids depend on it, and
