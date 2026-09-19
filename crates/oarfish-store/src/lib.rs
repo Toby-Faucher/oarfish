@@ -17,10 +17,12 @@
 
 #![forbid(unsafe_code)]
 
+mod alarms;
 mod keys;
 mod record;
 mod verdicts;
 
+pub use alarms::{ALARMS_KEYSPACE, alarm_key, decode_alarm, encode_alarm};
 pub use keys::{
     QUESTIONS_HASH_LEN, TEMPLATE_ID_LEN, parse_verdict_key, verdict_key, verdict_questions_prefix,
     verdict_template_prefix,

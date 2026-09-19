@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="docs/assets/oarfish-logo.png" alt="oarfish" width="420">
+
 # 🐟 oarfish
 
 **Log-driven alarms for homelabs, with a judgment model where the guesswork used to be.**
@@ -231,7 +233,8 @@ Milestones and their acceptance criteria are specified in
 - [x] **M2** — Drain port, validated against drain3 on a shared corpus
 - [x] **M3** — ingest: syslog → journald → OTLP
 - [x] **M4** — Jev client + fjall store, with decision records
-- [ ] **M5** — window, alarm state machine, SSE
+- [x] **M5** — window, alarm state machine, SSE
+- [ ] **M5.5** — merge review + the contextual check (`wake_someone`)
 - [ ] **M6** — the board on live data, ntfy delivery
 
 Not on the critical path: `oarfish masks synthesize`. The curated bundle carries M1–M6.

@@ -18,6 +18,17 @@ impl AlarmId {
     pub fn generate() -> Self {
         Self(Ulid::generate())
     }
+
+    /// The 16-byte chronological key for the `alarms` keyspace. ULID bytes
+    /// sort in time order, so a range scan is a timeline for free.
+    pub fn to_bytes(&self) -> [u8; 16] {
+        self.0.to_bytes()
+    }
+
+    /// Rebuild from raw storage bytes.
+    pub fn from_bytes(bytes: [u8; 16]) -> Self {
+        Self(Ulid::from_bytes(bytes))
+    }
 }
 
 impl fmt::Display for AlarmId {
@@ -51,6 +62,22 @@ pub struct Alarm {
     #[serde(with = "time::serde::rfc3339")]
     #[ts(type = "string")]
     pub opened_at: OffsetDateTime,
+}
+
+/// What changed, in the shape the board reads: one alarm raised, updated
+/// or cleared, plus the `Resync` marker.
+///
+/// The engine publishes these on a `broadcast` channel that SSE handlers
+/// subscribe to. `Resync` carries no payload: a lagging receiver skipped an
+/// unknowable set of messages — possibly a `Cleared` — so the board
+/// re-fetches `/api/alarms` rather than trusting a stream it knows skipped.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export, export_to = "oarfish.ts")]
+pub enum AlarmChange {
+    Raised(Alarm),
+    Updated(Alarm),
+    Cleared(AlarmId),
+    Resync,
 }
 
 #[cfg(test)]
@@ -97,6 +124,12 @@ mod tests {
     }
 
     #[test]
+    fn alarm_ids_round_trip_through_storage_bytes() {
+        let id = AlarmId::generate();
+        assert_eq!(AlarmId::from_bytes(id.to_bytes()), id);
+    }
+
+    #[test]
     fn an_alarm_round_trips() {
         let alarm = an_alarm();
         let json = serde_json::to_string(&alarm).expect("serialize");
@@ -111,5 +144,22 @@ mod tests {
     #[test]
     fn the_display_line_is_the_masked_template() {
         assert_eq!(an_alarm().template, "EXT4-fs error (device <VAR:DEV>)");
+    }
+
+    #[test]
+    fn changes_round_trip() {
+        let alarm = an_alarm();
+        for change in [
+            AlarmChange::Raised(alarm.clone()),
+            AlarmChange::Updated(alarm.clone()),
+            AlarmChange::Cleared(alarm.id),
+            AlarmChange::Resync,
+        ] {
+            let json = serde_json::to_string(&change).expect("serialize");
+            assert_eq!(
+                serde_json::from_str::<AlarmChange>(&json).expect("deserialize"),
+                change
+            );
+        }
     }
 }
