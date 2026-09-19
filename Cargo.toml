@@ -40,7 +40,7 @@ regex      = "1"
 
 # storage
 fjall = "3.1"
-moka  = { version = "0.12", features = ["future"] }
+moka  = { version = "0.12", features = ["future", "sync"] }
 postcard = { version = "1", default-features = false, features = ["use-std"] }
 
 # http

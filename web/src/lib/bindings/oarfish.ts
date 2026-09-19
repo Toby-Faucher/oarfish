@@ -60,6 +60,16 @@ host: string, source: Source,
 attrs: { [key in string]: string }, };
 
 /**
+ * The blake3 hash of the canonicalised question set, truncated to 16 bytes.
+ *
+ * Same discipline `bundle_hash` gives masking: a fixed, short identity for
+ * "what was asked", carried on every verdict so a reworded question cannot
+ * silently hit an answer meant for another. Displayed and serialized as
+ * 32 lowercase hex characters.
+ */
+export type QuestionsHash = string;
+
+/**
  * A subset of ITU-T X.733, because that is the vocabulary a NOC already
  * speaks.
  *
@@ -115,3 +125,51 @@ export type Source = "syslog" | "journal" | "otlp";
  * ids collide and the store serves the wrong verdict without complaint.
  */
 export type TemplateId = string;
+
+/**
+ * The cached judgment on one template.
+ *
+ * Stored, cached and rendered; never re-asked. Valid only for the question
+ * set in [`Verdict::questions_hash`] and the build in [`Verdict::model`]:
+ * the gate proved a request for `typesafe/jev-1.13` is answered by a dated
+ * build, so the resolved id is recorded rather than assumed.
+ */
+export type Verdict = { template_id: TemplateId, questions_hash: QuestionsHash, 
+/**
+ * The resolved, dated model id that answered — e.g.
+ * `typesafe/jev-1.13-20260917` — not the requested pin.
+ */
+model: string, 
+/**
+ * One entry per question id asked.
+ */
+answers: { [key in string]: VerdictAnswer }, judged_at: string, };
+
+/**
+ * One judged answer, in domain shape.
+ *
+ * Mirrors the wire's three primitives without naming a provider field:
+ * `choice` picks one option, `score` places the state on an ordered rubric,
+ * `noul` is P(yes) for a yes/no question.
+ *
+ * Externally tagged (the default) rather than matching the wire's
+ * `{"type": ...}` shape, because the store writes `postcard` and postcard —
+ * not being self-describing — only supports externally tagged enums. The
+ * wire type in `oarfish-jev` keeps the provider's shape; this is the mapped
+ * domain value.
+ *
+ * `choice` and `score` carry the full distribution plus the provider's
+ * calibrated `confidence`, both required — a payload without a confidence is
+ * a parse error, never a default, because a defaulted `0.0` would route as
+ * "record, no surface" and silently swallow a page. `noul` carries no
+ * separate confidence on the wire; its value *is* the probability, so
+ * [`VerdictAnswer::confidence`] returns `None` for it rather than inventing
+ * one.
+ */
+export type VerdictAnswer = { "choice": { choice: string, confidence: number, probabilities: { [key in string]: number }, } } | { "score": { score: number, confidence: number, probabilities: { [key in string]: number }, 
+/**
+ * No `skip_serializing_if`: verdicts are `postcard`-encoded for the
+ * store and postcard is not self-describing, so a skipped field
+ * shifts every field after it and corrupts the stream.
+ */
+legend: { [key in string]: string } | null, } } | { "noul": { noul: number, } };

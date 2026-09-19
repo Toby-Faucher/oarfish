@@ -2011,10 +2011,16 @@ dependencies = [
  "fjall",
  "moka",
  "oarfish-core",
+ "oarfish-jev",
  "postcard",
  "serde",
  "serde_json",
  "thiserror",
+ "time",
+ "tokio",
+ "tracing",
+ "ulid",
+ "wiremock",
 ]
 
 [[package]]

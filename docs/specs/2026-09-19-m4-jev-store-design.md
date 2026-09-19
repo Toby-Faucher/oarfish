@@ -1,6 +1,6 @@
 # M4 — `oarfish-jev` and `oarfish-store`, judged once and cached
 
-**Status:** accepted, pre-implementation
+**Status:** implemented, on branch `m4-jev`
 **Date:** 2026-09-19
 **Parent:** `docs/specs/2026-09-17-oarfish-design.md` — milestone M4 in §11, mechanism in §5.11 and §7
 

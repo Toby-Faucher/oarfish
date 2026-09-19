@@ -27,6 +27,18 @@ impl TemplateId {
     pub fn of(masked: &str) -> Self {
         Self(*blake3::hash(masked.as_bytes()).as_bytes())
     }
+
+    /// The raw 32 bytes, for storage-key assembly. The `verdicts` key leads
+    /// with these fixed-width bytes so a prefix scan on a template returns
+    /// every verdict it has ever received.
+    pub fn as_bytes(&self) -> &[u8; 32] {
+        &self.0
+    }
+
+    /// Rebuild from raw storage bytes.
+    pub fn from_bytes(bytes: [u8; 32]) -> Self {
+        Self(bytes)
+    }
 }
 
 impl fmt::Display for TemplateId {

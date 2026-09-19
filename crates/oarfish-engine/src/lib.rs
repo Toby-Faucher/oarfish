@@ -7,7 +7,8 @@
 //! - **Every line** - window aggregation and the alarm state machine. Pure
 //!   Rust, no network.
 //! - **Per new template** - the static verdict and merge review. Cached
-//!   against a `TemplateId` forever.
+//!   against `(template, questions, model)` — never re-asked for the same
+//!   triple.
 //! - **Per burst, flagged templates only** - the contextual check.
 //!
 //! Confidence picks the lane, and the threshold scales with the stakes: waking
