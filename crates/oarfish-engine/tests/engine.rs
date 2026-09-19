@@ -18,6 +18,12 @@ use oarfish_engine::{AlarmChange, Engine, EngineConfig};
 use oarfish_jev::Client;
 use oarfish_store::Verdicts;
 
+/// A pinned bundle identity. These tests never judge — the client points
+/// at a dead port — so any fixed hash stands in for the curated bundle.
+fn bundle() -> oarfish_mask::BundleHash {
+    oarfish_mask::BundleHash::from_bytes([7u8; 32])
+}
+
 static COUNTER: AtomicU64 = AtomicU64::new(0);
 
 fn tempdir() -> PathBuf {
@@ -43,6 +49,7 @@ fn verdicts(dir: &PathBuf) -> Arc<Verdicts> {
                 "typesafe/jev-1.13",
             ),
             oarfish_engine::static_questions(),
+            bundle(),
         )
         .expect("open"),
     )

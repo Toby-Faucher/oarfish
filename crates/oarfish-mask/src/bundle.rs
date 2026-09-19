@@ -148,6 +148,11 @@ impl BundleHash {
     pub fn as_bytes(&self) -> &[u8; 32] {
         &self.0
     }
+
+    /// Rebuild from raw storage bytes.
+    pub fn from_bytes(bytes: [u8; 32]) -> Self {
+        Self(bytes)
+    }
 }
 
 impl fmt::Display for BundleHash {

@@ -22,4 +22,5 @@ futures.workspace = true
 
 [dev-dependencies]
 bytes.workspace = true
+oarfish-mask.workspace = true
 tokio = { version = "1.53", features = ["test-util"] }

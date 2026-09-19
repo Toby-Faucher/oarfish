@@ -117,7 +117,9 @@ async fn main() -> anyhow::Result<()> {
         .with_context(|| format!("cannot bind API on {}", args.api))?;
 
     // The verdict cache and the open alarms. The question set is the
-    // engine's static policy; the key is optional, and without one the
+    // engine's static policy; the bundle hash is the mask identity the
+    // verdicts are keyed under, so an edited bundle re-judges instead of
+    // false-hitting. The key is optional, and without one the
     // pipeline still runs end to end — templates stay unjudged, the gate
     // holds, and nothing raises until a key arrives.
     let client = match oarfish_jev::Client::from_env() {
@@ -135,8 +137,13 @@ async fn main() -> anyhow::Result<()> {
         }
     };
     let verdicts = Arc::new(
-        oarfish_store::Verdicts::open(&args.data_dir, client, oarfish_engine::static_questions())
-            .with_context(|| format!("cannot open store at {}", args.data_dir.display()))?,
+        oarfish_store::Verdicts::open(
+            &args.data_dir,
+            client,
+            oarfish_engine::static_questions(),
+            oarfish_mask::curated().hash(),
+        )
+        .with_context(|| format!("cannot open store at {}", args.data_dir.display()))?,
     );
 
     // One engine task owns the windows, the state machine and the timers.

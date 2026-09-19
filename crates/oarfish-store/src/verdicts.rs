@@ -39,6 +39,7 @@ use std::sync::Arc;
 use moka::sync::Cache;
 use oarfish_core::{Alarm, AlarmId, QuestionsHash, TemplateId, Verdict};
 use oarfish_jev::{Client, Question};
+use oarfish_mask::BundleHash;
 use time::OffsetDateTime;
 use tokio::sync::{Mutex, Semaphore, mpsc};
 use ulid::Ulid;
@@ -110,9 +111,10 @@ struct Inner {
     records: fjall::Keyspace,
     records_by_template: fjall::Keyspace,
     alarms: fjall::Keyspace,
-    cache: Cache<TemplateId, Verdict>,
+    cache: Cache<(TemplateId, BundleHash), Verdict>,
     questions: BTreeMap<String, Question>,
     questions_hash: QuestionsHash,
+    bundle_hash: BundleHash,
 }
 
 /// The cache-aside verdict store.
@@ -120,7 +122,9 @@ struct Inner {
 /// Call [`Verdicts::open`] from within a Tokio runtime: it spawns the
 /// background judge task. The question set is fixed per instance — it is
 /// policy owned by `oarfish-engine`, taken here as a parameter and hashed
-/// into every key.
+/// into every key — as is the mask bundle's identity: a bundle edit must
+/// miss the cache and re-judge rather than serve a verdict meant for text
+/// another bundle produced.
 pub struct Verdicts {
     inner: Arc<Inner>,
     sender: mpsc::Sender<JudgeJob>,
@@ -133,8 +137,9 @@ impl Verdicts {
         path: impl AsRef<Path>,
         client: Client,
         questions: BTreeMap<String, Question>,
+        bundle_hash: BundleHash,
     ) -> Result<Self, Error> {
-        Self::open_with(path, client, questions, VerdictsConfig::default())
+        Self::open_with(path, client, questions, bundle_hash, VerdictsConfig::default())
     }
 
     /// Open with explicit tuning. Tests use this to shrink the queue.
@@ -142,6 +147,7 @@ impl Verdicts {
         path: impl AsRef<Path>,
         client: Client,
         questions: BTreeMap<String, Question>,
+        bundle_hash: BundleHash,
         config: VerdictsConfig,
     ) -> Result<Self, Error> {
         let path = path.as_ref();
@@ -174,6 +180,7 @@ impl Verdicts {
             cache: Cache::new(config.cache_capacity),
             questions,
             questions_hash,
+            bundle_hash,
         });
 
         let (sender, receiver) = mpsc::channel(config.queue_capacity);
@@ -203,12 +210,13 @@ impl Verdicts {
     /// state, not just the key. Synchronous and infallible by design — a
     /// storage fault logs and degrades to the same unjudged lane as a miss.
     pub fn verdict_for(&self, template_id: &TemplateId, template: &str) -> Option<Verdict> {
-        if let Some(hit) = self.inner.cache.get(template_id) {
+        let key = (*template_id, self.inner.bundle_hash);
+        if let Some(hit) = self.inner.cache.get(&key) {
             return Some(hit);
         }
         match read_latest(&self.inner, template_id) {
             Ok(Some(verdict)) => {
-                self.inner.cache.insert(*template_id, verdict.clone());
+                self.inner.cache.insert(key, verdict.clone());
                 Some(verdict)
             }
             Ok(None) => {
@@ -227,16 +235,17 @@ impl Verdicts {
         }
     }
 
-    /// The exact-key read, for replay and debugging. A changed question set
-    /// or a changed resolved model misses here even when other verdicts for
-    /// the template exist — that is the key doing its job.
+    /// The exact-key read, for replay and debugging. A changed question set,
+    /// a changed bundle, or a changed resolved model misses here even when
+    /// other verdicts for the template exist — that is the key doing its job.
     pub fn verdict_by_key(
         &self,
         template_id: &TemplateId,
         questions_hash: &QuestionsHash,
+        bundle_hash: &BundleHash,
         model: &str,
     ) -> Option<Verdict> {
-        let key = verdict_key(template_id, questions_hash, model);
+        let key = verdict_key(template_id, questions_hash, bundle_hash, model);
         match self.inner.verdicts.get(&key) {
             Ok(Some(bytes)) => match postcard::from_bytes::<Verdict>(bytes.as_ref()) {
                 Ok(verdict) => Some(verdict),
@@ -456,10 +465,11 @@ fn record_by_template_key(template_id: &TemplateId, id: &Ulid) -> [u8; 48] {
     key
 }
 
-/// The newest verdict for one template under this instance's question set, if
-/// any. Scoped to the 48-byte prefix so question revisions never alias.
+/// The newest verdict for one template under this instance's question set
+/// and bundle, if any. Scoped to the 80-byte prefix so question revisions
+/// and bundle edits never alias.
 fn read_latest(inner: &Inner, template_id: &TemplateId) -> Result<Option<Verdict>, fjall::Error> {
-    let prefix = verdict_questions_prefix(template_id, &inner.questions_hash);
+    let prefix = verdict_questions_prefix(template_id, &inner.questions_hash, &inner.bundle_hash);
     let mut best: Option<Verdict> = None;
     for guard in inner.verdicts.prefix(prefix) {
         let bytes = guard.value()?;
@@ -507,14 +517,16 @@ async fn judge_loop(
             }
         }
         // Judged while queued: serve it without spending a call.
-        if let Some(cached) = inner.cache.get(&job.template_id) {
+        if let Some(cached) = inner.cache.get(&(job.template_id, inner.bundle_hash)) {
             let _ = cached;
             in_flight.lock().await.remove(&job.template_id);
             continue;
         }
         match read_latest(&inner, &job.template_id) {
             Ok(Some(verdict)) => {
-                inner.cache.insert(job.template_id, verdict);
+                inner
+                    .cache
+                    .insert((job.template_id, inner.bundle_hash), verdict);
                 in_flight.lock().await.remove(&job.template_id);
                 continue;
             }
@@ -663,6 +675,7 @@ async fn judge_one(inner: &Inner, client: &Client, job: JudgeJob) {
     let key = verdict_key(
         &verdict.template_id,
         &verdict.questions_hash,
+        &inner.bundle_hash,
         &verdict.model,
     );
     if let Err(error) = inner.verdicts.insert(key, verdict_bytes) {
@@ -673,7 +686,9 @@ async fn judge_one(inner: &Inner, client: &Client, job: JudgeJob) {
         );
         return;
     }
-    inner.cache.insert(job.template_id, verdict);
+    inner
+        .cache
+        .insert((job.template_id, inner.bundle_hash), verdict);
 }
 
 #[cfg(test)]

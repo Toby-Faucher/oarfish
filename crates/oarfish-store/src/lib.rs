@@ -1,9 +1,10 @@
 //! Durable state on an embedded `fjall` LSM store.
 //!
 //! Holds the caches the cost model depends on: verdicts keyed by
-//! [`TemplateId`] — more precisely by template, question-set hash and
-//! resolved model — merge decisions keyed by template pair (M5), and the
-//! decision records that let any alarm be replayed long after it fired.
+//! [`TemplateId`] — more precisely by template, question-set hash, bundle
+//! hash and resolved model — merge decisions keyed by template pair (M5),
+//! and the decision records that let any alarm be replayed long after it
+//! fired.
 //!
 //! Also holds open alarms and local corrections (the "not an alarm"
 //! feedback).
@@ -24,8 +25,8 @@ mod verdicts;
 
 pub use alarms::{ALARMS_KEYSPACE, alarm_key, decode_alarm, encode_alarm};
 pub use keys::{
-    QUESTIONS_HASH_LEN, TEMPLATE_ID_LEN, parse_verdict_key, verdict_key, verdict_questions_prefix,
-    verdict_template_prefix,
+    BUNDLE_HASH_LEN, QUESTIONS_HASH_LEN, TEMPLATE_ID_LEN, parse_verdict_key, verdict_key,
+    verdict_questions_prefix, verdict_template_prefix,
 };
 pub use record::{DecisionRecord, record_key};
 pub use verdicts::{

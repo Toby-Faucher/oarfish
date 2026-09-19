@@ -13,6 +13,7 @@ use std::time::Duration;
 
 use oarfish_core::{TemplateId, Verdict, VerdictAnswer};
 use oarfish_jev::{Client, Question};
+use oarfish_mask::BundleHash;
 use oarfish_store::Verdicts;
 use wiremock::matchers::method;
 use wiremock::{Mock, MockServer, ResponseTemplate};
@@ -33,6 +34,12 @@ fn tempdir() -> PathBuf {
 
 fn cleanup(dir: &PathBuf) {
     let _ = std::fs::remove_dir_all(dir);
+}
+
+/// A pinned bundle identity. Every test judges under the same bundle, so
+/// the cache hits; the rebundle test pins a second one.
+fn bundle() -> BundleHash {
+    BundleHash::from_bytes([7u8; 32])
 }
 
 /// The standing question set. Two questions so the confidence test can pin a
@@ -149,6 +156,7 @@ async fn judged_once_and_cached() {
         &dir,
         Client::new(server.uri(), "test-key", "typesafe/jev-1.13"),
         questions(),
+        bundle(),
     )
     .expect("open");
 
@@ -181,6 +189,7 @@ async fn confidence_survives_the_round_trip() {
         &dir,
         Client::new(server.uri(), "test-key", "typesafe/jev-1.13"),
         questions(),
+        bundle(),
     )
     .expect("open");
 
@@ -227,6 +236,7 @@ async fn a_missing_confidence_never_synthesizes_one() {
         &dir,
         Client::new(server.uri(), "test-key", "typesafe/jev-1.13"),
         questions(),
+        bundle(),
     )
     .expect("open");
 
@@ -264,6 +274,7 @@ async fn a_changed_question_set_rejudges() {
         &dir,
         Client::new(server.uri(), "test-key", "typesafe/jev-1.13"),
         questions(),
+        bundle(),
     )
     .expect("open");
     assert!(verdicts.verdict_for(&id, template).is_none());
@@ -285,9 +296,48 @@ async fn a_changed_question_set_rejudges() {
         &dir,
         Client::new(server.uri(), "test-key", "typesafe/jev-1.13"),
         reworded,
+        bundle(),
     )
     .expect("reopen");
     // The old verdict is on disk under the old hash and must not serve.
+    assert!(verdicts.verdict_for(&id, template).is_none());
+    wait_for_verdict(&verdicts, &id, template).await;
+    assert_eq!(request_count(&server).await, 2);
+
+    verdicts.close().await.expect("close");
+    cleanup(&dir);
+}
+
+/// An edited bundle misses the key: the old verdict is on disk under the
+/// old bundle hash and must never serve for text another bundle produced.
+#[tokio::test]
+async fn an_edited_bundle_misses_the_key() {
+    let dir = tempdir();
+    let server = MockServer::start().await;
+    mount_ok(&server, ok_body()).await;
+
+    let template = "task <VAR:NUM> failed";
+    let id = TemplateId::of(template);
+
+    let verdicts = Verdicts::open(
+        &dir,
+        Client::new(server.uri(), "test-key", "typesafe/jev-1.13"),
+        questions(),
+        bundle(),
+    )
+    .expect("open");
+    wait_for_verdict(&verdicts, &id, template).await;
+    verdicts.persist().expect("persist");
+    verdicts.close().await.expect("close");
+
+    let verdicts = Verdicts::open(
+        &dir,
+        Client::new(server.uri(), "test-key", "typesafe/jev-1.13"),
+        questions(),
+        BundleHash::from_bytes([8u8; 32]),
+    )
+    .expect("reopen");
+    // Same questions, same model, other bundle: a miss, then a re-judge.
     assert!(verdicts.verdict_for(&id, template).is_none());
     wait_for_verdict(&verdicts, &id, template).await;
     assert_eq!(request_count(&server).await, 2);
@@ -308,6 +358,7 @@ async fn a_changed_resolved_model_misses_the_key() {
         &dir,
         Client::new(server.uri(), "test-key", "typesafe/jev-1.13"),
         questions(),
+        bundle(),
     )
     .expect("open");
 
@@ -319,12 +370,23 @@ async fn a_changed_resolved_model_misses_the_key() {
     let hash = verdicts.questions_hash();
     assert!(
         verdicts
-            .verdict_by_key(&id, &hash, "typesafe/jev-1.13-20260917")
+            .verdict_by_key(&id, &hash, &bundle(), "typesafe/jev-1.13-20260917")
             .is_some()
     );
     assert!(
         verdicts
-            .verdict_by_key(&id, &hash, "typesafe/jev-1.13-20261001")
+            .verdict_by_key(&id, &hash, &bundle(), "typesafe/jev-1.13-20261001")
+            .is_none()
+    );
+    // Same questions and model, other bundle: misses, never false-hits.
+    assert!(
+        verdicts
+            .verdict_by_key(
+                &id,
+                &hash,
+                &BundleHash::from_bytes([8u8; 32]),
+                "typesafe/jev-1.13-20260917"
+            )
             .is_none()
     );
 
@@ -347,6 +409,7 @@ async fn failure_is_survivable_and_reenqueueable() {
         &dir,
         Client::new(server.uri(), "test-key", "typesafe/jev-1.13"),
         questions(),
+        bundle(),
     )
     .expect("open");
 
@@ -379,6 +442,7 @@ async fn every_cached_verdict_has_a_record() {
         &dir,
         Client::new(server.uri(), "test-key", "typesafe/jev-1.13"),
         questions(),
+        bundle(),
     )
     .expect("open");
 
@@ -418,6 +482,7 @@ async fn replay_returns_every_verdict_the_template_has_held() {
         &dir,
         Client::new(server.uri(), "test-key", "typesafe/jev-1.13"),
         questions(),
+        bundle(),
     )
     .expect("open");
     let first = wait_for_verdict(&verdicts, &id, template).await;
@@ -436,6 +501,7 @@ async fn replay_returns_every_verdict_the_template_has_held() {
         &dir,
         Client::new(server.uri(), "test-key", "typesafe/jev-1.13"),
         reworded,
+        bundle(),
     )
     .expect("reopen");
     let second = wait_for_verdict(&verdicts, &id, template).await;
