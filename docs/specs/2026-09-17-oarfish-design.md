@@ -174,6 +174,16 @@ Drain never compares the two.
 Any new template structurally close to an existing one gets exactly one `noul`: *do
 these describe the same event type?* Cached by pair. Runs perhaps a dozen times a day.
 
+*Resolved 2026-09-19 in M5.5 (`docs/specs/2026-09-19-m5.5-merge-context-design.md`
+§4): "structurally close" is a Jaccard score over token multisets in
+`[0.65, 0.90)`, searched across token counts on purpose — the motivating case
+is one real event split in two because an optional field changed the token
+count, and Drain's first tree level is token count, so a tree-based search
+would systematically miss it. The ceiling is Drain's own threshold, not a
+tuning choice; the floor is configuration. The search is a read-only
+`Drain::neighbours` query over a token-count index, referred by the pipeline
+when a genuinely new cluster appears.*
+
 ### 5.7 Window — hot path
 
 A five-minute sliding window per template, in memory. Count, rate, distinct hosts,
@@ -327,15 +337,15 @@ verdict lookups don't touch disk per line.
 
 | Keyspace | Key | Value |
 |---|---|---|
-| `verdicts` | `template_id (32B) ++ questions_hash (16B) ++ resolved_model_id` | static verdict + model + timestamp |
-| `merges` | `(id_a, id_b)` | merge decision |
+| `verdicts` | `template_id (32B) ++ questions_hash (16B) ++ bundle_hash (32B) ++ resolved_model_id` | static verdict + model + timestamp |
+| `merges` | `id_lo (32B) ++ id_hi (32B) ++ questions_hash (16B) ++ bundle_hash (32B) ++ resolved_model_id` | merge decision |
 | `alarms` | `Ulid` | alarm record and state |
 | `records` | `Ulid` | decision record: exact state, questions, answers |
 | `corrections` | `TemplateId` | local operator corrections |
 
-The `verdicts` key is three components, not one (M4, `docs/specs/2026-09-19-m4-jev-store-design.md`
-§4): a verdict is only valid for the question set that produced it and the model build
-that answered. The fixed-width components lead so a prefix scan on `template_id`
+The `verdicts` key is four components, not one (M4, `docs/specs/2026-09-19-m4-jev-store-design.md`
+§4): a verdict is only valid for the question set that produced it, the bundle that
+masked its template, and the model build that answered. The fixed-width components lead so a prefix scan on `template_id`
 returns every verdict a template has ever received.
 
 **Decision records are the trust feature.** Every Jev call is persisted with its exact

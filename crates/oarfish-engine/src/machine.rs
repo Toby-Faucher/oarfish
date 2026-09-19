@@ -21,14 +21,15 @@
 //! suppression is a cooldown after clear: a re-raise inside it updates the
 //! alarm that just closed rather than opening a new one.
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::future::poll_fn;
 use std::sync::Arc;
 use std::task::Poll;
 
 use oarfish_core::{
-    Alarm, AlarmChange, AlarmId, EngineInput, Event, Snapshot, TemplateId, Verdict,
+    Alarm, AlarmChange, AlarmId, EngineInput, Event, Lane, Snapshot, TemplateId, Verdict,
 };
+use oarfish_jev::Client;
 use oarfish_store::Verdicts;
 use time::OffsetDateTime;
 use tokio::sync::{broadcast, mpsc};
@@ -37,21 +38,10 @@ use tokio_util::time::DelayQueue;
 
 use crate::{
     EngineConfig, WindowTable,
-    gate::{Gate, gate},
+    context::{BurstContext, CheckOutcome, CheckResult, OpenAlarmView, run_check},
+    gate::{Gate, gate, is_contextual},
     windows::{SHORT_WINDOW_SECS, WindowStats},
 };
-
-/// Where an alarm would surface. Thresholds scale with the stakes: waking
-/// someone needs more certainty than drawing a card on a dashboard.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Lane {
-    /// `wake_someone >= 0.90`: page via ntfy (M6).
-    Page,
-    /// `0.60 - 0.90`, and everything in M5: dashboard only.
-    Dashboard,
-    /// `< 0.60`: record, no surface.
-    Record,
-}
 
 /// Route on the contextual check's `wake_someone` value.
 ///
@@ -73,6 +63,17 @@ pub fn route(wake_someone: Option<f64>) -> Lane {
 /// template so the fleet-wide view survives; correlation stays per host.
 type AlarmKey = (TemplateId, String);
 
+/// The check's snapshot, frozen at trip time. The spawned task reads this —
+/// never live engine state — so the snapshot the model judges is the burst's
+/// own, whatever opens or clears during the round trip.
+struct FrozenView(Vec<Alarm>);
+
+impl OpenAlarmView for FrozenView {
+    fn open_alarms(&self) -> Vec<Alarm> {
+        self.0.clone()
+    }
+}
+
 struct OpenEntry {
     alarm: Alarm,
     timer: tokio_util::time::delay_queue::Key,
@@ -83,9 +84,12 @@ struct Tombstone {
     cleared_at: tokio::time::Instant,
 }
 
-/// The owning task's state: windows, open alarms, tombstones, timers.
+/// The owning task's state: windows, open alarms, tombstones, timers, and —
+/// M5.5 — the merge aliases it resolves through and the contextual checks it
+/// has in flight.
 pub struct Engine {
     verdicts: Arc<Verdicts>,
+    decide: Client,
     config: EngineConfig,
     windows: WindowTable,
     open: HashMap<AlarmKey, OpenEntry>,
@@ -94,16 +98,28 @@ pub struct Engine {
     timers: DelayQueue<AlarmId>,
     tx: broadcast::Sender<AlarmChange>,
     snapshot: Snapshot,
+    pending_tx: mpsc::Sender<CheckOutcome>,
+    pending_rx: mpsc::Receiver<CheckOutcome>,
+    /// Keys with a contextual check in flight. Their windows keep bumping;
+    /// nothing else happens until the answer returns.
+    in_flight: HashSet<AlarmKey>,
+    /// Keys whose last check resolved to `Record`. No new check spawns until
+    /// the window cools below the raise rule — one check per burst, never one
+    /// per line.
+    suppressed: HashMap<AlarmKey, tokio::time::Instant>,
 }
 
 impl Engine {
     /// Build the engine and reload open alarms from the store, re-arming
     /// their `DelayQueue` timers at the full silence interval. Windows are
-    /// not reloaded — they rebuild from live traffic in minutes.
-    pub fn new(verdicts: Arc<Verdicts>, config: EngineConfig) -> Self {
+    /// not reloaded — they rebuild from live traffic in minutes. Merge
+    /// aliases load with the store, so resolution works from the first line.
+    pub fn new(verdicts: Arc<Verdicts>, decide: Client, config: EngineConfig) -> Self {
         let (tx, _) = broadcast::channel(config.broadcast_capacity.max(1));
+        let (pending_tx, pending_rx) = mpsc::channel(config.pending_capacity);
         let mut engine = Self {
             verdicts,
+            decide,
             windows: WindowTable::new(config.max_windows),
             open: HashMap::new(),
             by_id: HashMap::new(),
@@ -111,6 +127,10 @@ impl Engine {
             timers: DelayQueue::new(),
             tx,
             snapshot: Snapshot::new(),
+            pending_tx,
+            pending_rx,
+            in_flight: HashSet::new(),
+            suppressed: HashMap::new(),
             config,
         };
         for alarm in engine.verdicts.load_open_alarms() {
@@ -157,20 +177,18 @@ impl Engine {
         self.windows.contains(template_id)
     }
 
-    /// The every-line entry: look the verdict up, then classify. The lookup
-    /// is synchronous and cheap — moka, then fjall, then an enqueue and
-    /// `None` — and gating is a decision-layer concern, so it lives here
-    /// rather than in the pipeline.
+    /// The every-line entry: resolve through the alias table, look the
+    /// verdict up, then classify. Resolution runs first — one in-memory
+    /// lookup, pure Rust, no network, no disk — so two halves of a split
+    /// event feed one window and one alarm. The lookup and the machine all
+    /// key on the survivor.
     pub fn on_event(&mut self, input: EngineInput) {
-        let verdict = self
-            .verdicts
-            .verdict_for(&input.template_id, &input.template);
-        self.on_classified(
-            &input.event,
-            input.template_id,
-            &input.template,
-            verdict.as_ref(),
-        );
+        let (template_id, template) = match self.verdicts.merges().resolve(&input.template_id) {
+            (resolved, Some(canonical)) => (resolved, canonical),
+            (resolved, None) => (resolved, input.template),
+        };
+        let verdict = self.verdicts.verdict_for(&template_id, &template);
+        self.on_classified(&input.event, template_id, &template, verdict.as_ref());
     }
 
     /// Classify one line against a verdict. The verdict is a parameter —
@@ -190,6 +208,24 @@ impl Engine {
             return;
         };
         let key: AlarmKey = (template_id, event.host.clone());
+
+        // A check is already in flight for this key: the window above keeps
+        // bumping as normal, and nothing else happens until the answer
+        // returns. In particular no second check spawns.
+        if self.in_flight.contains(&key) {
+            return;
+        }
+
+        // The last check for this key resolved to `Record`: no new check
+        // spawns until the window cools below the raise rule. One check per
+        // burst, never one per line.
+        if self.suppressed.contains_key(&key) {
+            if severity < self.config.bypass_severity && !window_triggered(&stats, &self.config) {
+                self.suppressed.remove(&key);
+            } else {
+                return;
+            }
+        }
 
         if let Some(entry) = self.open.get_mut(&key) {
             entry.alarm.count += 1;
@@ -235,22 +271,212 @@ impl Engine {
             return;
         }
 
+        // Flagged templates wait for the contextual check instead of raising
+        // outright. The raise is what waits, not the engine: the window keeps
+        // bumping on later events while the check flies, and nothing that
+        // has surfaced is ever withdrawn.
+        if is_contextual(verdict, self.config.contextual_threshold) {
+            self.spawn_check(event, template_id, template, severity, stats);
+            return;
+        }
+
+        self.raise(
+            &event.host,
+            template_id,
+            template,
+            severity,
+            Lane::Dashboard,
+        );
+    }
+
+    /// Raise one alarm into a lane, publish it, and track it everywhere a
+    /// raise lives. The M5 path raises here directly at `Dashboard` — no
+    /// contextual check ran; that is the whole of M5 — while checked bursts
+    /// arrive through [`Engine::apply`] with the lane the check routed.
+    fn raise(
+        &mut self,
+        host: &str,
+        template_id: TemplateId,
+        template: &str,
+        severity: oarfish_core::Severity,
+        lane: Lane,
+    ) {
         let alarm = Alarm {
             id: AlarmId::generate(),
             template_id,
             template: template.to_owned(),
             severity,
-            host: event.host.clone(),
+            host: host.to_owned(),
+            lane,
             count: 1,
             opened_at: OffsetDateTime::now_utc(),
         };
-        tracing::info!(alarm_id = %alarm.id, ?severity, "alarm raised");
+        tracing::info!(alarm_id = %alarm.id, ?severity, ?lane, "alarm raised");
         self.insert_open(alarm.clone(), self.config.silence);
         self.publish(AlarmChange::Raised(alarm));
     }
 
-    /// Fire every silence timer already past its deadline. Never parks:
-    /// awaiting the next deadline would fast-forward the paused clock past
+    /// Spawn the contextual check for one flagged burst and mark the key
+    /// in-flight. The snapshot is captured synchronously — the open set at
+    /// trip time is what the model judges — while the call flies on a task
+    /// the loop never awaits. Only this raise is deferred.
+    ///
+    /// Requires a runtime context: the run loop and every test caller have
+    /// one. Without one the burst raises at `Dashboard` instead of vanishing
+    /// — failure raises rather than swallows, and no runtime is a failure.
+    fn spawn_check(
+        &mut self,
+        event: &Event,
+        template_id: TemplateId,
+        template: &str,
+        severity: oarfish_core::Severity,
+        stats: WindowStats,
+    ) {
+        let burst = BurstContext {
+            template_id,
+            template: template.to_owned(),
+            host: event.host.clone(),
+            severity,
+            stats,
+        };
+        let key: AlarmKey = (template_id, event.host.clone());
+        self.in_flight.insert(key);
+        // Frozen at trip time: the task reads this, never live state, so the
+        // snapshot the model judges is the burst's own.
+        let view = FrozenView(self.open_alarms());
+        let decide = self.decide.clone();
+        let config = self.config.clone();
+        let tx = self.pending_tx.clone();
+        match tokio::runtime::Handle::try_current() {
+            Ok(handle) => {
+                handle.spawn(async move {
+                    let result = run_check(
+                        &decide,
+                        &view,
+                        &burst,
+                        config.max_context_alarms,
+                        config.check_timeout,
+                    )
+                    .await;
+                    let outcome = match result {
+                        CheckResult::Answered(answer) => CheckOutcome::Answered {
+                            template_id: burst.template_id,
+                            template: burst.template.clone(),
+                            host: burst.host.clone(),
+                            severity: burst.severity,
+                            answer,
+                        },
+                        CheckResult::Failed => CheckOutcome::Failed {
+                            template_id: burst.template_id,
+                            template: burst.template.clone(),
+                            host: burst.host.clone(),
+                            severity: burst.severity,
+                        },
+                    };
+                    let _ = tx.send(outcome).await;
+                });
+            }
+            Err(_) => {
+                let _ = tx.try_send(CheckOutcome::Failed {
+                    template_id: burst.template_id,
+                    template: burst.template.clone(),
+                    host: burst.host.clone(),
+                    severity: burst.severity,
+                });
+            }
+        }
+    }
+
+    /// Apply one returning check answer. Data flows one way per evaluation —
+    /// committed state, then check, then answer, then mutation — so feedback
+    /// happens across bursts, never within one.
+    ///
+    /// The snapshot re-validates first: a Jev call is not instantaneous and
+    /// auto-clear runs independently, so the alarm named by `correlates_with`
+    /// may have cleared during the round trip. A vanished alarm is `none` —
+    /// and the burst still raises: a cleared correlation must never swallow
+    /// what the window already decided was worth raising.
+    fn apply(&mut self, outcome: CheckOutcome) {
+        let (template_id, template, host, severity, answer) = match outcome {
+            CheckOutcome::Answered {
+                template_id,
+                template,
+                host,
+                severity,
+                answer,
+            } => (template_id, template, host, severity, Some(answer)),
+            CheckOutcome::Failed {
+                template_id,
+                template,
+                host,
+                severity,
+            } => (template_id, template, host, severity, None),
+        };
+        let key: AlarmKey = (template_id, host.clone());
+        self.in_flight.remove(&key);
+
+        // The key may have resolved while the check flew: an open alarm
+        // takes a count bump, not a second alarm and not a second check.
+        if self.open.contains_key(&key) {
+            return;
+        }
+
+        let Some(answer) = answer else {
+            // Failure raises rather than swallows: `route(None)`, exactly
+            // the M5 behaviour for a burst with no check behind it.
+            self.raise(&host, template_id, &template, severity, Lane::Dashboard);
+            return;
+        };
+
+        // The decision is recorded before it is trusted. A write failure
+        // degrades to the failure lane: uncertainty routes toward the board,
+        // never toward silence.
+        if let Err(error) = self.verdicts.save_record(&answer.record) {
+            tracing::error!(%error, "context record could not be saved; raising without it");
+            self.raise(&host, template_id, &template, severity, Lane::Dashboard);
+            return;
+        }
+
+        // Re-validate the correlation against live state: the alarm named by
+        // `correlates_with` may have cleared during the round trip, and a
+        // vanished alarm is `none`. Either way the burst raises — the wire
+        // answer stays in the record for replay, and consulting a cleared id
+        // is what the re-check prevents.
+        if let Some(named) = answer.correlates_with {
+            if self.by_id.contains_key(&named) {
+                tracing::debug!(alarm_id = %named, "checked burst correlates with a live alarm");
+            } else {
+                tracing::debug!(alarm_id = %named, "correlated alarm cleared mid-flight; treating as none");
+            }
+        }
+
+        if answer.matters_now < self.config.matters_now_threshold {
+            tracing::info!(
+                matters_now = answer.matters_now,
+                "checked burst resolved to Record; never surfaces"
+            );
+            self.suppressed.insert(key, tokio::time::Instant::now());
+            return;
+        }
+        let lane = route(Some(answer.wake_someone));
+        if lane == Lane::Record {
+            self.suppressed.insert(key, tokio::time::Instant::now());
+            return;
+        }
+        self.raise(&host, template_id, &template, severity, lane);
+    }
+
+    /// Apply every check answer already past the channel. Never parks: like
+    /// [`Engine::expire_ready`], tests call this after the answer lands; the
+    /// run loop takes the `pending_rx` branch instead, which is correct in
+    /// production and never used under pause.
+    pub fn poll_pending(&mut self) {
+        while let Ok(outcome) = self.pending_rx.try_recv() {
+            self.apply(outcome);
+        }
+    }
+
+    /// Fire every silence timer already past its deadline. Never parks:    /// awaiting the next deadline would fast-forward the paused clock past
     /// it — the idle runtime auto-advances virtual time — and clear alarms
     /// the caller asserts are still open. Tests call this after advancing
     /// the clock; the run loop parks on [`Engine::next_expiry`] instead,
@@ -263,8 +489,8 @@ impl Engine {
         }
     }
 
-    async fn next_expiry(&mut self) -> Option<AlarmId> {
-        poll_fn(|cx| self.timers.poll_expired(cx))
+    async fn next_expiry(timers: &mut DelayQueue<AlarmId>) -> Option<AlarmId> {
+        poll_fn(|cx| timers.poll_expired(cx))
             .await
             .map(|expired| expired.into_inner())
     }
@@ -355,9 +581,18 @@ impl Engine {
                         None => break,
                     }
                 }
-                expired = self.next_expiry(), if !self.timers.is_empty() => {
+                expired = Self::next_expiry(&mut self.timers), if !self.timers.is_empty() => {
                     if let Some(id) = expired {
                         self.clear(id);
+                    }
+                }
+                // Returning contextual checks. The loop never awaits a Jev
+                // call — the spawned task does, and only the one raise was
+                // deferred. `pending_tx` lives in `self`, so `None` is
+                // unreachable while the loop is.
+                outcome = self.pending_rx.recv() => {
+                    if let Some(outcome) = outcome {
+                        self.apply(outcome);
                     }
                 }
             }

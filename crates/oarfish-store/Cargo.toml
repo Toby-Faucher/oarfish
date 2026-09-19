@@ -24,3 +24,4 @@ postcard.workspace = true
 
 [dev-dependencies]
 wiremock.workspace = true
+proptest.workspace = true

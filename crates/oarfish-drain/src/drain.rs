@@ -42,6 +42,28 @@ pub struct Assignment {
     pub size: u64,
 }
 
+/// How [`Drain::neighbours`] is asked: the referral floor for this call.
+/// Defaults to the table's [`Config::referral_floor`]; tests pin values
+/// directly rather than rebuilding tables under edited configs.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct NeighbourQuery {
+    /// Pairs scoring below this are not referred. Must sit below the table's
+    /// similarity: the band is `[floor, similarity)`.
+    pub floor: f64,
+}
+
+/// One referred pair: a live cluster structurally close to the queried one,
+/// in the referral band and across token counts on purpose.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct Candidate {
+    /// The candidate cluster's internal sequence. Never persisted.
+    pub seq: u64,
+    /// The candidate cluster's current template id.
+    pub template_id: TemplateId,
+    /// Jaccard over token multisets, in `[floor, similarity)`.
+    pub score: f64,
+}
+
 /// Why a clusterer could not be built. Validation runs at construction, not
 /// per line: the every-line path never fails.
 #[derive(Debug, thiserror::Error, PartialEq, Eq)]
@@ -65,6 +87,11 @@ pub struct Drain {
     stamps: BTreeMap<u64, u64>,
     tick: u64,
     next_seq: u64,
+    /// Token-count index for [`Drain::neighbours`]: token count → live seqs.
+    /// Generalization never changes a cluster's token count, so entries move
+    /// only on insert and evict. An oarfish addition; the drain3 port never
+    /// had it.
+    counts: BTreeMap<usize, Vec<u64>>,
 }
 
 struct Entry {
@@ -85,6 +112,7 @@ impl Drain {
             stamps: BTreeMap::new(),
             tick: 0,
             next_seq: 1,
+            counts: BTreeMap::new(),
         })
     }
 
@@ -122,6 +150,7 @@ impl Drain {
                 let template = tokens.join(" ");
                 let owned: Vec<String> = tokens.iter().map(|s| (*s).to_owned()).collect();
                 let template_id = TemplateId::of(&template);
+                self.counts.entry(owned.len()).or_default().push(seq);
                 self.table.insert(
                     seq,
                     Entry {
@@ -181,7 +210,17 @@ impl Drain {
         };
         while self.table.len() > cap {
             let oldest = self.stamps.pop_first().expect("stamps track the table");
-            self.table.remove(&oldest.1);
+            if let Some(entry) = self.table.remove(&oldest.1) {
+                let len = entry.cluster.tokens.len();
+                if let Some(bucket) = self.counts.get_mut(&len) {
+                    if let Some(pos) = bucket.iter().position(|seq| *seq == oldest.1) {
+                        bucket.swap_remove(pos);
+                    }
+                    if bucket.is_empty() {
+                        self.counts.remove(&len);
+                    }
+                }
+            }
         }
     }
 
@@ -217,6 +256,73 @@ impl Drain {
         (found && best_sim >= self.config.similarity).then_some(best_seq)
     }
 
+    /// Structurally close clusters to `seq`: the merge-review referral.
+    ///
+    /// **An oarfish addition, not part of the drain3 port.** Read-only: it
+    /// touches no clustering decision, so the snapshot equivalence against
+    /// drain3 is unaffected. It deliberately crosses token counts — the
+    /// motivating case is one real event split in two because an optional
+    /// field changed the token count, and Drain's first tree level *is* token
+    /// count, so any search built on the tree would systematically miss the
+    /// exact case this exists to repair.
+    ///
+    /// Buckets within ±2 tokens of the cluster are read through the
+    /// token-count index (a handful of bucket reads, not a table walk) and
+    /// scored by Jaccard over token multisets. Only the referral band is
+    /// returned: at or above [`Config::similarity`] the two lines would
+    /// already be one cluster, so such a pair cannot exist as two clusters,
+    /// and below the floor the pair is different events rather than close
+    /// ones. Results arrive highest score first.
+    pub fn neighbours(&self, seq: u64, query: &NeighbourQuery) -> Vec<Candidate> {
+        let entry = match self.table.get(&seq) {
+            Some(entry) => entry,
+            None => return Vec::new(),
+        };
+        let len = entry.cluster.tokens.len();
+        let floor = query.floor;
+        if floor >= self.config.similarity {
+            return Vec::new();
+        }
+        let mut out = Vec::new();
+        let lo = len.saturating_sub(2);
+        let hi = len.saturating_add(2);
+        for count in lo..=hi {
+            let bucket = match self.counts.get(&count) {
+                Some(bucket) => bucket,
+                None => continue,
+            };
+            for candidate_seq in bucket {
+                if *candidate_seq == seq {
+                    continue;
+                }
+                let candidate = match self.table.get(candidate_seq) {
+                    Some(entry) => &entry.cluster,
+                    None => continue,
+                };
+                let score = jaccard(&entry.cluster.tokens, &candidate.tokens);
+                if score >= floor && score < self.config.similarity {
+                    out.push(Candidate {
+                        seq: *candidate_seq,
+                        template_id: candidate.template_id,
+                        score,
+                    });
+                }
+            }
+        }
+        out.sort_by(|a, b| {
+            b.score
+                .partial_cmp(&a.score)
+                .unwrap_or(std::cmp::Ordering::Equal)
+                .then_with(|| a.seq.cmp(&b.seq))
+        });
+        out
+    }
+
+    /// The merge-referral floor this table refers under: [`Config::referral_floor`].
+    pub fn referral_floor(&self) -> f64 {
+        self.config.referral_floor
+    }
+
     /// Look up a cluster by sequence number. `None` means never created — or
     /// evicted, once Task 2 bounds the table.
     pub fn get(&self, seq: u64) -> Option<&Cluster> {
@@ -232,9 +338,37 @@ impl Drain {
     }
 }
 
+/// Jaccard over token multisets: intersection (per-token minima) over union
+/// (per-token maxima). Order-insensitive on purpose — the referral crosses
+/// token counts, so positions do not align — and bounded in `[0, 1]`. Two
+/// empty clusters score 0, not 1: nothing about an empty line is close to
+/// anything.
+fn jaccard(a: &[String], b: &[String]) -> f64 {
+    if a.is_empty() && b.is_empty() {
+        return 0.0;
+    }
+    let mut counts: HashMap<&str, (usize, usize)> = HashMap::new();
+    for token in a {
+        counts.entry(token.as_str()).or_default().0 += 1;
+    }
+    for token in b {
+        counts.entry(token.as_str()).or_default().1 += 1;
+    }
+    let (mut inter, mut union) = (0usize, 0usize);
+    for (_, (ca, cb)) in counts {
+        inter += ca.min(cb);
+        union += ca.max(cb);
+    }
+    if union == 0 {
+        0.0
+    } else {
+        inter as f64 / union as f64
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use crate::{Config, Drain};
+    use crate::{Candidate, Config, Drain, NeighbourQuery};
 
     fn drain() -> Drain {
         Drain::new(Config::default()).expect("default config is valid")
@@ -308,5 +442,130 @@ mod tests {
         let assignment = drain.train("a b c d e f g h");
         let cluster = drain.get(assignment.seq).expect("cluster");
         assert_eq!(cluster.template, "a b c d");
+    }
+
+    fn neighbours_of(drain: &Drain, seq: u64) -> Vec<Candidate> {
+        drain.neighbours(
+            seq,
+            &NeighbourQuery {
+                floor: Config::default().referral_floor,
+            },
+        )
+    }
+
+    /// The §5.6 motivating case: one real event split in two because an
+    /// optional field changed the token count. Drain never compares across
+    /// counts, so both clusters exist — and the referral crosses counts on
+    /// purpose to find them. Six tokens plus an optional seventh: 6/7 ≈
+    /// 0.857, inside the band.
+    #[test]
+    fn an_optional_field_across_token_counts_is_referred() {
+        let mut drain = drain();
+        let base = drain.train("backup done files ok size mb took secs");
+        let extended = drain.train("backup done files ok size mb took secs extra");
+        assert_ne!(base.seq, extended.seq);
+
+        let referred = neighbours_of(&drain, base.seq);
+        assert_eq!(referred.len(), 1, "got {referred:?}");
+        assert_eq!(referred[0].seq, extended.seq);
+        assert_eq!(referred[0].template_id, extended.template);
+        assert!(
+            (0.65..0.90).contains(&referred[0].score),
+            "score {} outside the band",
+            referred[0].score
+        );
+        // Symmetric: the extended cluster refers back to the base.
+        let back = neighbours_of(&drain, extended.seq);
+        assert_eq!(back.len(), 1);
+        assert_eq!(back[0].seq, base.seq);
+    }
+
+    /// The ceiling is Drain's own threshold: at or above it the pair cannot
+    /// exist as two clusters at equal counts — and across counts it is still
+    /// not referred. Near-identical lines sharing every token but one extra
+    /// on a long line score past the ceiling and stay out.
+    #[test]
+    fn no_pair_scoring_at_or_above_threshold_is_ever_referred() {
+        let mut drain = drain();
+        // Ten tokens plus one optional eleventh: 10/11 ≈ 0.909, past the
+        // ceiling — two clusters Drain never compares, and no referral.
+        let base = drain.train("t1 t2 t3 t4 t5 t6 t7 t8 t9 t10");
+        let extended = drain.train("t1 t2 t3 t4 t5 t6 t7 t8 t9 t10 extra");
+        assert_ne!(base.seq, extended.seq);
+        assert!(neighbours_of(&drain, base.seq).is_empty());
+        assert!(neighbours_of(&drain, extended.seq).is_empty());
+
+        // And below the floor: different events stay unreferred.
+        let mut other = Drain::new(Config::default()).expect("default config is valid");
+        let a = other.train("alpha bravo charlie delta echo foxtrot");
+        let b = other.train("zulu yankee xray whiskey victor tango");
+        assert_ne!(a.seq, b.seq);
+        assert!(neighbours_of(&other, a.seq).is_empty());
+    }
+
+    /// Referrals arrive highest score first, and a cluster never refers to
+    /// itself. An unknown or evicted seq refers nothing.
+    #[test]
+    fn referrals_arrive_highest_score_first_and_never_self() {
+        let mut drain = drain();
+        let base = drain.train("a b c d e f g h");
+        // 8/9 ≈ 0.889: every base token plus one extra.
+        let near = drain.train("a b c d e f g h extra");
+        // 7/8 = 0.875: one token swapped for the extra, same count as base
+        // but only 7/8 similar, so still its own cluster.
+        let far = drain.train("a b c d e f g extra");
+        assert_ne!(base.seq, near.seq);
+        assert_ne!(base.seq, far.seq);
+        assert_ne!(near.seq, far.seq);
+
+        let referred = neighbours_of(&drain, base.seq);
+        assert_eq!(referred.len(), 2, "got {referred:?}");
+        assert_eq!(referred[0].seq, near.seq);
+        assert_eq!(referred[1].seq, far.seq);
+        assert!(
+            referred[0].score > referred[1].score,
+            "not sorted: {referred:?}"
+        );
+        assert!(
+            referred.iter().all(|c| c.seq != base.seq),
+            "self-referral: {referred:?}"
+        );
+
+        assert!(neighbours_of(&drain, 999_999).is_empty());
+    }
+
+    /// Evicted clusters leave the count index with them: a referral never
+    /// names a dead seq, while live close pairs still refer.
+    #[test]
+    fn evicted_clusters_are_never_referred() {
+        let mut drain = Drain::new(Config {
+            max_clusters: 3,
+            ..Config::default()
+        })
+        .expect("valid");
+        let first = drain.train("backup done files ok size mb");
+        let second = drain.train("backup done files ok size mb extra");
+        // An unrelated third fills the cap; a fourth close to the second
+        // evicts the oldest — seq 1 — instead.
+        drain.train("completely other words live here now");
+        let fourth = drain.train("backup done files ok size mb again");
+        assert!(drain.get(first.seq).is_none(), "seq 1 should be evicted");
+
+        // The live close pair still refers: 6 shared of 8 total = 0.75.
+        let referred = neighbours_of(&drain, second.seq);
+        assert_eq!(referred.len(), 1, "got {referred:?}");
+        assert_eq!(referred[0].seq, fourth.seq);
+
+        for cluster in drain.clusters() {
+            let referred = neighbours_of(&drain, cluster.seq);
+            assert!(
+                referred.iter().all(|c| drain.get(c.seq).is_some()),
+                "dead seq referred: {referred:?}"
+            );
+            assert!(
+                !referred.iter().any(|c| c.seq == first.seq),
+                "evicted seq referred: {referred:?}"
+            );
+        }
     }
 }

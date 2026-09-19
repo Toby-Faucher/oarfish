@@ -49,6 +49,7 @@ fn verdicts(dir: &PathBuf) -> Arc<Verdicts> {
                 "typesafe/jev-1.13",
             ),
             oarfish_engine::static_questions(),
+            oarfish_engine::merge_questions(),
             bundle(),
         )
         .expect("open"),
@@ -65,8 +66,18 @@ fn test_config() -> EngineConfig {
 
 fn engine_at(dir: &PathBuf) -> (Engine, Arc<Verdicts>) {
     let store = verdicts(dir);
-    let engine = Engine::new(Arc::clone(&store), test_config());
+    let engine = Engine::new(Arc::clone(&store), decide_client(), test_config());
     (engine, store)
+}
+
+/// The contextual-check client. Sync machine tests never flag a template, so
+/// this never fires; tests that flag one point it at wiremock instead.
+fn decide_client() -> Client {
+    Client::new(
+        "http://127.0.0.1:9/unreachable",
+        "test-key",
+        "typesafe/jev-1.13",
+    )
 }
 
 fn verdict(score: f64, actionable: f64) -> Verdict {
@@ -210,6 +221,7 @@ async fn a_burst_over_three_times_the_trailing_hour_raises_on_rate() {
     let store = verdicts(&dir);
     let mut engine = Engine::new(
         store,
+        decide_client(),
         EngineConfig {
             window_count_threshold: 1_000,
             silence: Duration::from_secs(300),
@@ -444,7 +456,7 @@ async fn reloaded_alarms_have_armed_timers_and_still_auto_clear() {
 
     let alarm_id = {
         let store = verdicts(&dir);
-        let mut first = Engine::new(Arc::clone(&store), test_config());
+        let mut first = Engine::new(Arc::clone(&store), decide_client(), test_config());
         first.on_classified(&event("web01"), id, &text, Some(&judged));
         assert_eq!(first.open_alarms().len(), 1);
         let alarm_id = first.open_alarms()[0].id;
@@ -461,7 +473,7 @@ async fn reloaded_alarms_have_armed_timers_and_still_auto_clear() {
     };
 
     let store = verdicts(&dir);
-    let mut second = Engine::new(store, test_config());
+    let mut second = Engine::new(store, decide_client(), test_config());
     let open = second.open_alarms();
     assert_eq!(open.len(), 1);
     assert_eq!(open[0].id, alarm_id);

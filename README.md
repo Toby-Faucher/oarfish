@@ -228,13 +228,13 @@ Milestones and their acceptance criteria are specified in
 
 - [x] Workspace scaffold, CI, licensing
 - [x] Design system and the board shell
-- [ ] **M0** — `oarfish-core` types, exported to the board via `ts-rs`
-- [ ] **M1** — mask bundle format + curated default bundle
+- [x] **M0** — `oarfish-core` types, exported to the board via `ts-rs`
+- [x] **M1** — mask bundle format + curated default bundle
 - [x] **M2** — Drain port, validated against drain3 on a shared corpus
 - [x] **M3** — ingest: syslog → journald → OTLP
 - [x] **M4** — Jev client + fjall store, with decision records
 - [x] **M5** — window, alarm state machine, SSE
-- [ ] **M5.5** — merge review + the contextual check (`wake_someone`)
+- [x] **M5.5** — merge review + the contextual check (`wake_someone`)
 - [ ] **M6** — the board on live data, ntfy delivery
 
 Not on the critical path: `oarfish masks synthesize`. The curated bundle carries M1–M6.

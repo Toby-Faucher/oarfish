@@ -44,6 +44,7 @@ mod tests {
             template: "EXT4-fs error (device <VAR:DEV>)".to_owned(),
             severity: Severity::Critical,
             host: "nas01".to_owned(),
+            lane: oarfish_core::Lane::Dashboard,
             count: 14,
             opened_at: OffsetDateTime::UNIX_EPOCH,
         }

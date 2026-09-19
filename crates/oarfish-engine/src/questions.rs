@@ -21,6 +21,34 @@ pub const SEVERITY_QUESTION: &str = "severity";
 /// The answer id the raise path reads as the actionability verdict. Same
 /// discipline as [`SEVERITY_QUESTION`].
 pub const ACTIONABLE_QUESTION: &str = "actionable";
+/// The answer id the raise path reads as the contextual flag: whether a
+/// burst of this template needs re-checking against surrounding context
+/// rather than settling on the static verdict alone. Same discipline as
+/// [`SEVERITY_QUESTION`].
+pub const CONTEXTUAL_QUESTION: &str = "contextual";
+
+/// The merge-review question set: one `noul`, in its own set — separate from
+/// the static six, so adding merge review cannot move `questions_hash` and
+/// invalidate the verdict table.
+///
+/// Keyed by the id the store's merge judge reads back
+/// ([`oarfish_store::MERGE_QUESTION`]), so a rename breaks the set at compile
+/// time instead of silently judging nothing.
+pub fn merge_questions() -> BTreeMap<String, Question> {
+    BTreeMap::from([(
+        oarfish_store::MERGE_QUESTION.to_owned(),
+        Question::noul(
+            serde_json::json!(
+                "Do these two log templates describe the same event type — \
+                 two halves of one real event split by an optional field or \
+                 a wording variant — rather than two different events? Answer \
+                 yes only when every line matching either template is the \
+                 same kind of occurrence."
+            ),
+            None,
+        ),
+    )])
+}
 
 /// The six static questions, keyed by the ids the engine reads back in the
 /// raise path (`severity`, `actionable`) and M5.5 will read (`contextual`).
@@ -89,7 +117,7 @@ pub fn static_questions() -> BTreeMap<String, Question> {
             ),
         ),
         (
-            "contextual".to_owned(),
+            CONTEXTUAL_QUESTION.to_owned(),
             Question::noul(
                 serde_json::json!(
                     "When this template bursts, does deciding whether it matters \
@@ -116,10 +144,26 @@ mod tests {
             ACTIONABLE_QUESTION,
             "transient",
             "security",
-            "contextual",
+            CONTEXTUAL_QUESTION,
         ] {
             assert!(questions.contains_key(key), "missing {key}");
         }
+    }
+
+    #[test]
+    fn the_merge_set_asks_only_the_merge_question() {
+        let questions = merge_questions();
+        assert_eq!(
+            questions.keys().collect::<Vec<_>>(),
+            vec![oarfish_store::MERGE_QUESTION]
+        );
+        // And it is disjoint from the static six: adding merge review cannot
+        // move `questions_hash` and invalidate the verdict table.
+        let static_set = static_questions();
+        assert!(
+            !static_set.contains_key(oarfish_store::MERGE_QUESTION),
+            "the merge question must not leak into the static set"
+        );
     }
 
     #[test]

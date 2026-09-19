@@ -65,6 +65,7 @@ mod tests {
             template: "task <VAR:NUM> failed".to_owned(),
             severity: crate::Severity::Minor,
             host: "web01".to_owned(),
+            lane: crate::Lane::Dashboard,
             count: 1,
             opened_at: time::OffsetDateTime::UNIX_EPOCH,
         }

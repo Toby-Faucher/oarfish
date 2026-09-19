@@ -13,6 +13,11 @@ export type Alarm = { id: AlarmId, template_id: TemplateId,
  */
 template: string, severity: Severity, host: string, 
 /**
+ * Where this alarm routed. M5 raises land here as `Dashboard`; the
+ * contextual check routes flagged bursts by `wake_someone`.
+ */
+lane: Lane, 
+/**
  * Occurrences folded into this alarm. Exported as a TypeScript `number`
  * rather than ts-rs's default `bigint`, because it crosses the wire as a
  * JSON number.
@@ -69,6 +74,19 @@ host: string, source: Source,
  * fields, OTLP attributes. `BTreeMap` for deterministic snapshots.
  */
 attrs: { [key in string]: string }, };
+
+/**
+ * Where an alarm would surface. Thresholds scale with the stakes: waking
+ * someone needs more certainty than drawing a card on a dashboard.
+ *
+ * This rides on [`Alarm`] rather than beside it so the raise publishes where
+ * it routed: M5 raises land [`Lane::Dashboard`], and M5.5's contextual check
+ * makes [`Lane::Page`] reachable with a real `wake_someone` behind it.
+ * Nothing is on the other side of the page lane until delivery lands — the
+ * signal and its delivery are separable, and landing the signal first means
+ * delivery builds against a value it can observe.
+ */
+export type Lane = "Page" | "Dashboard" | "Record";
 
 /**
  * The blake3 hash of the canonicalised question set, truncated to 16 bytes.

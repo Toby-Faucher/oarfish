@@ -136,11 +136,18 @@ async fn main() -> anyhow::Result<()> {
             )
         }
     };
+    // One engine task owns the windows, the state machine and the timers.
+    // The pipeline forwards it every classified line; the API reads its
+    // snapshot and subscribes to its changes. The contextual check judges
+    // through the same client as the verdicts: one key, one billing
+    // relationship, and the local-model fallback stays a config change.
+    let decide_client = client.clone();
     let verdicts = Arc::new(
         oarfish_store::Verdicts::open(
             &args.data_dir,
             client,
             oarfish_engine::static_questions(),
+            oarfish_engine::merge_questions(),
             oarfish_mask::curated().hash(),
         )
         .with_context(|| format!("cannot open store at {}", args.data_dir.display()))?,
@@ -151,6 +158,7 @@ async fn main() -> anyhow::Result<()> {
     // snapshot and subscribes to its changes.
     let engine = oarfish_engine::Engine::new(
         Arc::clone(&verdicts),
+        decide_client,
         oarfish_engine::EngineConfig::default(),
     );
     let api_state = oarfish_api::ApiState::new(
@@ -164,7 +172,8 @@ async fn main() -> anyhow::Result<()> {
     let pipeline = Pipeline::new(
         oarfish_mask::curated().clone(),
         oarfish_drain::Drain::new(oarfish_drain::Config::default())?,
-    );
+    )
+    .with_merges(verdicts.merges_handle());
     // Consumers first: the pipeline and the engine are running before any
     // socket starts reading, so startup never sheds into a channel with no
     // reader.

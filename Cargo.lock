@@ -1950,6 +1950,8 @@ dependencies = [
  "bytes",
  "futures",
  "oarfish-core",
+ "oarfish-drain",
+ "oarfish-ingest",
  "oarfish-jev",
  "oarfish-mask",
  "oarfish-store",
@@ -1960,6 +1962,8 @@ dependencies = [
  "tokio",
  "tokio-util",
  "tracing",
+ "ulid",
+ "wiremock",
 ]
 
 [[package]]
@@ -1971,7 +1975,9 @@ dependencies = [
  "insta",
  "oarfish-core",
  "oarfish-drain",
+ "oarfish-jev",
  "oarfish-mask",
+ "oarfish-store",
  "opentelemetry-proto",
  "proptest",
  "prost",
@@ -1985,6 +1991,7 @@ dependencies = [
  "tokio-util",
  "tonic",
  "tracing",
+ "wiremock",
 ]
 
 [[package]]
@@ -2026,6 +2033,7 @@ dependencies = [
  "oarfish-jev",
  "oarfish-mask",
  "postcard",
+ "proptest",
  "serde",
  "serde_json",
  "thiserror",
