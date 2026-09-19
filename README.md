@@ -228,8 +228,8 @@ Milestones and their acceptance criteria are specified in
 - [x] Design system and the board shell
 - [ ] **M0** — `oarfish-core` types, exported to the board via `ts-rs`
 - [ ] **M1** — mask bundle format + curated default bundle
-- [ ] **M2** — Drain port, validated against drain3 on a shared corpus
-- [ ] **M3** — ingest: syslog → journald → OTLP
+- [x] **M2** — Drain port, validated against drain3 on a shared corpus
+- [x] **M3** — ingest: syslog → journald → OTLP
 - [ ] **M4** — Jev client + fjall store, with decision records
 - [ ] **M5** — window, alarm state machine, SSE
 - [ ] **M6** — the board on live data, ntfy delivery
