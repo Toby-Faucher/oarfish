@@ -230,7 +230,7 @@ Milestones and their acceptance criteria are specified in
 - [ ] **M1** — mask bundle format + curated default bundle
 - [x] **M2** — Drain port, validated against drain3 on a shared corpus
 - [x] **M3** — ingest: syslog → journald → OTLP
-- [ ] **M4** — Jev client + fjall store, with decision records
+- [x] **M4** — Jev client + fjall store, with decision records
 - [ ] **M5** — window, alarm state machine, SSE
 - [ ] **M6** — the board on live data, ntfy delivery
 

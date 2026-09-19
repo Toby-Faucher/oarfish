@@ -197,7 +197,7 @@ cd web && bun run build
 
 | Need | Use | Not |
 |---|---|---|
-| Framing syslog over TCP | `tokio-util` `codec` (`LinesCodec`, `Framed`) | hand-rolled byte scanning |
+| Framing syslog over TCP | `tokio-util` `codec` (`AnyDelimiterCodec`, `Framed`) | `LinesCodec` — it decodes to `String`, so one non-UTF-8 byte kills the connection |
 | Alarm auto-clear / flap windows | `tokio-util` `time::DelayQueue` | a task per open alarm |
 | Coordinated shutdown | `tokio-util` `rt` (`CancellationToken`, `TaskTracker`) | ad-hoc channels |
 | OTLP ingest | `tonic` + `prost` + `opentelemetry-proto` | vendored `.proto` files |
@@ -236,22 +236,31 @@ edge case. Ingest is rate-limited on purpose.
 
 ## External APIs
 
-**Jev / TypeSafe System One, via OpenRouter** — base URL
-`https://openrouter.ai/api/v1`, model `typesafe/jev-1.13` (pinned), bearer auth via
-`OPENROUTER_API_KEY`. One key for every model oarfish calls, and it keeps the
-local-model fallback a config change.
+**Jev / TypeSafe System One, via OpenRouter** — endpoint
+`https://openrouter.ai/api/alpha/decisions`, model `typesafe/jev-1.13` (pinned), bearer
+auth via `OPENROUTER_API_KEY`. **Not `chat/completions`** — it rejects decisions
+models. One key for every model oarfish calls, and it keeps the local-model fallback a
+config change.
 
-Natively the body is `{state, model, questions}`; questions are `choice` / `score` /
-`noul` and all evaluate in parallel, so ask everything in one request. Request budget
-~32k tokens shared between state and questions. Answers carry calibrated
-`probabilities` and `confidence`.
+The body is `{model, state, questions}` — the native shape, passed through unmapped. A
+question is `{type, instructions, criteria}`, where `type` is `choice` / `score` /
+`noul` and `criteria` maps each option to what it means. All evaluate in parallel, so
+ask everything in one request. Request budget ~32k tokens shared between state and
+questions. Answers carry calibrated `probabilities` and `confidence`.
 
 **Never synthesize a confidence value.** It is read from the provider payload or it
 does not exist — the routing table keys off it, and a made-up number is worse than
-none. OpenRouter fronts Jev with an OpenAI-compatible surface, so whether per-answer
-confidence survives that mapping is verified in M4 before the client is written; if it
-does not, `oarfish-jev` keeps its shape and points at `https://api.typesafe.ai/v1/systemone`
-instead. Docs: https://docs.typesafe.ai and https://openrouter.ai/typesafe
+none. This is enforced by arithmetic, not just policy: the M4 gate (design §5.11,
+2026-09-19) measured max-probability 0.69 against confidence 0.59 and 0.64 against 0.27
+in one response, so confidence is an independent calibrated signal that no local
+formula could reconstruct.
+
+Two things the gate also found: a request for `typesafe/jev-1.13` is answered by a
+dated build (`typesafe/jev-1.13-20260917`), so **record the resolved model id in every
+decision record** — the pin alone does not stop behaviour moving overnight. And the
+endpoint is `alpha`: keep `oarfish-jev` thin, with the wire shape isolated behind it.
+
+Docs: https://docs.typesafe.ai and https://openrouter.ai/typesafe
 
 ---
 

@@ -241,18 +241,52 @@ SSE to the board; POST to ntfy.
 
 Jev is reached **through OpenRouter**, not the native TypeSafe endpoint: one key and
 one billing relationship for any model oarfish ever calls, and it keeps the local-model
-fallback in §13 a config change rather than a second client. Base URL
-`https://openrouter.ai/api/v1`, model id `typesafe/jev-1.13`, auth via
+fallback in §13 a config change rather than a second client. Decisions endpoint
+`https://openrouter.ai/api/alpha/decisions`, model id `typesafe/jev-1.13`, auth via
 `OPENROUTER_API_KEY`.
 
-The cost is that OpenRouter fronts Jev with an OpenAI-compatible surface, while the
-native endpoint takes `{state, model, questions}` and returns per-answer
-`probabilities` and `confidence` directly. **That confidence is load-bearing** — it is
-the entire input to the routing table in 5.9 — and it is never synthesized locally; a
-made-up confidence is worse than none. So the M4 spike has one job, and it is a gate,
-not a formality: send a two-question request through OpenRouter and confirm calibrated
-per-answer confidence survives the mapping. If it does not, `oarfish-jev` keeps its
-shape and points at the native endpoint instead.
+**That confidence is load-bearing** — it is the entire input to the routing table in
+5.9 — and it is never synthesized locally; a made-up confidence is worse than none. The
+M4 gate was therefore to confirm calibrated per-answer confidence survives the trip
+through OpenRouter.
+
+**Gate result, 2026-09-19: passed, and the premise behind it was wrong.** This section
+assumed OpenRouter fronts Jev with an OpenAI-compatible surface and that confidence
+might be lost in that mapping. There is no such mapping. `chat/completions` rejects the
+model outright — *"typesafe/jev-1.13 is a decisions model and cannot be used with the
+chat/completions endpoint"* — and decisions models are served at
+`https://openrouter.ai/api/alpha/decisions`, which takes the native
+`{model, state, questions}` body and returns the native answer shape. Nothing is
+remapped, so nothing can be lost. Verified response:
+
+```json
+"answers": {
+  "kind": { "type": "choice", "choice": "software", "confidence": 0.59,
+            "probabilities": {"software":0.69,"hardware":0.31,"noise":0,"security":0} }
+}
+```
+
+A question is `{type, instructions, criteria}`, where `type` is `choice` | `score` |
+`noul` and `criteria` maps each option to what it means.
+
+Four findings from the gate that constrain M4:
+
+1. **Confidence is not derivable from the probabilities.** One request returned max
+   probability 0.69 against confidence 0.59, and 0.64 against 0.27. Different
+   relationships in the same response, so confidence is an independent calibrated
+   signal, not a function of the spread. The rule against synthesizing one is not only
+   policy — there is no arithmetic that would reconstruct it.
+2. **The pin does not pin.** A request for `typesafe/jev-1.13` is answered by
+   `typesafe/jev-1.13-20260917`. A dated build moves underneath the id, so §9's promise
+   that behaviour will not change overnight is not currently guaranteed. Either pin the
+   dated id or record the resolved id in every decision record, so a behaviour change is
+   at least visible in the replay trail.
+3. **The endpoint is `alpha`.** The surface M4 builds on is explicitly unstable, which
+   is the argument for `oarfish-jev` staying a thin transport with the wire shape
+   isolated behind it.
+4. **It is very cheap.** 489 input and 75 output tokens cost $0.0000205 — roughly two
+   cents per thousand templates judged. Per-template caching is therefore about
+   determinism and latency, not about money.
 
 ## 6. Data model
 
@@ -277,11 +311,16 @@ verdict lookups don't touch disk per line.
 
 | Keyspace | Key | Value |
 |---|---|---|
-| `verdicts` | `TemplateId` | static verdict + model + timestamp |
+| `verdicts` | `template_id (32B) ++ questions_hash (16B) ++ resolved_model_id` | static verdict + model + timestamp |
 | `merges` | `(id_a, id_b)` | merge decision |
 | `alarms` | `Ulid` | alarm record and state |
 | `records` | `Ulid` | decision record: exact state, questions, answers |
 | `corrections` | `TemplateId` | local operator corrections |
+
+The `verdicts` key is three components, not one (M4, `docs/specs/2026-09-19-m4-jev-store-design.md`
+§4): a verdict is only valid for the question set that produced it and the model build
+that answered. The fixed-width components lead so a prefix scan on `template_id`
+returns every verdict a template has ever received.
 
 **Decision records are the trust feature.** Every Jev call is persisted with its exact
 input, so *"why did this wake me three weeks ago"* has an answer. They are also what
