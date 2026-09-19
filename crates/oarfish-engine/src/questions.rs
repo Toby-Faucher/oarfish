@@ -14,6 +14,14 @@ use std::collections::BTreeMap;
 
 use oarfish_jev::Question;
 
+/// The answer id the raise path reads as the X.733 severity. Defined here,
+/// beside the question, so a rename breaks the gate's reader at compile
+/// time instead of silently closing it to `None`.
+pub const SEVERITY_QUESTION: &str = "severity";
+/// The answer id the raise path reads as the actionability verdict. Same
+/// discipline as [`SEVERITY_QUESTION`].
+pub const ACTIONABLE_QUESTION: &str = "actionable";
+
 /// The six static questions, keyed by the ids the engine reads back in the
 /// raise path (`severity`, `actionable`) and M5.5 will read (`contextual`).
 pub fn static_questions() -> BTreeMap<String, Question> {
@@ -35,7 +43,7 @@ pub fn static_questions() -> BTreeMap<String, Question> {
             ),
         ),
         (
-            "severity".to_owned(),
+            SEVERITY_QUESTION.to_owned(),
             Question::score(
                 serde_json::json!(
                     "How severe is this template on its own, before considering \
@@ -50,7 +58,7 @@ pub fn static_questions() -> BTreeMap<String, Question> {
             ),
         ),
         (
-            "actionable".to_owned(),
+            ACTIONABLE_QUESTION.to_owned(),
             Question::noul(
                 serde_json::json!(
                     "Can a human operator do anything about this: fix it, \
@@ -104,8 +112,8 @@ mod tests {
         let questions = static_questions();
         for key in [
             "kind",
-            "severity",
-            "actionable",
+            SEVERITY_QUESTION,
+            ACTIONABLE_QUESTION,
             "transient",
             "security",
             "contextual",

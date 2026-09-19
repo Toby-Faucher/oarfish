@@ -26,9 +26,7 @@ use std::future::poll_fn;
 use std::sync::{Arc, RwLock};
 use std::task::Poll;
 
-use oarfish_core::{
-    Alarm, AlarmChange, AlarmId, EngineInput, Event, Severity, TemplateId, Verdict, VerdictAnswer,
-};
+use oarfish_core::{Alarm, AlarmChange, AlarmId, EngineInput, Event, TemplateId, Verdict};
 use oarfish_store::Verdicts;
 use time::OffsetDateTime;
 use tokio::sync::{broadcast, mpsc};
@@ -37,6 +35,7 @@ use tokio_util::time::DelayQueue;
 
 use crate::{
     EngineConfig, WindowTable,
+    gate::{Gate, gate},
     windows::{SHORT_WINDOW_SECS, WindowStats},
 };
 
@@ -66,44 +65,6 @@ pub fn route(wake_someone: Option<f64>) -> Lane {
         Some(_) => Lane::Record,
         None => Lane::Dashboard,
     }
-}
-
-/// Read the severity score answer as the X.733 severity the board renders.
-/// The mapping is a rounding of the 0–3 score: `3 -> critical`, `2 ->
-/// major`, `1 -> minor`, `0 -> info`. `cleared` is never reachable from a
-/// score — it is a state the machine assigns, never a judgement Jev makes.
-fn severity_of(verdict: &Verdict) -> Option<Severity> {
-    match verdict.answers.get("severity")? {
-        VerdictAnswer::Score { score, .. } => Some(match score.round() as i64 {
-            3.. => Severity::Critical,
-            2 => Severity::Major,
-            1 => Severity::Minor,
-            _ => Severity::Info,
-        }),
-        _ => None,
-    }
-}
-
-/// Whether the `actionable` noul value clears the threshold. A missing or
-/// misshapen answer closes the gate: an unjudged template never raises,
-// no matter how hard it bursts.
-fn is_actionable(verdict: &Verdict, threshold: f64) -> Option<bool> {
-    match verdict.answers.get("actionable")? {
-        VerdictAnswer::Noul { noul } => Some(*noul >= threshold),
-        _ => None,
-    }
-}
-
-/// The gate: actionable at or above the severity floor, else nothing raises.
-fn gate(verdict: &Verdict, config: &EngineConfig) -> Option<Severity> {
-    let severity = severity_of(verdict)?;
-    if severity < config.gate_floor {
-        return None;
-    }
-    if !is_actionable(verdict, config.actionable_threshold)? {
-        return None;
-    }
-    Some(severity)
 }
 
 /// Dedupe key: one alarm per template per host. The window stays per
@@ -228,7 +189,7 @@ impl Engine {
         let now = tokio::time::Instant::now();
         let stats = self.windows.record(&template_id, &event.host, now);
         let Some(verdict) = verdict else { return };
-        let Some(severity) = gate(verdict, &self.config) else {
+        let Some(Gate { severity }) = gate(verdict, &self.config) else {
             return;
         };
         let key: AlarmKey = (template_id, event.host.clone());
@@ -438,39 +399,6 @@ fn window_triggered(stats: &WindowStats, config: &EngineConfig) -> bool {
 mod tests {
     use super::*;
 
-    #[test]
-    fn severity_scores_round_to_the_x733_subset() {
-        assert_eq!(
-            severity_of(&verdict_with(2.6, 0.9)),
-            Some(Severity::Critical)
-        );
-        assert_eq!(severity_of(&verdict_with(2.4, 0.9)), Some(Severity::Major));
-        assert_eq!(severity_of(&verdict_with(1.4, 0.9)), Some(Severity::Minor));
-        assert_eq!(
-            severity_of(&verdict_with(3.0, 0.9)),
-            Some(Severity::Critical)
-        );
-        assert_eq!(severity_of(&verdict_with(0.2, 0.9)), Some(Severity::Info));
-    }
-
-    #[test]
-    fn cleared_is_never_reachable_from_a_score() {
-        for score in [0.0, 1.0, 2.0, 3.0, 100.0, -100.0] {
-            assert_ne!(
-                severity_of(&verdict_with(score, 0.9)),
-                Some(Severity::Cleared)
-            );
-        }
-    }
-
-    #[test]
-    fn a_missing_or_misshapen_answer_closes_the_gate() {
-        let mut verdict = verdict_with(3.0, 0.9);
-        verdict.answers.remove("severity");
-        assert_eq!(severity_of(&verdict), None);
-        assert_eq!(gate(&verdict, &EngineConfig::default()), None);
-    }
-
     /// The routing table as written: 0.93 pages, 0.61 does not, and nothing
     /// in M5 reaches the page lane.
     #[test]
@@ -479,30 +407,5 @@ mod tests {
         assert_eq!(route(Some(0.61)), Lane::Dashboard);
         assert_eq!(route(Some(0.30)), Lane::Record);
         assert_eq!(route(None), Lane::Dashboard);
-    }
-
-    fn verdict_with(score: f64, actionable: f64) -> Verdict {
-        use std::collections::BTreeMap;
-        Verdict {
-            template_id: TemplateId::of("task <VAR:NUM> failed"),
-            questions_hash: oarfish_core::QuestionsHash::of(b"{}"),
-            model: "typesafe/jev-1.13-20260917".to_owned(),
-            answers: BTreeMap::from([
-                (
-                    "severity".to_owned(),
-                    VerdictAnswer::Score {
-                        score,
-                        confidence: 0.61,
-                        probabilities: BTreeMap::new(),
-                        legend: None,
-                    },
-                ),
-                (
-                    "actionable".to_owned(),
-                    VerdictAnswer::Noul { noul: actionable },
-                ),
-            ]),
-            judged_at: OffsetDateTime::UNIX_EPOCH,
-        }
     }
 }
