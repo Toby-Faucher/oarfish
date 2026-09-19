@@ -421,4 +421,34 @@ mod tests {
         assert!(cache.records_for_template(&job().template_id).is_empty());
         let _ = std::fs::remove_dir_all(&dir);
     }
+
+    /// The seam, proven through the real wiring: a spawned judge judging
+    /// through the fake lands a verdict the cache serves, with no network
+    /// anywhere in the path.
+    #[tokio::test]
+    async fn a_spawned_judge_with_a_fake_judges_through_the_wiring() {
+        let dir =
+            std::env::temp_dir().join(format!("oarfish-judge-spawn-test-{}", std::process::id()));
+        let _ = std::fs::create_dir_all(&dir);
+        let shared = shared(&dir);
+        let judge = Judge::spawn(Arc::clone(&shared), FakeDecide::ok(), 16, 2);
+        let cache = crate::verdict_cache::VerdictCache::new(Arc::clone(&shared));
+
+        judge.enqueue(job().template_id, &job().template);
+        let id = job().template_id;
+        let verdict = tokio::time::timeout(std::time::Duration::from_secs(5), async {
+            loop {
+                if let Some(verdict) = cache.lookup(&id) {
+                    break verdict;
+                }
+                tokio::time::sleep(std::time::Duration::from_millis(10)).await;
+            }
+        })
+        .await
+        .expect("the fake judges within the timeout");
+        assert_eq!(verdict.model, "fake-build-1");
+
+        judge.close().await.expect("close");
+        let _ = std::fs::remove_dir_all(&dir);
+    }
 }

@@ -45,7 +45,13 @@ impl VerdictCache {
     pub fn lookup(&self, template_id: &TemplateId) -> Option<Verdict> {
         let key = (*template_id, self.shared.bundle_hash);
         if let Some(hit) = self.shared.cache.get(&key) {
-            return Some(hit);
+            // The key already scopes template and bundle, and the cache
+            // lives no longer than the instance whose question set it was
+            // judged under — but validity is checked, not reasoned about:
+            // a hit for another question set falls through and re-reads.
+            if hit.questions_hash == self.shared.questions_hash {
+                return Some(hit);
+            }
         }
         match read_latest(&self.shared, template_id) {
             Ok(Some(verdict)) => {
