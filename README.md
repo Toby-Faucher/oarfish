@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="docs/assets/oarfish-logo.png" alt="oarfish" width="420">
+
 # 🐟 oarfish
 
 **Log-driven alarms for homelabs, with a judgment model where the guesswork used to be.**
