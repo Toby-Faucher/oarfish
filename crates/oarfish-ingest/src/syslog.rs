@@ -9,8 +9,11 @@
 //! Overload is where the transports differ. TCP applies backpressure — the
 //! read loop `send().await`s, the sender's window closes on its own, nothing
 //! is lost. UDP has no backpressure to apply, so a full channel means shed
-//! and count via [`crate::ShedTracker`]. Framing on TCP is `LinesCodec`, per
-//! the dependency table; hand-rolled byte scanning need not apply.
+//! and count via [`crate::ShedTracker`]. Framing on TCP is
+//! `AnyDelimiterCodec`, per the dependency table's spirit: it must be
+//! byte-oriented, because `LinesCodec` decodes to `String` and a single
+//! non-UTF-8 byte would kill the whole connection — exactly the malformed
+//! input §7 exists to carry.
 
 use std::io;
 use std::net::SocketAddr;
@@ -26,7 +29,7 @@ use time::OffsetDateTime;
 use tokio::net::{TcpListener, TcpStream, UdpSocket};
 use tokio::sync::mpsc;
 use tokio_stream::StreamExt as _;
-use tokio_util::codec::{Framed, LinesCodec};
+use tokio_util::codec::{AnyDelimiterCodec, AnyDelimiterCodecError, Framed};
 use tokio_util::sync::CancellationToken;
 
 use crate::{IngestError, ShedTracker};
@@ -43,8 +46,12 @@ const MAX_DATAGRAM_BYTES: usize = 65_507;
 /// Turn one frame's bytes into an `Event`. Pure, so the snapshot harness can
 /// pin it: same bytes in, same event out.
 ///
-/// `peer` is the socket peer as text. It becomes `host` when the frame names
-/// no host of its own, and it is the only host a malformed frame ever gets.
+/// `peer` is the socket peer. It becomes `host` — the peer *IP*, never
+/// `host:port` — when the frame names no host of its own, and it is the only
+/// host a malformed frame ever gets. The port is stripped because it is
+/// ephemeral: a UDP source port changes per datagram, so keeping it would
+/// hand every malformed line a distinct host and fragment per-host grouping,
+/// dedup and windows downstream.
 ///
 /// Malformed input is data, not an error. When the bytes are not UTF-8 or
 /// `syslog_loose` rejects the frame outright, the event still goes out: raw
@@ -52,7 +59,7 @@ const MAX_DATAGRAM_BYTES: usize = 65_507;
 /// parser rejects is a device worth an alarm; discarding those lines because
 /// the firmware disagrees with the RFC would delete exactly the signal this
 /// crate exists to carry.
-pub fn frame_to_event(raw: &[u8], peer: &str, received_at: OffsetDateTime) -> Event {
+pub fn frame_to_event(raw: &[u8], peer: &SocketAddr, received_at: OffsetDateTime) -> Event {
     let text = std::str::from_utf8(raw).ok();
     let parsed = text.and_then(|line| {
         parse_message_with_year_exact(line, |_| received_at.year(), Variant::Either).ok()
@@ -93,7 +100,10 @@ pub fn frame_to_event(raw: &[u8], peer: &str, received_at: OffsetDateTime) -> Ev
                 raw: Bytes::copy_from_slice(raw),
                 received_at,
                 timestamp,
-                host: message.hostname.unwrap_or(peer).to_owned(),
+                host: message
+                    .hostname
+                    .map(ToOwned::to_owned)
+                    .unwrap_or_else(|| peer.ip().to_string()),
                 source: Source::Syslog,
                 attrs,
             }
@@ -102,7 +112,7 @@ pub fn frame_to_event(raw: &[u8], peer: &str, received_at: OffsetDateTime) -> Ev
             raw: Bytes::copy_from_slice(raw),
             received_at,
             timestamp: None,
-            host: peer.to_owned(),
+            host: peer.ip().to_string(),
             source: Source::Syslog,
             attrs: std::collections::BTreeMap::from([("parse".to_owned(), "failed".to_owned())]),
         },
@@ -153,14 +163,11 @@ impl SyslogUdp {
                     match res {
                         Ok((len, peer)) => {
                             if self.intake.check().is_err() {
-                                self.shed.note_dropped();
+                                self.shed.note_rate_limited();
                                 continue;
                             }
-                            let event = frame_to_event(
-                                &buf[..len],
-                                &peer.to_string(),
-                                OffsetDateTime::now_utc(),
-                            );
+                            let event =
+                                frame_to_event(&buf[..len], &peer, OffsetDateTime::now_utc());
                             match tx.try_send(event) {
                                 Ok(()) => {}
                                 // The pipeline is gone: no point holding the socket.
@@ -230,23 +237,36 @@ impl SyslogTcp {
         tx: mpsc::Sender<Event>,
         cancel: CancellationToken,
     ) {
-        let mut framed = Framed::new(socket, LinesCodec::new_with_max_length(MAX_LINE_BYTES));
-        let peer = peer.to_string();
+        // Byte-oriented framing, deliberately not LinesCodec: lines arrive as
+        // BytesMut, so a Latin-1 byte in one line neither kills the line nor
+        // the connection. Only an overlong chunk or a real I/O error tears
+        // down the peer.
+        let mut framed = Framed::new(
+            socket,
+            AnyDelimiterCodec::new_with_max_length(vec![b'\n'], vec![b'\n'], MAX_LINE_BYTES),
+        );
         loop {
             tokio::select! {
                 () = cancel.cancelled() => break,
                 next = framed.next() => {
                     match next {
-                        Some(Ok(line)) => {
+                        Some(Ok(chunk)) => {
                             let event =
-                                frame_to_event(line.as_bytes(), &peer, OffsetDateTime::now_utc());
+                                frame_to_event(&chunk, &peer, OffsetDateTime::now_utc());
                             // Backpressure, not shedding: stall here.
                             if tx.send(event).await.is_err() {
                                 break;
                             }
                         }
                         Some(Err(e)) => {
-                            tracing::debug!(error = %e, peer = %peer, "syslog-tcp frame failed");
+                            match e {
+                                AnyDelimiterCodecError::MaxChunkLengthExceeded => {
+                                    tracing::debug!(%peer, "syslog-tcp line over the limit");
+                                }
+                                AnyDelimiterCodecError::Io(e) => {
+                                    tracing::debug!(error = %e, %peer, "syslog-tcp read failed");
+                                }
+                            }
                             break;
                         }
                         None => break,
@@ -265,10 +285,14 @@ mod tests {
         OffsetDateTime::from_unix_timestamp(1_789_812_000).expect("fixed test time")
     }
 
+    fn peer() -> SocketAddr {
+        "10.0.0.9:40000".parse().expect("test peer")
+    }
+
     #[test]
     fn an_rfc5424_frame_becomes_an_event() {
         let raw = b"<34>1 2026-09-19T10:00:00Z web01 nginx 123 req1 - connection accepted";
-        let event = frame_to_event(raw, "10.0.0.5:514", received_at());
+        let event = frame_to_event(raw, &peer(), received_at());
         insta::assert_json_snapshot!(event, @r###"
         {
           "raw": "<34>1 2026-09-19T10:00:00Z web01 nginx 123 req1 - connection accepted",
@@ -291,7 +315,7 @@ mod tests {
     #[test]
     fn an_rfc3164_frame_becomes_an_event() {
         let raw = b"<34>Sep 19 10:00:01 web01 sshd[1234]: Failed password for root";
-        let event = frame_to_event(raw, "10.0.0.5:514", received_at());
+        let event = frame_to_event(raw, &peer(), received_at());
         assert_eq!(event.host, "web01");
         assert_eq!(event.source, Source::Syslog);
         assert_eq!(
@@ -312,8 +336,10 @@ mod tests {
     #[test]
     fn an_unparseable_frame_is_still_an_event_marked_failed() {
         let raw = b"<999>this pri does not exist";
-        let event = frame_to_event(raw, "10.0.0.9:40000", received_at());
-        assert_eq!(event.host, "10.0.0.9:40000");
+        let event = frame_to_event(raw, &peer(), received_at());
+        // The peer IP, never host:port: the source port is ephemeral, and
+        // keeping it would hand every malformed line a distinct host.
+        assert_eq!(event.host, "10.0.0.9");
         assert_eq!(event.attrs.get("parse").map(String::as_str), Some("failed"));
         assert_eq!(event.raw.as_ref(), raw);
     }
@@ -321,7 +347,8 @@ mod tests {
     #[test]
     fn non_utf8_bytes_are_still_an_event_marked_failed() {
         let raw = b"\xff\xfe\x00binary junk";
-        let event = frame_to_event(raw, "10.0.0.9:40000", received_at());
+        let event = frame_to_event(raw, &peer(), received_at());
+        assert_eq!(event.host, "10.0.0.9");
         assert_eq!(event.attrs.get("parse").map(String::as_str), Some("failed"));
         assert_eq!(event.raw.as_ref(), raw);
     }
@@ -330,12 +357,12 @@ mod tests {
     proptest::proptest! {
         #[test]
         fn the_raw_frame_survives_byte_for_byte(bytes in proptest::collection::vec(proptest::num::u8::ANY, 0..4096)) {
-            let event = frame_to_event(&bytes, "peer", received_at());
+            let event = frame_to_event(&bytes, &"127.0.0.1:9999".parse().expect("peer"), received_at());
             proptest::prop_assert_eq!(event.raw.as_ref(), bytes.as_slice());
         }
     }
 
-    /// One frame split across two writes is reassembled by `LinesCodec`.
+    /// One frame split across two writes is reassembled by the codec.
     #[tokio::test]
     async fn tcp_reassembles_a_frame_split_across_two_writes() {
         use tokio::io::AsyncWriteExt as _;
@@ -384,7 +411,7 @@ mod tests {
         use tokio::io::AsyncWriteExt as _;
 
         fn syslog_line(n: u8) -> Vec<u8> {
-            format!("<34>1 2026-09-19T10:00:0{n}Z web01 nginx 1 - line {n}\n").into_bytes()
+            format!("<34>1 2026-09-19T10:00:0{n}Z web01 nginx 1 req{n} - line {n}\n").into_bytes()
         }
 
         // UDP sheds.
@@ -459,8 +486,57 @@ mod tests {
             .expect("no timeout")
             .expect("the stalled line arrives once the channel frees up");
         assert!(stalled.raw_lossy().contains("line 2"));
+        assert_eq!(stalled.host, "web01");
         cancel.cancel();
         tokio::time::timeout(std::time::Duration::from_secs(5), tcp_handle)
+            .await
+            .expect("no timeout")
+            .expect("join");
+    }
+
+    /// A single non-UTF-8 byte must cost one line, not the connection. The
+    /// codec is byte-oriented, so the Latin-1 line still arrives (marked
+    /// failed, raw verbatim) and the valid line behind it arrives too.
+    #[tokio::test]
+    async fn tcp_survives_a_non_utf8_line() {
+        use tokio::io::AsyncWriteExt as _;
+
+        let listener = SyslogTcp::bind("127.0.0.1:0".parse().expect("addr"))
+            .await
+            .expect("bind");
+        let addr = listener.local_addr().expect("local addr");
+        let (tx, mut rx) = mpsc::channel(16);
+        let cancel = CancellationToken::new();
+        let handle = tokio::spawn(listener.run(tx, cancel.clone()));
+
+        let mut client = tokio::net::TcpStream::connect(addr).await.expect("connect");
+        // A degree sign in Latin-1 where UTF-8 was expected.
+        client
+            .write_all(b"temp 23\xb0C on sensor 7\n")
+            .await
+            .expect("latin-1 line");
+        client
+            .write_all(b"<34>1 2026-09-19T10:00:00Z web01 nginx 1 req1 - after\n")
+            .await
+            .expect("valid line");
+
+        let bad = tokio::time::timeout(std::time::Duration::from_secs(5), rx.recv())
+            .await
+            .expect("no timeout")
+            .expect("the latin-1 line arrives");
+        assert_eq!(bad.raw.as_ref(), b"temp 23\xb0C on sensor 7");
+        assert_eq!(bad.attrs.get("parse").map(String::as_str), Some("failed"));
+        assert_eq!(bad.host, "127.0.0.1");
+
+        let good = tokio::time::timeout(std::time::Duration::from_secs(5), rx.recv())
+            .await
+            .expect("no timeout")
+            .expect("the connection survives for the next line");
+        assert_eq!(good.host, "web01");
+        assert!(!good.attrs.contains_key("parse"));
+
+        cancel.cancel();
+        tokio::time::timeout(std::time::Duration::from_secs(5), handle)
             .await
             .expect("no timeout")
             .expect("join");

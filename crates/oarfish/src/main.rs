@@ -21,6 +21,25 @@ use tokio::sync::mpsc;
 use tokio_util::sync::CancellationToken;
 use tokio_util::task::TaskTracker;
 
+/// Ctrl-C everywhere, SIGTERM too. This ships as a systemd unit, and
+/// `systemctl stop` sends SIGTERM — whose default disposition would kill the
+/// process instantly and discard up to a channel-full of queued events.
+async fn shutdown_signal() {
+    #[cfg(unix)]
+    {
+        let mut term = tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate())
+            .expect("SIGTERM handler installs");
+        tokio::select! {
+            _ = tokio::signal::ctrl_c() => {},
+            _ = term.recv() => {},
+        }
+    }
+    #[cfg(not(unix))]
+    {
+        let _ = tokio::signal::ctrl_c().await;
+    }
+}
+
 /// Log-driven alarms for homelabs.
 #[derive(Debug, Parser)]
 struct Args {
@@ -130,9 +149,7 @@ async fn main() -> anyhow::Result<()> {
         "oarfish listening"
     );
 
-    tokio::signal::ctrl_c()
-        .await
-        .context("cannot listen for shutdown")?;
+    shutdown_signal().await;
     tracing::info!("shutting down: listeners stop, the pipeline drains");
     cancel.cancel();
     tracker.close();

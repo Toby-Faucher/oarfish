@@ -111,7 +111,7 @@ fn hex_string(bytes: &[u8]) -> String {
 /// standing up a server: same record in, same event out.
 ///
 /// `resource_attrs` are the resource's flattened attributes, `scope` the
-/// instrumentation scope name, `peer` the gRPC peer as text. The host is
+/// instrumentation scope name, `peer` the gRPC peer IP as text. The host is
 /// `host.name` when the resource names one, else the peer. The source
 /// timestamp prefers `time_unix_nano`, then `observed_time_unix_nano`, then
 /// nothing — a zero timestamp means unknown, not 1970.
@@ -203,9 +203,11 @@ impl LogsService for OtlpService {
         &self,
         request: tonic::Request<ExportLogsServiceRequest>,
     ) -> Result<tonic::Response<ExportLogsServiceResponse>, tonic::Status> {
+        // The peer IP, never host:port: the source port is ephemeral, and the
+        // fallback host must be stable for per-host grouping downstream.
         let peer = request
             .remote_addr()
-            .map(|addr| addr.to_string())
+            .map(|addr| addr.ip().to_string())
             .unwrap_or_default();
         let received_at = OffsetDateTime::now_utc();
         let inner = request.into_inner();
@@ -317,15 +319,15 @@ mod tests {
     }
 
     #[test]
-    fn a_missing_host_falls_back_to_the_peer() {
+    fn a_missing_host_falls_back_to_the_peer_ip() {
         let event = log_record_to_event(
             &record("hello"),
             &BTreeMap::new(),
             "",
-            "10.0.0.5:4317",
+            "10.0.0.5",
             received_at(),
         );
-        assert_eq!(event.host, "10.0.0.5:4317");
+        assert_eq!(event.host, "10.0.0.5");
     }
 
     #[test]
@@ -361,25 +363,38 @@ mod tests {
             .expect("connect");
         client
             .export(ExportLogsServiceRequest {
-                resource_logs: vec![ResourceLogs {
-                    resource: Some(Resource {
-                        attributes: vec![KeyValue {
-                            key: "host.name".to_owned(),
-                            value: Some(string_value("web01")),
+                resource_logs: vec![
+                    ResourceLogs {
+                        resource: Some(Resource {
+                            attributes: vec![KeyValue {
+                                key: "host.name".to_owned(),
+                                value: Some(string_value("web01")),
+                                ..Default::default()
+                            }],
+                            ..Default::default()
+                        }),
+                        scope_logs: vec![ScopeLogs {
+                            scope: Some(InstrumentationScope {
+                                name: "app".to_owned(),
+                                ..Default::default()
+                            }),
+                            log_records: vec![record("connection refused")],
                             ..Default::default()
                         }],
                         ..Default::default()
-                    }),
-                    scope_logs: vec![ScopeLogs {
-                        scope: Some(InstrumentationScope {
-                            name: "app".to_owned(),
+                    },
+                    // No resource at all: the fallback host is the peer IP,
+                    // never host:port.
+                    ResourceLogs {
+                        resource: None,
+                        scope_logs: vec![ScopeLogs {
+                            scope: None,
+                            log_records: vec![record("no resource here")],
                             ..Default::default()
-                        }),
-                        log_records: vec![record("connection refused")],
+                        }],
                         ..Default::default()
-                    }],
-                    ..Default::default()
-                }],
+                    },
+                ],
             })
             .await
             .expect("export");
@@ -392,6 +407,13 @@ mod tests {
         assert_eq!(event.host, "web01");
         assert_eq!(event.source, Source::Otlp);
         assert_eq!(event.attrs.get("scope").map(String::as_str), Some("app"));
+
+        let fallback = tokio::time::timeout(std::time::Duration::from_secs(5), rx.recv())
+            .await
+            .expect("no timeout")
+            .expect("a second event");
+        assert_eq!(fallback.raw_lossy(), "no resource here");
+        assert_eq!(fallback.host, "127.0.0.1");
 
         cancel.cancel();
         tokio::time::timeout(std::time::Duration::from_secs(5), handle)

@@ -49,15 +49,29 @@ impl ShedTracker {
         }
     }
 
-    /// Record one shed event. Increments the counter always; emits the warn at
-    /// most once per interval, with the total so far.
+    /// Record one shed event: the channel was full and this transport has no
+    /// backpressure to apply. Increments the counter always; emits the warn
+    /// at most once per interval, with the total so far.
     pub fn note_dropped(&self) {
+        self.note("the channel is full and this transport has no backpressure");
+    }
+
+    /// Record one shed event: the datagram arrived over the UDP intake quota.
+    /// Same counting and damped warn as [`ShedTracker::note_dropped`], but the
+    /// warn names this cause — a lab flooding an idle pipeline must not be
+    /// sent to debug the channel.
+    pub fn note_rate_limited(&self) {
+        self.note("over the UDP intake quota on a non-full channel");
+    }
+
+    fn note(&self, cause: &str) {
         let total = self.dropped.fetch_add(1, Ordering::Relaxed) + 1;
         if self.warn_limiter.check().is_ok() {
             tracing::warn!(
                 source = self.source,
                 dropped_total = total,
-                "shedding intake: the channel is full and this transport has no backpressure"
+                cause = cause,
+                "shedding intake"
             );
         }
     }
@@ -94,5 +108,13 @@ mod tests {
         let other = tracker.clone();
         other.note_dropped();
         assert_eq!(tracker.dropped(), 1);
+    }
+
+    #[test]
+    fn both_causes_share_the_counter() {
+        let tracker = ShedTracker::new("test");
+        tracker.note_dropped();
+        tracker.note_rate_limited();
+        assert_eq!(tracker.dropped(), 2);
     }
 }

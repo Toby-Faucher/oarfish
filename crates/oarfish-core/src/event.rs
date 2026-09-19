@@ -77,19 +77,30 @@ impl Event {
     }
 }
 
-/// `Bytes` on the wire as a lossy string. The store holds real bytes; JSON —
-/// and the board — cannot, so this adapter is the boundary where invalid
-/// UTF-8 becomes `U+FFFD`, and nowhere else.
+/// `Bytes` on the wire. Human-readable formats (JSON, and through it the
+/// board, which cannot render invalid UTF-8) get a lossy string; binary
+/// formats (`postcard`, for M4's fjall store) get the exact bytes. Gating on
+/// `is_human_readable` is what keeps invariant 3 through the store: without
+/// it every persisted raw line would carry `U+FFFD` instead of the bytes that
+/// arrived.
 mod raw_serde {
     use bytes::Bytes;
-    use serde::{Deserialize, Deserializer, Serializer};
+    use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
     pub fn serialize<S: Serializer>(raw: &Bytes, serializer: S) -> Result<S::Ok, S::Error> {
-        serializer.serialize_str(&String::from_utf8_lossy(raw))
+        if serializer.is_human_readable() {
+            serializer.serialize_str(&String::from_utf8_lossy(raw))
+        } else {
+            raw.to_vec().serialize(serializer)
+        }
     }
 
     pub fn deserialize<'de, D: Deserializer<'de>>(deserializer: D) -> Result<Bytes, D::Error> {
-        String::deserialize(deserializer).map(|s| Bytes::from(s.into_bytes()))
+        if deserializer.is_human_readable() {
+            String::deserialize(deserializer).map(|s| Bytes::from(s.into_bytes()))
+        } else {
+            Vec::<u8>::deserialize(deserializer).map(Bytes::from)
+        }
     }
 }
 
@@ -148,6 +159,23 @@ mod tests {
 
         let json = serde_json::to_value(&event).expect("serialize");
         assert_eq!(json["raw"], serde_json::json!("ssh\u{fffd}d"));
+    }
+
+    /// The store boundary must not share JSON's lossiness: under `postcard`
+    /// the adapter carries the exact bytes. Pinned at the adapter level with
+    /// bytes JSON cannot represent — full-Event postcard coverage is M4's to
+    /// define, since it does not persist Events today.
+    #[test]
+    fn postcard_preserves_non_utf8_bytes_exactly() {
+        use serde::{Deserialize, Serialize};
+
+        #[derive(Debug, PartialEq, Serialize, Deserialize)]
+        struct Raw(#[serde(with = "super::raw_serde")] Bytes);
+
+        let raw = Raw(Bytes::from(vec![b's', b's', b'h', 0xff, b'd', 0x00, b'\n']));
+        let encoded = postcard::to_stdvec(&raw).expect("encode");
+        let back: Raw = postcard::from_bytes(&encoded).expect("decode");
+        assert_eq!(back, raw);
     }
 
     #[test]

@@ -119,6 +119,13 @@ impl JournalReader {
             exclude_unit,
         } = self;
         loop {
+            // At the top, not in the timeout arm: on a busy host every
+            // `await_next_entry` returns an entry, so a check anywhere else
+            // is never reached and this thread would hold its Sender — and
+            // the whole shutdown — forever.
+            if cancel.is_cancelled() {
+                break;
+            }
             match journal.await_next_entry(Some(std::time::Duration::from_millis(250))) {
                 Ok(Some(record)) => {
                     let own_unit = exclude_unit.as_deref().and_then(|exclude| {

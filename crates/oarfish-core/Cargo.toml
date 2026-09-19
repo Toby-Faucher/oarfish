@@ -21,3 +21,4 @@ insta.workspace = true
 rstest.workspace = true
 serde_json.workspace = true
 proptest.workspace = true
+postcard.workspace = true

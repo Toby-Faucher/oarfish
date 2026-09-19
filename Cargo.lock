@@ -1908,6 +1908,7 @@ dependencies = [
  "blake3",
  "bytes",
  "insta",
+ "postcard",
  "proptest",
  "rstest",
  "serde",
