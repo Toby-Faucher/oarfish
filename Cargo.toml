@@ -50,7 +50,7 @@ reqwest    = { version = "0.13", default-features = false, features = ["json", "
 
 # ingest
 syslog_loose        = "0.23"
-tonic               = { version = "0.14", features = ["server", "codegen", "router"] }
+tonic               = { version = "0.14", features = ["server", "channel", "codegen", "router"] }
 prost               = "0.14"
 opentelemetry-proto = { version = "0.32", default-features = false, features = ["gen-tonic", "logs"] }
 governor            = "0.10"

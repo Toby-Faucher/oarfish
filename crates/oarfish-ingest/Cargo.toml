@@ -8,7 +8,9 @@ repository.workspace   = true
 authors.workspace      = true
 
 [dependencies]
-oarfish-core.workspace = true
+oarfish-core.workspace  = true
+oarfish-mask.workspace  = true
+oarfish-drain.workspace = true
 tokio.workspace        = true
 tokio-stream.workspace = true
 syslog_loose.workspace = true
@@ -21,3 +23,16 @@ tonic.workspace               = true
 prost.workspace               = true
 opentelemetry-proto.workspace = true
 governor.workspace            = true
+
+systemd = { version = "0.10", optional = true }
+
+[features]
+default = []
+# systemd journal reading, via libsystemd FFI. Off for portable builds;
+# the daemon rejects --journal without it rather than silently ignoring it.
+journald = ["dep:systemd"]
+
+[dev-dependencies]
+insta.workspace      = true
+proptest.workspace   = true
+serde_json.workspace = true

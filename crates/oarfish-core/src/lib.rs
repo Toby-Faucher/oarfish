@@ -3,13 +3,15 @@
 //! Depends on nothing else in the workspace, by design: every other crate
 //! depends on this one, so a cycle here would be a cycle everywhere.
 //!
-//! Owns `TemplateId`, `Severity`, `Slot`, `AlarmId` and `Alarm`, and exports
-//! them to the board with `ts-rs` so the two never drift. Nothing here does
-//! I/O.
+//! Owns `TemplateId`, `Severity`, `Slot`, `AlarmId`, `Alarm`, `Source` and
+//! `Event`, and exports them to the board with `ts-rs` so the two never
+//! drift. Nothing here does I/O.
 //!
-//! `Event` arrives with `oarfish-ingest`, and `Verdict` with `oarfish-jev`:
-//! both are shaped by their producers, so they are defined alongside them
-//! rather than guessed at here.
+//! `Event` lives here — not beside its producers — because it is the contract
+//! between them: syslog, OTLP and the journal all normalize into it, and the
+//! pipeline reads nothing else. `Verdict` arrives with `oarfish-jev` and is
+//! shaped by its producer, so it is defined alongside it rather than guessed
+//! at here.
 
 #![forbid(unsafe_code)]
 
@@ -24,6 +26,10 @@ pub use template::{Slot, TemplateId, TemplateIdError};
 mod alarm;
 
 pub use alarm::{Alarm, AlarmId};
+
+mod event;
+
+pub use event::{Event, Source};
 
 #[cfg(test)]
 mod tests {

@@ -31,6 +31,35 @@ opened_at: string, };
 export type AlarmId = string;
 
 /**
+ * One line, normalized. The raw bytes are kept verbatim: at 3am the operator
+ * wants the bytes that arrived, not our interpretation of them.
+ */
+export type Event = { 
+/**
+ * The bytes that arrived, unchanged. [`Event::raw_lossy`] converts at the
+ * mask boundary; the board cannot render invalid UTF-8, so the `ts-rs`
+ * export declares `string` through that same lossy conversion.
+ */
+raw: string, 
+/**
+ * Oarfish's clock, at intake. What windows order on.
+ */
+received_at: string, 
+/**
+ * What the source claimed. `None` when it claimed nothing.
+ */
+timestamp: string | null, 
+/**
+ * The sending host, or the socket peer when the frame names none.
+ */
+host: string, source: Source, 
+/**
+ * Everything source-specific: syslog severity and facility, the journal's
+ * fields, OTLP attributes. `BTreeMap` for deterministic snapshots.
+ */
+attrs: { [key in string]: string }, };
+
+/**
  * A subset of ITU-T X.733, because that is the vocabulary a NOC already
  * speaks.
  *
@@ -64,6 +93,12 @@ pattern: string,
  * JSON number. Counts stay far below 2^53.
  */
 seen: number, };
+
+/**
+ * Where a line came from. Three listeners, no registry: these are not
+ * pluggable, so this is a closed enum and not a trait.
+ */
+export type Source = "syslog" | "journal" | "otlp";
 
 /**
  * The stable identity of one masked template, and the key every cached

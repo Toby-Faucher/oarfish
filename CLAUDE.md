@@ -257,7 +257,11 @@ instead. Docs: https://docs.typesafe.ai and https://openrouter.ai/typesafe
 
 ## Don't
 
-- Don't add a dependency to `oarfish-core`.
+- Don't add a dependency to `oarfish-core`. The one exception is `bytes`:
+  `Event.raw` holds the verbatim log bytes (invariant 3), and a `String` field
+  would force a lossy conversion at intake for exactly the devices worth
+  reading at 3am. Invariant 1 — core depends on no other workspace crate — is
+  untouched.
 - Don't put an LLM call on the every-line path.
 - Don't lower the Drain threshold to "fix" fragmented templates.
 - Don't summarize or rewrite log lines. Oarfish classifies; it does not narrate.
