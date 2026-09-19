@@ -27,7 +27,7 @@ use tokio::sync::mpsc;
 use tokio_stream::wrappers::TcpListenerStream;
 use tokio_util::sync::CancellationToken;
 
-use crate::IngestError;
+use crate::{IngestError, peer_ip, resolve};
 
 /// Render an OTLP attribute value as text. Scalars stringify; arrays and maps
 /// join recursively; bytes stay bytes-shaped only through [`log_record_body`].
@@ -112,7 +112,8 @@ fn hex_string(bytes: &[u8]) -> String {
 ///
 /// `resource_attrs` are the resource's flattened attributes, `scope` the
 /// instrumentation scope name, `peer` the gRPC peer IP as text. The host is
-/// `host.name` when the resource names one, else the peer. The source
+/// `host.name` when the resource names one, else the peer, resolved through
+/// [`crate::host`]. The source
 /// timestamp prefers `time_unix_nano`, then `observed_time_unix_nano`, then
 /// nothing — a zero timestamp means unknown, not 1970.
 pub fn log_record_to_event(
@@ -153,11 +154,7 @@ pub fn log_record_to_event(
         received_at,
         timestamp: nanos_to_timestamp(record.time_unix_nano)
             .or_else(|| nanos_to_timestamp(record.observed_time_unix_nano)),
-        host: resource_attrs
-            .get("host.name")
-            .filter(|name| !name.is_empty())
-            .cloned()
-            .unwrap_or_else(|| peer.to_owned()),
+        host: resolve(resource_attrs.get("host.name"), peer),
         source: Source::Otlp,
         attrs,
     }
@@ -210,7 +207,7 @@ impl LogsService for OtlpService {
         // fallback host must be stable for per-host grouping downstream.
         let peer = request
             .remote_addr()
-            .map(|addr| addr.ip().to_string())
+            .map(|addr| peer_ip(&addr))
             .unwrap_or_default();
         let received_at = OffsetDateTime::now_utc();
         let inner = request.into_inner();

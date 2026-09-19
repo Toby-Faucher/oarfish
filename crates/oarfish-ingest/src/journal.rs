@@ -18,6 +18,8 @@ use bytes::Bytes;
 use oarfish_core::{Event, Source};
 use time::OffsetDateTime;
 
+use crate::resolve;
+
 #[cfg(feature = "journald")]
 use crate::IngestError;
 
@@ -29,7 +31,8 @@ pub const DEFAULT_EXCLUDE_UNIT: &str = "oarfish.service";
 /// record in, same event out.
 ///
 /// `MESSAGE` becomes the raw bytes verbatim. The host is `_HOSTNAME`, falling
-/// back to `localhost` — the journal is local. The source timestamp is
+/// back to `localhost` — the journal is local — resolved through
+/// [`crate::host`]. The source timestamp is
 /// `_SOURCE_REALTIME_TIMESTAMP`, falling back to `__REALTIME_TIMESTAMP`;
 /// both are microseconds since the epoch, and a missing or unparsable one
 /// means unknown, not 1970. Every other field survives in `attrs` rather than
@@ -53,11 +56,7 @@ pub fn record_to_event(record: &BTreeMap<String, String>, received_at: OffsetDat
             .and_then(|micros| micros.parse::<u64>().ok())
             .and_then(|micros| micros.checked_mul(1_000))
             .and_then(|nanos| OffsetDateTime::from_unix_timestamp_nanos(nanos as i128).ok()),
-        host: record
-            .get("_HOSTNAME")
-            .filter(|name| !name.is_empty())
-            .cloned()
-            .unwrap_or_else(|| "localhost".to_owned()),
+        host: resolve(record.get("_HOSTNAME"), "localhost"),
         source: Source::Journal,
         attrs,
     }

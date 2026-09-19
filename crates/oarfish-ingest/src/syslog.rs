@@ -32,7 +32,7 @@ use tokio_stream::StreamExt as _;
 use tokio_util::codec::{AnyDelimiterCodec, AnyDelimiterCodecError, Framed};
 use tokio_util::sync::CancellationToken;
 
-use crate::{IngestError, ShedTracker};
+use crate::{IngestError, ShedTracker, peer_ip, resolve};
 
 /// Largest single syslog line accepted on TCP. Past this `LinesCodec` errors
 /// the frame and the connection is dropped at debug: a peer emitting
@@ -89,12 +89,10 @@ fn resolve_year(received_at: OffsetDateTime, idate: syslog_loose::IncompleteDate
 /// Turn one frame's bytes into an `Event`. Pure, so the snapshot harness can
 /// pin it: same bytes in, same event out.
 ///
-/// `peer` is the socket peer. It becomes `host` — the peer *IP*, never
-/// `host:port` — when the frame names no host of its own, and it is the only
-/// host a malformed frame ever gets. The port is stripped because it is
-/// ephemeral: a UDP source port changes per datagram, so keeping it would
-/// hand every malformed line a distinct host and fragment per-host grouping,
-/// dedup and windows downstream.
+/// `peer` is the socket peer. It becomes `host` — resolved through
+/// [`crate::host`], whose two rules are the whole policy — when the frame
+/// names no host of its own, and it is the only host a malformed frame ever
+/// gets.
 ///
 /// Malformed input is data, not an error. When the bytes are not UTF-8 or
 /// `syslog_loose` rejects the frame outright, the event still goes out: raw
@@ -148,10 +146,7 @@ pub fn frame_to_event(raw: &[u8], peer: &SocketAddr, received_at: OffsetDateTime
                 raw: Bytes::copy_from_slice(raw),
                 received_at,
                 timestamp,
-                host: message
-                    .hostname
-                    .map(ToOwned::to_owned)
-                    .unwrap_or_else(|| peer.ip().to_string()),
+                host: resolve(message.hostname, &peer_ip(peer)),
                 source: Source::Syslog,
                 attrs,
             }
@@ -160,7 +155,7 @@ pub fn frame_to_event(raw: &[u8], peer: &SocketAddr, received_at: OffsetDateTime
             raw: Bytes::copy_from_slice(raw),
             received_at,
             timestamp: None,
-            host: peer.ip().to_string(),
+            host: peer_ip(peer),
             source: Source::Syslog,
             attrs: std::collections::BTreeMap::from([("parse".to_owned(), "failed".to_owned())]),
         },
