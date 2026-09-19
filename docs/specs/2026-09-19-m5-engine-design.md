@@ -1,6 +1,6 @@
 # M5 — `oarfish-engine` and `oarfish-api`, an alarm that raises and reaches the board
 
-**Status:** accepted, pre-implementation
+**Status:** implemented, on branch `m5-engine`
 **Date:** 2026-09-19
 **Parent:** `docs/specs/2026-09-17-oarfish-design.md` — milestone M5 in §11, mechanism in §5.5, §5.7, §5.9, §5.10
 
@@ -90,8 +90,20 @@ silence" without ever saying what causes a raise. Three rules, in order:
 
 Starting values, all config, all to be tuned against real data in the spirit of §5.9:
 the gate floor is `minor`, the bypass fires at `critical`, and the window triggers at 5
-events in the 5-minute window or a rate three times the trailing hour. They are written
+events in the 5-minute window, or at three times the baseline rate. They are written
 down so the tests have something concrete to assert; they are not claims.
+
+**The rate rule needs a real baseline, and "three times the trailing hour" is not one.**
+An earlier draft of this section said exactly that, and it is wrong at the only moment
+it matters: the first event of a template computes `1 >= 3 × (1/12)` against an assumed
+full hour and raises immediately, turning the rate rule into "raise on first sight" for
+every template regardless of severity. A count test caught it.
+
+The rule therefore divides the long total by the template's *actual* history span,
+capped at the hour, and refuses to fire until that span covers a full short window. A
+young template is then never an infinite multiple of nothing, and steady traffic sits at
+a ratio of exactly 1 at any history length rather than drifting with the assumed
+denominator.
 
 Rule 1 is what keeps the cold path load-bearing: a purely statistical trigger would page
 on a noisy harmless template and stay silent on a single catastrophic one. Rule 2 is
@@ -150,7 +162,17 @@ wrong.
 board that silently stopped updating is indistinguishable from a quiet night.
 
 `AlarmChange` is `Raised(Alarm)` | `Updated(Alarm)` | `Cleared(AlarmId)`, plus the
-`Resync` marker below. It gets a `ts-rs` export alongside `Alarm`, so the island's event handling is
+`Resync` marker below.
+
+**It lives in `oarfish-core` and the engine re-exports it.** "Alongside `Alarm`" is not
+a stylistic preference: `.cargo/config.toml` records that only `oarfish-core` may export
+into `oarfish.ts`, because ts-rs's registry is process-local and `cargo test
+--workspace` runs one binary per crate — a second exporting crate truncates what the
+first wrote, nondeterministically by test order. Exporting `AlarmChange` from the engine
+does exactly that, and the symptom is a bindings file that silently loses `Alarm` rather
+than a failing test. With the type in core the bindings diff is purely additive.
+
+It gets a `ts-rs` export alongside `Alarm`, so the island's event handling is
 typed from one definition rather than a hand-written guess.
 
 ## 8. Daemon wiring
@@ -166,6 +188,15 @@ than three.
 cooldowns are untestable in real time. With a paused clock, auto-clear and flap
 suppression become fast deterministic assertions, and a test can advance an hour to prove
 window eviction.
+
+**Never await a `DelayQueue` under `pause()` and then assert an alarm is still open.**
+The idle runtime auto-advances virtual time to the next deadline, so parking on the
+queue fast-forwards the clock past the very timer being asserted on, and the alarm
+clears underneath the assertion. It reads exactly like `reset()` being broken, and it is
+not. Tests drive expiry through a non-parking `expire_ready()` that fires only what is
+already past its deadline; the production run loop still parks, which is correct there
+and never happens under pause. The gotcha is documented on the method, because the next
+person to hit it will also start by suspecting `reset()`.
 
 | Property | Test |
 |---|---|
