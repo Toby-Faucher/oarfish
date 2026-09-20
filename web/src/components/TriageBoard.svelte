@@ -18,10 +18,18 @@
   import type { AlarmDetail, VerdictAnswer } from '../lib/bindings/oarfish';
   import { connect, connectionAlarms } from '../lib/connection.svelte';
   import { clockOf } from '../lib/time';
+  import { DEMO_ALARM, DEMO_DETAIL } from '../lib/demo';
 
-  onMount(connect);
+  onMount(() => {
+    connect();
+    // Dev-only, URL-gated demo: `bun run dev` plus `?demo`. Evaluated after
+    // mount so the server-rendered first paint never diverges.
+    demoMode = import.meta.env.DEV && new URLSearchParams(location.search).has('demo');
+  });
 
   let live = $derived(connectionAlarms());
+  let demoMode = $state(false);
+  let rows = $derived(demoMode ? [DEMO_ALARM, ...live] : live);
   let density = $state<Density>('compact');
   let query = $state('');
   let severityFilter = $state<SeverityLevel | 'all'>('all');
@@ -41,19 +49,19 @@
 
   let filtered = $derived.by(() => {
     const q = query.trim().toLowerCase();
-    let rows = live.filter((a) => {
+    let matches = rows.filter((a) => {
       if (severityFilter !== 'all' && a.severity !== severityFilter) return false;
       if (laneFilter !== 'all' && a.lane !== laneFilter) return false;
       if (q && !`${a.template} ${a.host}`.toLowerCase().includes(q)) return false;
       return true;
     });
-    return [...rows].sort((a, b) =>
+    return [...matches].sort((a, b) =>
       sortBy === 'count' ? b.count - a.count : b.opened_at.localeCompare(a.opened_at),
     );
   });
 
   /* A cleared alarm leaves no dangling selection behind. */
-  let selected = $derived(selectedId !== null ? (live.find((a) => a.id === selectedId) ?? null) : null);
+  let selected = $derived(selectedId !== null ? (rows.find((a) => a.id === selectedId) ?? null) : null);
 
   let isFiltered = $derived(
     query.trim() !== '' || severityFilter !== 'all' || laneFilter !== 'all',
@@ -70,13 +78,18 @@
    * discarded rather than painted under the wrong alarm.
    */
   let detail = $state<AlarmDetail | null>(null);
-  let detailState = $state<'idle' | 'loading' | 'live' | 'error'>('idle');
+  let detailState = $state<'idle' | 'loading' | 'live' | 'demo' | 'error'>('idle');
 
   $effect(() => {
     retryNonce;
     if (selected === null) {
       detail = null;
       detailState = 'idle';
+      return;
+    }
+    if (selected.id === DEMO_ALARM.id) {
+      detail = DEMO_DETAIL;
+      detailState = 'demo';
       return;
     }
     const id = selected.id;
@@ -104,7 +117,10 @@
   });
 
   let liveDetail = $derived(
-    detailState === 'live' && detail !== null && selected !== null && detail.alarm.id === selected.id
+    (detailState === 'live' || detailState === 'demo') &&
+      detail !== null &&
+      selected !== null &&
+      detail.alarm.id === selected.id
       ? detail
       : null,
   );
@@ -139,11 +155,11 @@
   <div class="flex items-center gap-3 border-b border-line px-3.5 py-2">
     <h2 class="label text-[13px]">Open alarms</h2>
     <span class="rounded-(--radius-ui) bg-l2 px-1.5 py-0.5 font-mono text-[11px] tabular-nums text-ink-2">
-      {live.length}
+      {rows.length}
     </span>
     {#if isFiltered}
       <span class="font-mono text-[10.5px] tracking-[0.06em] text-ink-3 uppercase">
-        filtered · {filtered.length} of {live.length}
+        filtered · {filtered.length} of {rows.length}
       </span>
       <button
         type="button"
@@ -215,7 +231,7 @@
 
   <div class="grid items-start lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
     <div aria-label="Alarm list">
-      {#if live.length === 0}
+      {#if rows.length === 0}
         <div class="px-3.5 py-10 text-center">
           <p class="text-[13.5px] text-ink-2">Nothing is firing.</p>
           <p class="mt-1 font-mono text-[11px] text-ink-3">
@@ -259,7 +275,7 @@
         <div class="flex items-center gap-2 border-t border-line px-3.5 py-2 font-mono text-[10.5px] tabular-nums text-ink-3">
           <span>{filtered.length} shown</span>
           <span aria-hidden="true">·</span>
-          <span>{live.length} open</span>
+          <span>{rows.length} open</span>
         </div>
       {/if}
     </div>
@@ -275,7 +291,9 @@
           <Severity level={selected.severity} />
           <span class="font-mono text-[11px] text-ink-3">{selected.template_id}</span>
           <span class="rounded-(--radius-ui) bg-l3 px-1.5 py-0.5 font-mono text-[10px] text-ink-2">{selected.lane}</span>
-          {#if liveDetail}
+          {#if detailState === 'demo'}
+            <span class="rounded-(--radius-ui) border border-line-2 px-1.5 py-0.5 font-mono text-[10px] tracking-[0.06em] text-ink-3 uppercase">Demo</span>
+        {:else if liveDetail}
             <span class="rounded-(--radius-ui) bg-accent-soft px-1.5 py-0.5 font-mono text-[10px] tracking-[0.06em] text-accent uppercase">Live</span>
           {/if}
           <span class="ml-auto font-mono text-[11px] tabular-nums text-ink-2">
