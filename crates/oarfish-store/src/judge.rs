@@ -298,6 +298,15 @@ async fn judge_one<D: Decide>(shared: &Shared, decide: &D, job: JudgeJob) {
     shared
         .cache
         .insert((job.template_id, shared.bundle_hash), verdict);
+    // A first-ever judgment: tell the engine so a host that saw this
+    // template while it was still unjudged doesn't have to wait for a
+    // repeat just to be told what nothing was known yet to gate on. Absent
+    // until `Verdicts::set_judged_notifier` wires it, and harmless if the
+    // engine's queue is momentarily full — the verdict is cached regardless,
+    // and the next line for this template raises through the normal path.
+    if let Some(notify) = shared.judged_notify.get() {
+        let _ = notify.try_send((job.template_id, job.template.clone()));
+    }
 }
 
 #[cfg(test)]

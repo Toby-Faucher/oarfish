@@ -362,6 +362,12 @@ async fn run_daemon(args: DaemonArgs) -> anyhow::Result<()> {
     // The pipeline forwards it every classified line; the API reads its
     // snapshot and subscribes to its changes.
     let engine = oarfish_engine::Engine::new(Arc::clone(&verdicts), decide_client, engine_config);
+    // Wired after both exist: the engine can't be built before the store it
+    // depends on is, so this can't be a constructor parameter on either
+    // side. From here, a first-ever judgment lands and the engine hears
+    // about it directly, instead of waiting for a repeat sighting to ask
+    // the cache again.
+    verdicts.set_judged_notifier(engine.judged_sender());
     let api_state = oarfish_api::ApiState::new(
         engine.snapshot_handle(),
         Arc::clone(&verdicts),

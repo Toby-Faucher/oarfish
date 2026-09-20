@@ -6,12 +6,13 @@
 //! over — rather than each threading five handles through every call.
 
 use std::collections::BTreeMap;
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock};
 
 use moka::sync::Cache;
 use oarfish_core::{QuestionsHash, TemplateId, Verdict};
 use oarfish_jev::Question;
 use oarfish_mask::BundleHash;
+use tokio::sync::mpsc;
 
 /// The handles behind [`crate::VerdictCache`] and the judge: the database,
 /// its keyspaces, the memory cache, and the question set (with its hash and
@@ -25,6 +26,12 @@ pub(crate) struct Shared {
     pub questions: BTreeMap<String, Question>,
     pub questions_hash: QuestionsHash,
     pub bundle_hash: BundleHash,
+    /// Set once, after `Verdicts` and the engine both exist — `main.rs`
+    /// wires `Verdicts::set_judged_notifier` with the engine's own sender
+    /// once it's built, since the engine can't exist before the store it
+    /// depends on does. Empty until then, which is exactly the M0–M5.5
+    /// behavior: a judgment lands in the cache and waits for the next line.
+    pub judged_notify: OnceLock<mpsc::Sender<(TemplateId, String)>>,
 }
 
 /// The verdict-side keyspaces, opened together by the composition root.
@@ -52,6 +59,7 @@ impl Shared {
             questions,
             questions_hash,
             bundle_hash,
+            judged_notify: OnceLock::new(),
         })
     }
 }

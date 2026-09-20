@@ -12,9 +12,11 @@ pub struct EngineConfig {
     /// A template may alarm only if judged actionable at or above this
     /// severity. Below it the verdict gates and nothing raises.
     pub gate_floor: Severity,
-    /// A template judged at or above this severity raises on first sight,
-    /// without waiting for the window. An EXT4 error must not wait for a
-    /// second occurrence to be believed.
+    /// A template judged at or above this severity raises without waiting
+    /// for the window — on the very first sighting, if that sighting is
+    /// still around waiting when judgment lands, or on whichever sighting
+    /// is current otherwise. An EXT4 error must not wait for a second
+    /// occurrence to be believed.
     pub bypass_severity: Severity,
     /// The `actionable` noul value at or above which a template counts as
     /// actionable. A coin flip is actionable; below it the template is
@@ -41,6 +43,12 @@ pub struct EngineConfig {
     /// per burst on flagged templates only, so the queue is small; a lagging
     /// engine still drains, never replays.
     pub pending_capacity: usize,
+    /// `mpsc` capacity for the judge's first-judgment notifications. One per
+    /// distinct new template, ever — the same rate `oarfish-jev` calls
+    /// happen at — so this is small on purpose. A dropped notification is
+    /// harmless: the verdict is cached regardless, and the next line for
+    /// that template raises through the normal path.
+    pub judged_capacity: usize,
     /// Events in the five-minute window that raise a gated, non-bypassed
     /// template on count alone.
     pub window_count_threshold: u64,
@@ -87,6 +95,10 @@ pub const DEFAULT_MAX_CONTEXT_ALARMS: usize = 8;
 /// Pending check outcomes buffer this many answers. Checks run per burst on
 /// flagged templates only — dozens a day, not hundreds a second.
 pub const DEFAULT_PENDING_CAPACITY: usize = 256;
+/// One notification per distinct new template, ever — matched to the same
+/// scale as [`DEFAULT_PENDING_CAPACITY`], though this queue empties even
+/// faster in practice.
+pub const DEFAULT_JUDGED_CAPACITY: usize = 256;
 
 impl Default for EngineConfig {
     fn default() -> Self {
@@ -104,6 +116,7 @@ impl Default for EngineConfig {
             flap_cooldown: Duration::from_secs(DEFAULT_FLAP_COOLDOWN_SECS),
             broadcast_capacity: DEFAULT_BROADCAST_CAPACITY,
             pending_capacity: DEFAULT_PENDING_CAPACITY,
+            judged_capacity: DEFAULT_JUDGED_CAPACITY,
             max_windows: DEFAULT_MAX_WINDOWS,
         }
     }
@@ -128,5 +141,6 @@ mod tests {
         assert_eq!(config.silence, Duration::from_secs(900));
         assert_eq!(config.flap_cooldown, Duration::from_secs(1800));
         assert_eq!(config.pending_capacity, 256);
+        assert_eq!(config.judged_capacity, 256);
     }
 }
