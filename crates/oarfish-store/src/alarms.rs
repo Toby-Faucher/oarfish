@@ -42,6 +42,7 @@ mod tests {
             id: AlarmId::generate(),
             template_id: TemplateId::of("EXT4-fs error (device <VAR:DEV>)"),
             template: "EXT4-fs error (device <VAR:DEV>)".to_owned(),
+            exemplar: "EXT4-fs error (device sda)".to_owned(),
             severity: Severity::Critical,
             host: "nas01".to_owned(),
             lane: oarfish_core::Lane::Dashboard,

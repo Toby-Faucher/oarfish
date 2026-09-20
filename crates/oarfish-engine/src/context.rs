@@ -192,6 +192,9 @@ pub enum CheckOutcome {
         template_id: TemplateId,
         template: String,
         host: String,
+        /// The trip line, verbatim. Rides beside the check so the raise that
+        /// follows keeps it for forensics; the model never sees it.
+        exemplar: String,
         severity: Severity,
         answer: Box<PendingAnswer>,
     },
@@ -199,6 +202,9 @@ pub enum CheckOutcome {
         template_id: TemplateId,
         template: String,
         host: String,
+        /// The trip line, verbatim: a failed check still raises, with the
+        /// same forensics behind it.
+        exemplar: String,
         severity: Severity,
     },
 }
@@ -412,6 +418,7 @@ mod tests {
             id: AlarmId::generate(),
             template_id: TemplateId::of(template),
             template: template.to_owned(),
+            exemplar: String::new(),
             severity: Severity::Major,
             host: host.to_owned(),
             lane: oarfish_core::Lane::Dashboard,

@@ -13,12 +13,6 @@
   }
 
   let { alarm, density = 'compact', selected = false, onselect }: Props = $props();
-
-  const LANE_TONE: Record<Alarm['lane'], string> = {
-    Page: 'text-critical',
-    Dashboard: 'text-ink-2',
-    Record: 'text-ink-3',
-  };
 </script>
 
 <!--
@@ -34,8 +28,12 @@
     density
   ]} {selected ? 'bg-l2' : ''}"
 >
+  <!--
+    The severity label is always visible: bars and hue alone drop to
+    hue-only for info/cleared, which fill zero bars.
+  -->
   <span class="w-[104px] shrink-0">
-    <Severity level={alarm.severity} compact={density === 'compact'} />
+    <Severity level={alarm.severity} />
   </span>
 
   <span class="min-w-0 flex-1">
@@ -46,14 +44,30 @@
     -->
     <span class="block truncate font-mono text-[12.5px] text-ink">{alarm.template}</span>
     {#if density !== 'compact'}
+      <!--
+        Lane is neutral text, never a severity hue: a minor alarm routed to
+        Page must not read as critical. The clock stays in the Opened column
+        on wide screens and rides here only where that column is hidden.
+      -->
       <span class="mt-0.5 block font-mono text-[10.5px] text-ink-3">
-        {alarm.host} · {clockOf(alarm.opened_at)} UTC · <span class={LANE_TONE[alarm.lane]}>{alarm.lane}</span>
+        {alarm.host} · <span class="text-ink-2">{alarm.lane}</span><span class="sm:hidden"> · {clockOf(alarm.opened_at)} UTC</span>
       </span>
-    {/if}
-    {#if density === 'compact'}
-      <span class="mt-0.5 block font-mono text-[10.5px] text-ink-3 sm:hidden">
-        {alarm.host} · {clockOf(alarm.opened_at)}
-      </span>
+    {:else}
+      <!--
+        The Page chip is the will-it-wake-me signal, so it shows at every
+        width even in compact; Dashboard and Record live in the detail
+        header. Host and clock ride along only where their columns hide.
+      -->
+      {#if alarm.lane === 'Page'}
+        <span class="mt-0.5 flex items-center gap-1.5 font-mono text-[10.5px] text-ink-3">
+          <span class="rounded-(--radius-ui) bg-l3 px-1.5 py-px text-[10px] text-ink-2">Page</span>
+          <span class="sm:hidden">{alarm.host} · {clockOf(alarm.opened_at)} UTC</span>
+        </span>
+      {:else}
+        <span class="mt-0.5 block font-mono text-[10.5px] text-ink-3 sm:hidden">
+          {alarm.host} · {clockOf(alarm.opened_at)} UTC
+        </span>
+      {/if}
     {/if}
   </span>
 
@@ -66,7 +80,8 @@
     {#if density === 'compact'}
       <span class="sm:hidden">{alarm.count}</span>
     {/if}
-    {clockOf(alarm.opened_at)}
+    <!-- UTC suffixed, and hidden where the meta line already carries it. -->
+    <span class="hidden sm:inline">{clockOf(alarm.opened_at)} UTC</span>
     <ChevronRight
       size={14}
       class="shrink-0 transition-colors duration-[120ms] {selected ? 'text-accent' : 'text-ink-3'}"

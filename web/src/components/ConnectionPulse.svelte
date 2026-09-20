@@ -9,17 +9,7 @@
 
   onMount(connect);
 
-  let now = $state(new Date());
   let status = $derived(connectionStatus());
-
-  onMount(() => {
-    const id = setInterval(() => (now = new Date()), 1000);
-    return () => clearInterval(id);
-  });
-
-  const clock = $derived(
-    now.toLocaleTimeString('en-GB', { hour12: false })
-  );
 </script>
 
 <div
@@ -27,10 +17,14 @@
   role="status"
   aria-label={status === 'live' ? 'Connected' : 'Connecting'}
 >
+  <!--
+    Neutral dot on purpose: severity hues are reserved for severity, so a
+    green dot must never read as "all clear". No clock either: alarm times
+    are UTC, and a second local-time clock on screen invites misreads.
+  -->
   <span
-    class="size-1.5 rounded-full {status === 'live' ? 'bg-cleared' : 'bg-major'}"
+    class="size-1.5 rounded-full {status === 'live' ? 'bg-ink-2' : 'bg-line-2'}"
     aria-hidden="true"
   ></span>
   <span class="text-ink-2">{status === 'live' ? 'live' : 'connecting'}</span>
-  <span class="text-ink-3">{clock}</span>
 </div>

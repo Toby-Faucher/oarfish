@@ -252,6 +252,7 @@ mod tests {
             id: AlarmId::generate(),
             template_id: TemplateId::of("task <VAR:NUM> failed"),
             template: "task <VAR:NUM> failed".to_owned(),
+            exemplar: "task 7 failed".to_owned(),
             severity: oarfish_core::Severity::Minor,
             host: "web01".to_owned(),
             lane: oarfish_core::Lane::Dashboard,

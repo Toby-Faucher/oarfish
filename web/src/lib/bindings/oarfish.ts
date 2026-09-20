@@ -11,7 +11,15 @@ export type Alarm = { id: AlarmId, template_id: TemplateId,
 /**
  * The masked template, verbatim. The alarm's display line.
  */
-template: string, severity: Severity, host: string, 
+template: string, 
+/**
+ * One raw line that raised this alarm, verbatim. The board's forensics
+ * panel renders it; at 3am the operator wants the bytes that arrived,
+ * not our interpretation of them. The first triggering line wins and is
+ * kept across count bumps and flap revives. Empty when the raise had no
+ * line behind it (a first-ever judgment resolving unjudged sightings).
+ */
+exemplar: string, severity: Severity, host: string, 
 /**
  * Where this alarm routed. M5 raises land here as `Dashboard`; the
  * contextual check routes flagged bursts by `wake_someone`.
