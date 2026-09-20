@@ -31,17 +31,20 @@ const nav = [
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content="Log-driven alarms for homelabs. Oarfish clusters your logs into templates and judges each one once, so it wakes you only when something earns it." />
     <title>{title}</title>
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="icon" href="/favicon.png" type="image/png" />
+    <link rel="apple-touch-icon" href="/logo.png" />
   </head>
   <body class="min-h-dvh">
     <div class="flex min-h-dvh">
       <nav class="flex w-14 shrink-0 flex-col items-center gap-1 border-r border-line bg-l1 py-3" aria-label="Sections">
         <a
           href="/"
-          class="mb-3 grid size-9 place-items-center rounded-(--radius-ui) bg-l2 font-cond text-[13px] font-bold tracking-[0.08em] text-ink"
+          class="mb-3 grid size-9 place-items-center overflow-hidden rounded-(--radius-ui) bg-l2"
           title="oarfish home"
           aria-label="oarfish home"
         >
-          OF
+          <img src="/logo.png" alt="" width="36" height="36" class="size-9 object-cover" />
         </a>
         {nav.map(({ icon: Icon, label, href, key }) => (
           <a

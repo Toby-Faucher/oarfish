@@ -19,8 +19,10 @@
 
 ## Status
 
-**Pre-alpha.** The architecture is settled and the scaffold builds. Almost nothing is
-implemented yet. Watch the repo if you want to know when it does something useful.
+**Pre-alpha.** The pipeline runs end to end: syslog, journald and OTLP intake,
+masking, Drain clustering, Jev verdicts cached in fjall, windowing, the alarm state
+machine, and SSE to the board, which renders live alarms with forensics. What remains
+is **M6** — the board hardened on live data, plus ntfy delivery.
 
 ---
 
