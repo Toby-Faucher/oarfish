@@ -186,6 +186,42 @@ async fn a_critical_template_raises_on_first_sight() {
     let _ = std::fs::remove_dir_all(&dir);
 }
 
+/// The raise keeps the trip line verbatim, and later bumps never overwrite
+/// it: forensics shows the bytes that arrived first, not the latest repeat.
+#[tokio::test]
+async fn a_raise_keeps_the_first_trip_line_as_its_exemplar() {
+    tokio::time::pause();
+    let dir = tempdir();
+    let (mut engine, _store) = engine_at(&dir);
+    let mut rx = engine.subscribe();
+    let (id, text) = template();
+
+    let first = Event::new(
+        Bytes::from_static(b"task 12 failed"),
+        "nas01",
+        Source::Syslog,
+    );
+    engine.on_classified(&first, id, &text, Some(&verdict(3.0, 0.9)));
+    let later = Event::new(
+        Bytes::from_static(b"task 13 failed"),
+        "nas01",
+        Source::Syslog,
+    );
+    engine.on_classified(&later, id, &text, Some(&verdict(3.0, 0.9)));
+
+    let open = engine.open_alarms();
+    assert_eq!(open.len(), 1);
+    assert_eq!(open[0].count, 2);
+    assert_eq!(open[0].exemplar, "task 12 failed");
+    match published(&mut rx).as_slice() {
+        [AlarmChange::Raised(_), AlarmChange::Updated(alarm)] => {
+            assert_eq!(alarm.exemplar, "task 12 failed")
+        }
+        other => panic!("expected Raised then Updated, got {other:?}"),
+    }
+    let _ = std::fs::remove_dir_all(&dir);
+}
+
 /// A first-and-only sighting no longer has to wait for a repeat: the
 /// unjudged sighting is remembered, and the judgment landing raises it
 /// directly, at the exact severity bar `bypass_severity` already names.

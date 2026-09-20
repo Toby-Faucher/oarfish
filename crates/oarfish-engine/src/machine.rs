@@ -312,6 +312,7 @@ impl Engine {
             &event.host,
             template_id,
             template,
+            &event.raw_lossy(),
             severity,
             Lane::Dashboard,
         );
@@ -326,6 +327,7 @@ impl Engine {
         host: &str,
         template_id: TemplateId,
         template: &str,
+        exemplar: &str,
         severity: oarfish_core::Severity,
         lane: Lane,
     ) {
@@ -333,6 +335,7 @@ impl Engine {
             id: AlarmId::generate(),
             template_id,
             template: template.to_owned(),
+            exemplar: exemplar.to_owned(),
             severity,
             host: host.to_owned(),
             lane,
@@ -385,7 +388,7 @@ impl Engine {
             if self.open.contains_key(&key) {
                 continue;
             }
-            self.raise(&host, template_id, template, severity, Lane::Dashboard);
+            self.raise(&host, template_id, template, "", severity, Lane::Dashboard);
         }
     }
 
@@ -414,6 +417,10 @@ impl Engine {
         };
         let key: AlarmKey = (template_id, event.host.clone());
         self.in_flight.insert(key);
+        // The trip line rides beside the check, never through it: the model
+        // judges the burst, while the raise that follows keeps the verbatim
+        // bytes for the board's forensics panel.
+        let exemplar = event.raw_lossy().into_owned();
         // Frozen at trip time: the task reads this, never live state, so the
         // snapshot the model judges is the burst's own.
         let view = FrozenView(self.open_alarms());
@@ -436,6 +443,7 @@ impl Engine {
                             template_id: burst.template_id,
                             template: burst.template.clone(),
                             host: burst.host.clone(),
+                            exemplar: exemplar.clone(),
                             severity: burst.severity,
                             answer,
                         },
@@ -443,6 +451,7 @@ impl Engine {
                             template_id: burst.template_id,
                             template: burst.template.clone(),
                             host: burst.host.clone(),
+                            exemplar: exemplar.clone(),
                             severity: burst.severity,
                         },
                     };
@@ -454,6 +463,7 @@ impl Engine {
                     template_id: burst.template_id,
                     template: burst.template.clone(),
                     host: burst.host.clone(),
+                    exemplar,
                     severity: burst.severity,
                 });
             }
@@ -470,20 +480,29 @@ impl Engine {
     /// and the burst still raises: a cleared correlation must never swallow
     /// what the window already decided was worth raising.
     fn apply(&mut self, outcome: CheckOutcome) {
-        let (template_id, template, host, severity, answer) = match outcome {
+        let (template_id, template, host, exemplar, severity, answer) = match outcome {
             CheckOutcome::Answered {
                 template_id,
                 template,
                 host,
+                exemplar,
                 severity,
                 answer,
-            } => (template_id, template, host, severity, Some(answer)),
+            } => (
+                template_id,
+                template,
+                host,
+                exemplar,
+                severity,
+                Some(answer),
+            ),
             CheckOutcome::Failed {
                 template_id,
                 template,
                 host,
+                exemplar,
                 severity,
-            } => (template_id, template, host, severity, None),
+            } => (template_id, template, host, exemplar, severity, None),
         };
         let key: AlarmKey = (template_id, host.clone());
         self.in_flight.remove(&key);
@@ -497,7 +516,14 @@ impl Engine {
         let Some(answer) = answer else {
             // Failure raises rather than swallows: `route(None)`, exactly
             // the M5 behaviour for a burst with no check behind it.
-            self.raise(&host, template_id, &template, severity, Lane::Dashboard);
+            self.raise(
+                &host,
+                template_id,
+                &template,
+                &exemplar,
+                severity,
+                Lane::Dashboard,
+            );
             return;
         };
 
@@ -506,7 +532,14 @@ impl Engine {
         // never toward silence.
         if let Err(error) = self.verdicts.save_record(&answer.record) {
             tracing::error!(%error, "context record could not be saved; raising without it");
-            self.raise(&host, template_id, &template, severity, Lane::Dashboard);
+            self.raise(
+                &host,
+                template_id,
+                &template,
+                &exemplar,
+                severity,
+                Lane::Dashboard,
+            );
             return;
         }
 
@@ -536,7 +569,7 @@ impl Engine {
             self.suppressed.insert(key, tokio::time::Instant::now());
             return;
         }
-        self.raise(&host, template_id, &template, severity, lane);
+        self.raise(&host, template_id, &template, &exemplar, severity, lane);
     }
 
     /// Apply every check answer already past the channel. Never parks: like

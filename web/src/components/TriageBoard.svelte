@@ -17,7 +17,7 @@
   import type { Density, Severity as SeverityLevel } from '../lib/severity';
   import type { AlarmDetail, VerdictAnswer } from '../lib/bindings/oarfish';
   import { connect, connectionAlarms } from '../lib/connection.svelte';
-  import { clockOf } from '../lib/time';
+  import { stampOf } from '../lib/time';
   import { demoModeEnabled } from '../lib/settings.svelte';
   import { DEMO_ALARM, DEMO_DETAIL } from '../lib/demo';
 
@@ -123,18 +123,28 @@
       : null,
   );
 
-  function distributionOf(answer: VerdictAnswer): Array<{ label: string; p: number }> {
-    if ('choice' in answer) return entriesOf(answer.choice.probabilities);
-    if ('score' in answer) return entriesOf(answer.score.probabilities);
-    return [{ label: 'yes', p: answer.noul.noul }];
+  /*
+   * Verdict ids are wire keys, not copy: `kind` reads as "Kind" and
+   * `hardware_fault` as "Hardware fault" at 3am. Numbers pass through
+   * untouched.
+   */
+  function humanize(id: string): string {
+    const words = id.replace(/_/g, ' ');
+    return words.charAt(0).toUpperCase() + words.slice(1);
   }
 
-  function entriesOf(probabilities: { [key in string]: number }): Array<{
-    label: string;
-    p: number;
-  }> {
+  function distributionOf(answer: VerdictAnswer): Array<{ label: string; display: string; p: number }> {
+    if ('choice' in answer) return entriesOf(answer.choice.probabilities, null);
+    if ('score' in answer) return entriesOf(answer.score.probabilities, answer.score.legend ?? null);
+    return [{ label: 'yes', display: 'Yes', p: answer.noul.noul }];
+  }
+
+  function entriesOf(
+    probabilities: { [key in string]: number },
+    legend: { [key in string]: string } | null,
+  ): Array<{ label: string; display: string; p: number }> {
     return Object.entries(probabilities)
-      .map(([label, p]) => ({ label, p }))
+      .map(([label, p]) => ({ label, display: legend?.[label] ?? humanize(label), p }))
       .sort((a, b) => b.p - a.p)
       .slice(0, 4);
   }
@@ -164,7 +174,7 @@
         onclick={clearFilters}
         class="rounded-(--radius-ui) px-1.5 py-0.5 font-mono text-[10.5px] text-accent transition-colors duration-[120ms] hover:bg-accent-soft"
       >
-        Clear
+        Clear filters
       </button>
     {/if}
     <div class="ml-auto">
@@ -256,7 +266,7 @@
           <span class="label text-[10px] text-ink-3">Template</span>
           <span class="label hidden text-right text-[10px] text-ink-3 sm:block">Host</span>
           <span class="label hidden text-right text-[10px] text-ink-3 sm:block">Count{sortBy === 'count' ? ' ↓' : ''}</span>
-          <span class="label text-right text-[10px] text-ink-3">Age</span>
+          <span class="label text-right text-[10px] text-ink-3">Opened</span>
         </div>
         <ul class="list-none p-0">
           {#each filtered as alarm (alarm.id)}
@@ -285,24 +295,40 @@
           <p class="mt-1 font-mono text-[11px] text-ink-3">Select a row to inspect it.</p>
         </div>
       {:else}
-        <div class="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-line bg-l2 px-3.5 py-2">
-          <Severity level={selected.severity} />
-          <span class="font-mono text-[11px] text-ink-3">{selected.template_id}</span>
-          <span class="rounded-(--radius-ui) bg-l3 px-1.5 py-0.5 font-mono text-[10px] text-ink-2">{selected.lane}</span>
-          {#if detailState === 'demo'}
-            <span class="rounded-(--radius-ui) border border-line-2 px-1.5 py-0.5 font-mono text-[10px] tracking-[0.06em] text-ink-3 uppercase">Demo</span>
-        {:else if liveDetail}
-            <span class="rounded-(--radius-ui) bg-accent-soft px-1.5 py-0.5 font-mono text-[10px] tracking-[0.06em] text-accent uppercase">Live</span>
-          {/if}
-          <span class="ml-auto font-mono text-[11px] tabular-nums text-ink-2">
-            {selected.count} hits · {selected.host}
-          </span>
+        <div class="border-b border-line bg-l2 px-3.5 py-2">
+          <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <Severity level={selected.severity} />
+            <span class="font-mono text-[11px] text-ink-3">{selected.template_id}</span>
+            <span class="rounded-(--radius-ui) bg-l3 px-1.5 py-0.5 font-mono text-[10px] text-ink-2">{selected.lane}</span>
+            {#if detailState === 'demo'}
+              <span class="rounded-(--radius-ui) border border-line-2 px-1.5 py-0.5 font-mono text-[10px] tracking-[0.06em] text-ink-3 uppercase">Demo</span>
+          {:else if liveDetail}
+              <span class="rounded-(--radius-ui) bg-accent-soft px-1.5 py-0.5 font-mono text-[10px] tracking-[0.06em] text-accent uppercase">Live</span>
+            {/if}
+            <span class="ml-auto font-mono text-[11px] tabular-nums text-ink-2">
+              Count {selected.count} · {selected.host}
+            </span>
+          </div>
+          <div class="mt-1 font-mono text-[11px] tabular-nums text-ink-3">
+            Opened {stampOf(selected.opened_at)} UTC
+          </div>
         </div>
 
         {#if liveDetail}
           {@const forensic = liveDetail}
           <div class="border-b border-line p-4">
-            <Template template={forensic.alarm.template} slots={[]} />
+            <Template template={forensic.alarm.template} />
+            <!--
+              The verbatim line that raised this alarm. Mono with its own
+              scroll, boxed apart from the masked template above: bytes that
+              arrived, not our interpretation of them.
+            -->
+            <h3 class="label mt-4 text-[11px] text-ink-3">Exemplar line</h3>
+            {#if forensic.alarm.exemplar}
+              <pre class="mt-2 overflow-x-auto rounded-(--radius-ui) border border-line bg-l0 p-2.5 font-mono text-[12px] whitespace-pre text-ink">{forensic.alarm.exemplar}</pre>
+            {:else}
+              <p class="mt-2 font-mono text-[11px] text-ink-3">No exemplar line was captured for this alarm.</p>
+            {/if}
           </div>
 
           <div class="border-b border-line px-4 py-3">
@@ -316,11 +342,11 @@
                   {@const top = rows.length ? rows[0].label : ''}
                   <div>
                     <div class="flex items-baseline gap-2">
-                      <h4 class="label text-[10.5px] text-ink-2">{qid}</h4>
-                      <span class="truncate text-[12.5px] text-ink">{head.value}</span>
+                      <h4 class="label text-[10.5px] text-ink-2">{humanize(qid)}</h4>
+                      <span class="truncate text-[12.5px] text-ink">{humanize(head.value)}</span>
                       {#if head.confidence !== null}
                         <span class="ml-auto shrink-0 font-mono text-[11px] tabular-nums text-ink-3">
-                          conf {head.confidence.toFixed(2)}
+                          {(head.confidence * 100).toFixed(0)}% confidence
                         </span>
                       {/if}
                     </div>
@@ -328,14 +354,19 @@
                       {#each rows as row}
                         <li class="grid grid-cols-[minmax(0,1fr)_44px] items-center gap-3">
                           <span class="min-w-0">
-                            <span class="block truncate text-[12px] {row.label === top ? 'text-ink' : 'text-ink-2'}">{row.label}</span>
+                            <span class="block truncate text-[12px] {row.label === top ? 'font-medium text-ink' : 'text-ink-2'}">{row.display}</span>
+                            <!--
+                              Neutral bars: severity hues are reserved for
+                              severity, so the lead option gets weight and a
+                              brighter neutral, never major-red.
+                            -->
                             <span
                               class="mt-1 block h-[3px] overflow-hidden rounded-full bg-l3"
                               role="img"
-                              aria-label={`${row.label}: ${(row.p * 100).toFixed(0)} percent`}
+                              aria-label={`${row.display}: ${(row.p * 100).toFixed(0)} percent`}
                             >
                               <span
-                                class="block h-full rounded-full {row.label === top ? 'bg-major' : 'bg-line-2'}"
+                                class="block h-full rounded-full {row.label === top ? 'bg-ink-2' : 'bg-line-2'}"
                                 style={`width: ${(row.p * 100).toFixed(0)}%`}
                               ></span>
                             </span>
@@ -359,7 +390,7 @@
                 <dt class="text-ink-3">Model</dt>
                 <dd class="m-0 break-all text-ink-2">{forensic.record.model}</dd>
                 <dt class="text-ink-3">Recorded</dt>
-                <dd class="m-0 tabular-nums text-ink-2">{clockOf(forensic.record.recorded_at)} UTC</dd>
+                <dd class="m-0 tabular-nums text-ink-2">{stampOf(forensic.record.recorded_at)} UTC</dd>
                 <dt class="text-ink-3">Tokens</dt>
                 <dd class="m-0 tabular-nums text-ink-2">
                   {forensic.record.input_tokens.toLocaleString()} in · {forensic.record.output_tokens.toLocaleString()} out
@@ -393,20 +424,32 @@
       {/if}
 
       {#if selected !== null}
-        <div class="flex flex-wrap gap-2 px-4 py-3">
+        <!--
+          Honestly disabled: there is no acknowledgement endpoint yet, and a
+          live-looking button that does nothing is worse than one that says
+          it cannot act. The caption below names the gap.
+        -->
+        <div class="flex flex-wrap gap-2 px-4 pt-3">
           <button
             type="button"
-            class="rounded-(--radius-ui) bg-accent px-3 py-1.5 text-[13px] font-medium text-accent-fg transition-colors duration-[120ms] hover:brightness-110"
+            disabled
+            title="Acknowledgement is not wired to the daemon yet"
+            class="rounded-(--radius-ui) bg-accent px-3 py-1.5 text-[13px] font-medium text-accent-fg opacity-50 disabled:cursor-not-allowed"
           >
             Acknowledge
           </button>
           <button
             type="button"
-            class="rounded-(--radius-ui) border border-line px-3 py-1.5 text-[13px] text-ink-2 transition-colors duration-[120ms] hover:bg-l2 hover:text-ink"
+            disabled
+            title="Dismissal is not wired to the daemon yet"
+            class="rounded-(--radius-ui) border border-line px-3 py-1.5 text-[13px] text-ink-2 opacity-50 disabled:cursor-not-allowed"
           >
             Not an alarm
           </button>
         </div>
+        <p class="px-4 pt-2 pb-3 font-mono text-[11px] text-ink-3">
+          Actions are not wired to the daemon yet.
+        </p>
       {/if}
     </aside>
   </div>

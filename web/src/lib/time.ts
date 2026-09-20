@@ -17,3 +17,22 @@ const CLOCK = new Intl.DateTimeFormat('en-GB', {
 export function clockOf(iso: string): string {
   return CLOCK.format(new Date(iso));
 }
+
+/*
+ * The full stamp, with date: the detail header and the decision record name
+ * multi-day alarms, where a bare clock is ambiguous. UTC for the same reason
+ * as above, and always suffixed at the call site.
+ */
+const STAMP = new Intl.DateTimeFormat('en-GB', {
+  day: '2-digit',
+  month: 'short',
+  year: 'numeric',
+  hour: '2-digit',
+  minute: '2-digit',
+  hour12: false,
+  timeZone: 'UTC',
+});
+
+export function stampOf(iso: string): string {
+  return STAMP.format(new Date(iso));
+}

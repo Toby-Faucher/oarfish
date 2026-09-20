@@ -87,6 +87,12 @@ pub struct Alarm {
     pub template_id: TemplateId,
     /// The masked template, verbatim. The alarm's display line.
     pub template: String,
+    /// One raw line that raised this alarm, verbatim. The board's forensics
+    /// panel renders it; at 3am the operator wants the bytes that arrived,
+    /// not our interpretation of them. The first triggering line wins and is
+    /// kept across count bumps and flap revives. Empty when the raise had no
+    /// line behind it (a first-ever judgment resolving unjudged sightings).
+    pub exemplar: String,
     pub severity: Severity,
     pub host: String,
     /// Where this alarm routed. M5 raises land here as `Dashboard`; the
@@ -130,6 +136,7 @@ mod tests {
             id: AlarmId::generate(),
             template_id: TemplateId::of("EXT4-fs error (device <VAR:DEV>)"),
             template: "EXT4-fs error (device <VAR:DEV>)".to_owned(),
+            exemplar: "EXT4-fs error (device sda): test".to_owned(),
             severity: Severity::Critical,
             host: "nas01".to_owned(),
             lane: Lane::Dashboard,

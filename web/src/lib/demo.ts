@@ -12,6 +12,9 @@ export const DEMO_ALARM: Alarm = {
   template:
     'EXT4-fs error (device <VAR:DEV>): ext4_find_entry:<VAR:NUM>: inode #<VAR:NUM>: ' +
     'comm <VAR:PROC>: reading directory lblock <VAR:NUM>',
+  exemplar:
+    'EXT4-fs error (device sda): ext4_find_entry:1532: inode #819204: ' +
+    'comm find: reading directory lblock 0',
   severity: 'major',
   host: 'nas',
   lane: 'Dashboard',
