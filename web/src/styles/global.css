@@ -45,6 +45,15 @@
   --ui-minor:    #d4bc5e;
   --ui-info:     #8b95a3;
   --ui-cleared:  #4fc79a;
+
+  /*
+   * Read by OceanBackground.svelte for the optional ambient shader (off by
+   * default, Settings → Appearance). Deliberately its own hue family, not a
+   * reuse of --ui-accent — the accent means "interactive," and the water
+   * should never be mistaken for something clickable.
+   */
+  --ui-water:           #123244;
+  --ui-water-highlight: #3fa8c4;
 }
 
 /*
@@ -72,6 +81,11 @@
   --ui-minor:    #7d6a00;
   --ui-info:     #5b6675;
   --ui-cleared:  #0f7a5a;
+
+  /* Highlight reads deeper/more saturated rather than brighter — there's no
+     headroom above a pale ground for a lighter glint to read against. */
+  --ui-water:           #c7dbe8;
+  --ui-water-highlight: #4f88b3;
 }
 
 /*
@@ -107,6 +121,9 @@
   --ui-minor:    #d4bc5e;
   --ui-info:     #8b95a3;
   --ui-cleared:  #4fc79a;
+
+  --ui-water:           #123c52;
+  --ui-water-highlight: #35c6cf;
 }
 
 @theme inline {
