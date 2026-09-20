@@ -10,6 +10,7 @@ authors.workspace      = true
 [dependencies]
 oarfish-core.workspace   = true
 oarfish-engine.workspace = true
+oarfish-store.workspace  = true
 axum.workspace           = true
 tower-http.workspace     = true
 tokio.workspace          = true
@@ -28,4 +29,5 @@ oarfish-mask.workspace = true
 oarfish-store.workspace = true
 reqwest = { version = "0.13", default-features = false, features = ["stream"] }
 time.workspace = true
+ulid.workspace = true
 wiremock.workspace = true

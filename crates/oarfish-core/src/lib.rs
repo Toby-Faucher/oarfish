@@ -27,7 +27,9 @@ pub use template::{Slot, TemplateId, TemplateIdError};
 
 mod verdict;
 
-pub use verdict::{QuestionsHash, QuestionsHashError, Verdict, VerdictAnswer};
+pub use verdict::{
+    AlarmDetail, DecisionRecordView, QuestionsHash, QuestionsHashError, Verdict, VerdictAnswer,
+};
 
 mod alarm;
 

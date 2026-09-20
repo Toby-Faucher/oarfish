@@ -1,0 +1,55 @@
+---
+import Board from '../layouts/Board.astro';
+import ConnectionPulse from '../components/ConnectionPulse.svelte';
+
+const ingest = [
+  { name: 'Syslog, UDP and TCP', value: '0.0.0.0:514' },
+  { name: 'OTLP logs, gRPC', value: '0.0.0.0:4317' },
+  { name: 'Systemd journal', value: 'off unless --journal with the journald build' },
+];
+const serving = [
+  { name: 'JSON API, SSE stream, board', value: '127.0.0.1:4000' },
+  { name: 'Verdict cache and records', value: 'oarfish-data (fjall)' },
+  { name: 'Mask bundle', value: 'embedded curated set unless --bundle' },
+];
+const policy = [
+  { name: 'Pipeline', value: 'mask to cluster to window to alarm' },
+  { name: 'Drain similarity', value: '0.90' },
+  { name: 'Decision model', value: 'typesafe/jev-1.13 via OPENROUTER_API_KEY' },
+];
+---
+
+<Board title="oarfish — settings" section="settings">
+  <header class="flex min-h-12 items-center gap-4 border-b border-line bg-l1 px-5 py-2.5">
+    <div class="min-w-0">
+      <h1 class="label text-[14px] leading-none">Settings</h1>
+      <p class="mt-1 font-mono text-[10.5px] tracking-[0.04em] text-ink-3 uppercase">Homelab</p>
+    </div>
+    <div class="ml-auto shrink-0"><ConnectionPulse client:load /></div>
+  </header>
+
+  <main class="min-w-0 flex-1 p-4">
+    <section
+      class="overflow-hidden rounded-(--radius-ui) border border-line bg-l1"
+      aria-label="Daemon configuration"
+    >
+      <div class="flex items-center gap-3 border-b border-line px-3.5 py-2">
+        <h2 class="label text-[13px]">Daemon defaults</h2>
+        <span class="font-mono text-[10.5px] text-ink-3">file, env, then CLI flags win</span>
+      </div>
+      {[{ title: 'Ingest', rows: ingest }, { title: 'Serving and storage', rows: serving }, { title: 'Policy', rows: policy }].map((group) => (
+        <div class="border-b border-line px-3.5 py-3 last:border-b-0">
+          <h3 class="label text-[11px] text-ink-3">{group.title}</h3>
+          <dl class="mt-2 grid grid-cols-[minmax(0,1fr)] gap-x-3 gap-y-2 sm:grid-cols-[220px_minmax(0,1fr)]">
+            {group.rows.map((row) => (
+              <>
+                <dt class="text-[12.5px] text-ink-2">{row.name}</dt>
+                <dd class="m-0 font-mono text-[11.5px] break-all text-ink">{row.value}</dd>
+              </>
+            ))}
+          </dl>
+        </div>
+      ))}
+    </section>
+  </main>
+</Board>

@@ -1,0 +1,33 @@
+---
+import Board from '../layouts/Board.astro';
+import ConnectionPulse from '../components/ConnectionPulse.svelte';
+---
+
+<Board title="oarfish — templates" section="templates">
+  <header class="flex min-h-12 items-center gap-4 border-b border-line bg-l1 px-5 py-2.5">
+    <div class="min-w-0">
+      <h1 class="label text-[14px] leading-none">Templates</h1>
+      <p class="mt-1 font-mono text-[10.5px] tracking-[0.04em] text-ink-3 uppercase">Homelab</p>
+    </div>
+    <div class="ml-auto shrink-0"><ConnectionPulse client:load /></div>
+  </header>
+
+  <main class="min-w-0 flex-1 p-4">
+    <section
+      class="overflow-hidden rounded-(--radius-ui) border border-line bg-l1"
+      aria-label="Templates"
+    >
+      <div class="flex items-center gap-3 border-b border-line px-3.5 py-2">
+        <h2 class="label text-[13px]">Templates</h2>
+      </div>
+      <div class="px-3.5 py-10 text-center">
+        <p class="text-[13.5px] text-ink-2">The template index is not served yet.</p>
+        <p class="mx-auto mt-1 max-w-md font-mono text-[11px] leading-relaxed text-ink-3">
+          It will list every masked template with its cached verdict and counts,
+          once the daemon serves the verdict index. Judging and alarming work
+          without it.
+        </p>
+      </div>
+    </section>
+  </main>
+</Board>

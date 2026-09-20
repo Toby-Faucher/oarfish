@@ -179,6 +179,7 @@ async fn an_alarm_raises_dedupes_clears_and_every_transition_reaches_sse() {
     let cancel = CancellationToken::new();
     let api_state = oarfish_api::ApiState::new(
         engine.snapshot_handle(),
+        Arc::clone(&verdicts),
         engine.sender(),
         None,
         cancel.child_token(),
@@ -249,6 +250,37 @@ async fn an_alarm_raises_dedupes_clears_and_every_transition_reaches_sse() {
         .expect("json");
     assert_eq!(open.as_array().expect("array").len(), 1);
     assert_eq!(open[0]["host"], serde_json::json!("acc01"));
+
+    // Its forensics read back too: the verdict the judge landed plus the
+    // decision record behind it.
+    let detail: serde_json::Value = reqwest::get(format!(
+        "http://127.0.0.1:{port}/api/alarms/{alarm_id}/detail"
+    ))
+    .await
+    .expect("get detail")
+    .json()
+    .await
+    .expect("json");
+    assert_eq!(
+        detail["verdict"]["model"],
+        serde_json::json!("typesafe/jev-1.13-20260917")
+    );
+    assert_eq!(
+        detail["verdict"]["answers"]["kind"]["choice"]["choice"],
+        serde_json::json!("software")
+    );
+    assert_eq!(
+        detail["record"]["model"],
+        serde_json::json!("typesafe/jev-1.13-20260917")
+    );
+
+    // A cleared id is 404: the snapshot is the open set, not history.
+    let missing = reqwest::get(format!(
+        "http://127.0.0.1:{port}/api/alarms/01ARZ3NDEKTSV4RRFFQ69G5FAV/detail"
+    ))
+    .await
+    .expect("get missing");
+    assert_eq!(missing.status(), 404);
 
     // Same pair: a count bump, not a second alarm. The count folds events
     // for this host: one at raise, plus this one.
