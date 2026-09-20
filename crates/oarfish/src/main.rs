@@ -121,6 +121,15 @@ struct DaemonArgs {
     /// means exactly the M1–M6 behavior: `oarfish_mask::curated()`.
     #[arg(long)]
     bundle: Option<PathBuf>,
+
+    /// Bypass the actionable gate, the window, and the contextual check:
+    /// every judged template raises immediately at its static severity,
+    /// info included. For seeing the classifier's real output on the board
+    /// without needing traffic that would actually earn an alarm in
+    /// production. Never run this against production traffic — it is the
+    /// opposite of the gating this project exists to have.
+    #[arg(long, default_value_t = false)]
+    classify_all: bool,
 }
 
 #[tokio::main]
@@ -314,14 +323,45 @@ async fn run_daemon(args: DaemonArgs) -> anyhow::Result<()> {
         .with_context(|| format!("cannot open store at {}", args.data_dir.display()))?,
     );
 
+    // classify_all bundles four existing, already-tested EngineConfig
+    // fields into the most permissive values each allows, rather than
+    // adding a new code path to the engine: gate_floor at the lowest
+    // severity never rejects anything, actionable_threshold at 0.0 never
+    // rejects an actionable answer, and bypass_severity at the lowest
+    // severity means the "high severity skips the window" check in
+    // oarfish-engine's machine.rs is unconditionally true.
+    //
+    // That check only ever skips the window-count requirement — the
+    // contextual check in machine.rs::on_classified is a separate,
+    // independent gate that still runs afterward regardless of how the
+    // window check was satisfied. contextual_threshold above 1.0 closes it
+    // too: the verdict's `contextual` answer is a probability, always
+    // <= 1.0, so a threshold it can never clear means `is_contextual`
+    // always returns false and every verdict falls through to `raise`.
+    let engine_config = if args.classify_all {
+        tracing::warn!("CLASSIFY-ALL MODE ACTIVE");
+        tracing::warn!(
+            "every judged template raises immediately at its static severity, info included."
+        );
+        tracing::warn!(
+            "the actionable gate, the window, and the contextual check are all bypassed."
+        );
+        tracing::warn!("never run this against production traffic.");
+        oarfish_engine::EngineConfig {
+            gate_floor: oarfish_core::Severity::Info,
+            actionable_threshold: 0.0,
+            bypass_severity: oarfish_core::Severity::Info,
+            contextual_threshold: f64::INFINITY,
+            ..oarfish_engine::EngineConfig::default()
+        }
+    } else {
+        oarfish_engine::EngineConfig::default()
+    };
+
     // One engine task owns the windows, the state machine and the timers.
     // The pipeline forwards it every classified line; the API reads its
     // snapshot and subscribes to its changes.
-    let engine = oarfish_engine::Engine::new(
-        Arc::clone(&verdicts),
-        decide_client,
-        oarfish_engine::EngineConfig::default(),
-    );
+    let engine = oarfish_engine::Engine::new(Arc::clone(&verdicts), decide_client, engine_config);
     let api_state = oarfish_api::ApiState::new(
         engine.snapshot_handle(),
         Arc::clone(&verdicts),
@@ -443,6 +483,18 @@ mod tests {
         let cli = Cli::try_parse_from(["oarfish"]).expect("parses");
         assert_eq!(cli.daemon.bundle, None);
         assert_eq!(cli.daemon.api, "127.0.0.1:4000".parse().unwrap());
+    }
+
+    #[test]
+    fn classify_all_defaults_to_false() {
+        let cli = Cli::try_parse_from(["oarfish"]).expect("parses");
+        assert!(!cli.daemon.classify_all);
+    }
+
+    #[test]
+    fn classify_all_flag_parses() {
+        let cli = Cli::try_parse_from(["oarfish", "--classify-all"]).expect("parses");
+        assert!(cli.daemon.classify_all);
     }
 
     #[test]
