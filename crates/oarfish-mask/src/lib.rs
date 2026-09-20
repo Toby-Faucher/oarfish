@@ -35,4 +35,6 @@ mod synth;
 pub use bundle::{Bundle, BundleError, BundleHash, RESERVED_SLOT, SlotDef};
 pub use curated::curated;
 pub use masker::{Masked, SlotMatch};
-pub use synth::{Candidate, build_fix_prompt, build_prompt, find_candidates, merge};
+pub use synth::{
+    Candidate, SynthesisError, SynthesisReport, Synthesize, find_candidates, merge, run,
+};

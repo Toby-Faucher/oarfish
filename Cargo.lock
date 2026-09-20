@@ -2016,11 +2016,14 @@ dependencies = [
  "criterion",
  "insta",
  "oarfish-drain",
+ "oarfish-synth",
  "proptest",
  "regex",
  "rstest",
  "serde",
+ "serde_json",
  "thiserror",
+ "tokio",
  "toml",
 ]
 
