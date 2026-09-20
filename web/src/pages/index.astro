@@ -1,9 +1,23 @@
 ---
 import Board from '../layouts/Board.astro';
-import AlarmList from '../components/AlarmList.svelte';
-import Template from '../components/Template.svelte';
+import TriageBoard from '../components/TriageBoard.svelte';
 import ConnectionPulse from '../components/ConnectionPulse.svelte';
-import type { Slot } from '../lib/bindings/oarfish';
+import type { Alarm, Slot } from '../lib/bindings/oarfish';
+
+/*
+ * Example detail content. The list beside it is live; these values stand in
+ * until the daemon serves per-alarm forensics, and the panel badges them.
+ */
+const fallback: Alarm = {
+  id: 'example',
+  template_id: 't_8f3c21a9',
+  template: 'EXT4-fs error, reading directory lblock',
+  severity: 'major',
+  host: 'nas',
+  lane: 'Dashboard',
+  count: 14,
+  opened_at: '2026-09-19T03:12:04Z',
+};
 
 const template =
   'EXT4-fs error (device <VAR:DEV>): ext4_find_entry:<VAR:NUM>: inode #<VAR:NUM>: ' +
@@ -14,29 +28,47 @@ const slots: Slot[] = [
   { name: 'NUM',  pattern: '/\\b\\d+\\b/',                              seen: 812 },
   { name: 'PROC', pattern: '/comm ([a-z_][a-z0-9_-]*)/',                seen: 6 },
 ];
+
+const raw = [
+  'Sep 19 03:12:04 nas kernel: EXT4-fs error (device sda1): ext4_find_entry:1312: inode #48211: comm find: reading directory lblock 41',
+  'Sep 19 03:12:09 nas kernel: EXT4-fs error (device sda1): ext4_find_entry:1312: inode #48211: comm updatedb: reading directory lblock 41',
+];
+
+const verdicts = [
+  { label: 'filesystem degradation', p: 0.81 },
+  { label: 'imminent device failure', p: 0.11 },
+  { label: 'transient read error', p: 0.06 },
+  { label: 'not an alarm', p: 0.02 },
+];
+
+const hosts = [
+  { name: 'nas', count: 11 },
+  { name: 'pi-hole', count: 3 },
+];
+
+const buckets = [1, 1, 2, 1, 3, 2, 5, 4, 9, 14];
 ---
 
 <Board title="oarfish — alarms" section="alarms">
-  <header class="flex items-center gap-4 border-b border-line bg-l1 px-5 py-2.5">
-    <h1 class="label text-[14px]">Alarms</h1>
-    <div class="ml-auto"><ConnectionPulse client:load /></div>
+  <header class="flex min-h-12 items-center gap-4 border-b border-line bg-l1 px-5 py-2.5">
+    <div class="min-w-0">
+      <h1 class="label text-[14px] leading-none">Alarms</h1>
+      <p class="mt-1 font-mono text-[10.5px] tracking-[0.04em] text-ink-3 uppercase">Homelab</p>
+    </div>
+    <div class="ml-auto shrink-0"><ConnectionPulse client:load /></div>
   </header>
 
-  <main class="grid min-w-0 flex-1 gap-4 p-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
-    <!-- island: holds density state, and opens the board's SSE stream -->
-    <section class="self-start overflow-hidden rounded-(--radius-ui) border border-line bg-l1">
-      <AlarmList client:load />
-    </section>
-
-    <!-- static: the signature component, server-rendered, no JavaScript -->
-    <section class="self-start overflow-hidden rounded-(--radius-ui) border border-line bg-l1">
-      <div class="flex items-center gap-2 border-b border-line bg-l2 px-3.5 py-2 font-mono text-[10px] tracking-[0.12em] text-ink-3 uppercase">
-        <span>t_8f3c21a9</span>
-        <span class="ml-auto normal-case tracking-normal">14 occurrences · 1 host</span>
-      </div>
-      <div class="p-5">
-        <Template {template} {slots} />
-      </div>
-    </section>
+  <main class="min-w-0 flex-1 p-4">
+    <!-- island: filters, the live list, and the detail share one selection -->
+    <TriageBoard
+      client:load
+      {fallback}
+      {template}
+      {slots}
+      {raw}
+      {verdicts}
+      {hosts}
+      {buckets}
+    />
   </main>
 </Board>

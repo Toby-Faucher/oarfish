@@ -3,9 +3,13 @@
    * The signature component.
    *
    * A masked template is the most characteristic object in oarfish — it is what
-   * gets cached, judged once, and correlated on. So it is drawn the way a
-   * schematic draws a dimensioned part: the variable slots are measured slots,
-   * and the dimension lines beneath report what was measured and how often.
+   * gets cached, judged once, and correlated on. So it gets the clearest
+   * treatment on the board: the template set large, the parts that change
+   * highlighted, and a plain list beneath saying what each part is and how
+   * often it varies. No regex on display; the pattern rides on `title` for
+   * anyone who wants it.
+   *
+   * Static markup, no JavaScript.
    *
    * This is the one place the design is allowed to be loud. If a second
    * component starts competing with it, cut something.
@@ -36,71 +40,105 @@
     if (last < template.length) out.push({ kind: 'text', value: template.slice(last) });
     return out;
   });
+
+  const slotCount = $derived(pieces.filter((p) => p.kind === 'slot').length);
+  const totalSeen = $derived(slots.reduce((sum, s) => sum + s.seen, 0));
 </script>
 
-<div class="font-mono text-[13.5px] leading-[2.4] break-words text-ink-2">
-  {#each pieces as piece}{#if piece.kind === 'text'}{piece.value}{:else}<span
-        class="slot">{piece.value}</span>{/if}{/each}
-</div>
+<figure class="sheet m-0">
+  <figcaption class="label512">Template</figcaption>
+  <div class="tmpl font-mono" aria-label="Masked template">
+    {#each pieces as piece}{#if piece.kind === 'text'}{piece.value}{:else}<span
+          class="slot">{piece.value}</span>{/if}{/each}
+  </div>
+  <p class="hint">Highlighted bits change line to line. The rest is fixed.</p>
 
-{#if slots.length}
-  <dl class="mt-5 flex flex-col gap-2.5">
-    {#each slots as slot}
-      <div class="grid grid-cols-[64px_56px_1fr_auto] items-center gap-3 font-mono text-[11px]">
-        <span class="dim" aria-hidden="true"></span>
-        <dt class="tracking-[0.08em] text-accent">{slot.name}</dt>
-        <dd class="m-0 overflow-x-auto whitespace-nowrap text-ink-3">{slot.pattern}</dd>
-        <dd class="m-0 tabular-nums text-ink-2">{slot.seen.toLocaleString()} values</dd>
-      </div>
-    {/each}
-  </dl>
-{/if}
+  {#if slots.length}
+    <ul class="vary">
+      {#each slots as slot}
+        <li title={slot.pattern}>
+          <span class="slot small">{slot.name}</span>
+          <span>{slot.seen.toLocaleString()} values</span>
+        </li>
+      {/each}
+    </ul>
+    <p class="totals font-mono">
+      {slotCount} {slotCount === 1 ? 'changing part' : 'changing parts'} · {totalSeen.toLocaleString()} values seen
+    </p>
+  {/if}
+</figure>
 
 <style>
-  /* A measured slot: boxed, with leader ticks reaching out to the text either side. */
+  .sheet {
+    border: 1px solid var(--ui-line);
+    border-radius: 12px;
+    background: var(--ui-l0);
+    padding: 16px 18px 14px;
+  }
+
+  .label512 {
+    font-family: var(--font-cond);
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ui-ink-3);
+  }
+
+  .tmpl {
+    margin-top: 8px;
+    font-size: 14.5px;
+    line-height: 2.2;
+    overflow-wrap: break-word;
+    color: var(--ui-ink);
+  }
+
   .slot {
     display: inline-block;
-    position: relative;
-    margin: 0 1px;
-    padding: 1px 7px;
-    border: 1px solid var(--ui-accent);
-    border-radius: 2px;
+    margin: 0 2px;
+    padding: 2px 10px;
+    border-radius: 999px;
     background: var(--ui-accent-soft);
     color: var(--ui-accent);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    vertical-align: 2px;
+    white-space: nowrap;
+  }
+  .slot.small {
+    padding: 1px 9px;
+    font-size: 11px;
+  }
+
+  .hint {
+    margin: 8px 0 0;
+    font-size: 12px;
+    color: var(--ui-ink-3);
+  }
+
+  .vary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+    margin: 14px 0 0;
+    padding: 14px 0 0;
+    border-top: 1px solid var(--ui-line);
+    list-style: none;
+  }
+  .vary li {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-mono);
     font-size: 11.5px;
-    font-weight: 500;
-    letter-spacing: 0.07em;
-    vertical-align: 1px;
+    color: var(--ui-ink-2);
   }
 
-  .slot::before,
-  .slot::after {
-    content: '';
-    position: absolute;
-    top: 50%;
-    width: 3px;
-    height: 1px;
-    background: var(--ui-accent);
-    opacity: 0.55;
+  .totals {
+    margin: 12px 0 0;
+    font-size: 10.5px;
+    letter-spacing: 0.04em;
+    color: var(--ui-ink-3);
   }
-  .slot::before { left: -4px; }
-  .slot::after { right: -4px; }
-
-  /* Dimension line: a promise that somebody measured something. */
-  .dim {
-    position: relative;
-    height: 1px;
-    background: var(--ui-line-2);
-  }
-  .dim::before,
-  .dim::after {
-    content: '';
-    position: absolute;
-    top: -3.5px;
-    width: 1px;
-    height: 8px;
-    background: var(--ui-line-2);
-  }
-  .dim::before { left: 0; }
-  .dim::after { right: 0; }
 </style>

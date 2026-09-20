@@ -2,6 +2,10 @@
 /**
  * The board shell. Static HTML — renders on the server, ships no JavaScript.
  * Live regions are islands placed by the page, never by this layout.
+ *
+ * Layout follows the UniFi console pattern: a narrow icon rail, a top
+ * header strip owned by the page, and content panels barely lifted off the
+ * ground with hairline borders. No shadows, no gradients, radius 4px.
  */
 import '../styles/global.css';
 import { TriangleAlert, LayoutGrid, Layers, Settings } from '@lucide/svelte';
@@ -30,8 +34,15 @@ const nav = [
   </head>
   <body class="min-h-dvh">
     <div class="flex min-h-dvh">
-      <nav class="flex w-14 shrink-0 flex-col items-center gap-1 bg-l0 py-3 ring-1 ring-line" aria-label="Sections">
-        <div class="mb-3 text-lg leading-none" title="oarfish" aria-hidden="true">🐟</div>
+      <nav class="flex w-14 shrink-0 flex-col items-center gap-1 border-r border-line bg-l1 py-3" aria-label="Sections">
+        <a
+          href="/"
+          class="mb-3 grid size-9 place-items-center rounded-(--radius-ui) bg-l2 font-cond text-[13px] font-bold tracking-[0.08em] text-ink"
+          title="oarfish home"
+          aria-label="oarfish home"
+        >
+          OF
+        </a>
         {nav.map(({ icon: Icon, label, href, key }) => (
           <a
             href={href}
@@ -41,13 +52,16 @@ const nav = [
             class:list={[
               'grid size-10 place-items-center rounded-(--radius-ui) transition-colors duration-[120ms]',
               key === section
-                ? 'bg-accent text-accent-fg'
+                ? 'bg-accent-soft text-accent'
                 : 'text-ink-3 hover:bg-l2 hover:text-ink',
             ]}
           >
-            <Icon size={18} />
+            <Icon size={18} strokeWidth={key === section ? 2.25 : 1.75} />
           </a>
         ))}
+        <div class="mt-auto flex flex-col items-center gap-1" aria-hidden="true">
+          <span class="size-1 rounded-full bg-line-2"></span>
+        </div>
       </nav>
 
       <div class="flex min-w-0 flex-1 flex-col">

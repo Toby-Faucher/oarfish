@@ -22,13 +22,15 @@
   );
 </script>
 
-<div class="flex items-center gap-2 font-mono text-xs text-ink-3">
+<div
+  class="flex items-center gap-2 rounded-(--radius-ui) border border-line bg-l0 px-2 py-1 font-mono text-[11px] tabular-nums"
+  role="status"
+  aria-label={status === 'live' ? 'Connected' : 'Connecting'}
+>
   <span
-    class="size-1.5 rounded-full"
-    class:bg-ok={status === 'live'}
-    class:bg-ink-3={status !== 'live'}
+    class="size-1.5 rounded-full {status === 'live' ? 'bg-cleared' : 'bg-major'}"
     aria-hidden="true"
   ></span>
-  <span>{status === 'live' ? 'live' : 'connecting'}</span>
-  <span class="tabular-nums">{clock}</span>
+  <span class="text-ink-2">{status === 'live' ? 'live' : 'connecting'}</span>
+  <span class="text-ink-3">{clock}</span>
 </div>
