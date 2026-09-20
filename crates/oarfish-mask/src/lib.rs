@@ -30,7 +30,9 @@
 mod bundle;
 mod curated;
 mod masker;
+mod synth;
 
 pub use bundle::{Bundle, BundleError, BundleHash, RESERVED_SLOT, SlotDef};
 pub use curated::curated;
 pub use masker::{Masked, SlotMatch};
+pub use synth::{Candidate, find_candidates};
