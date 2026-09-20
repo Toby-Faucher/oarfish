@@ -1875,6 +1875,7 @@ dependencies = [
  "oarfish-jev",
  "oarfish-mask",
  "oarfish-store",
+ "oarfish-synth",
  "serde",
  "tokio",
  "tokio-util",
@@ -2015,11 +2016,15 @@ dependencies = [
  "blake3",
  "criterion",
  "insta",
+ "oarfish-drain",
+ "oarfish-synth",
  "proptest",
  "regex",
  "rstest",
  "serde",
+ "serde_json",
  "thiserror",
+ "tokio",
  "toml",
 ]
 
@@ -2041,6 +2046,19 @@ dependencies = [
  "tokio",
  "tracing",
  "ulid",
+ "wiremock",
+]
+
+[[package]]
+name = "oarfish-synth"
+version = "0.1.0"
+dependencies = [
+ "reqwest",
+ "serde",
+ "serde_json",
+ "thiserror",
+ "tokio",
+ "tracing",
  "wiremock",
 ]
 
