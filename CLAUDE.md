@@ -89,6 +89,14 @@ Scattered animation is itself an AI tell, and this board is stared at for hours.
 Never animate keyboard-initiated actions or anything triggered hundreds of times a
 shift. `prefers-reduced-motion` is honoured globally in `global.css`.
 
+**One deliberate exception:** `OceanBackground.svelte`, an optional ambient water
+shader fixed behind the app chrome, off by default and toggled from Settings →
+Appearance. It's continuous rather than event-triggered, which is a real departure
+from the table above — that was a conscious call, not drift, so don't "fix" it back
+out. It still answers to `prefers-reduced-motion` (stops its render loop entirely,
+not just holds still) and stays low-opacity so it reads as ambient depth behind the
+dense panels, not something competing with them for attention.
+
 ### Rows and tables
 
 - **Row separators, not gridlines.** A full grid of rules fights the data.

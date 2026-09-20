@@ -45,6 +45,15 @@
   --ui-minor:    #d4bc5e;
   --ui-info:     #8b95a3;
   --ui-cleared:  #4fc79a;
+
+  /*
+   * Read by OceanBackground.svelte for the optional ambient shader (off by
+   * default, Settings → Appearance). Deliberately its own hue family, not a
+   * reuse of --ui-accent — the accent means "interactive," and the water
+   * should never be mistaken for something clickable.
+   */
+  --ui-water:           #123244;
+  --ui-water-highlight: #3fa8c4;
 }
 
 /*
@@ -72,6 +81,49 @@
   --ui-minor:    #7d6a00;
   --ui-info:     #5b6675;
   --ui-cleared:  #0f7a5a;
+
+  /* Highlight reads deeper/more saturated rather than brighter — there's no
+     headroom above a pale ground for a lighter glint to read against. */
+  --ui-water:           #c7dbe8;
+  --ui-water-highlight: #4f88b3;
+}
+
+/*
+ * Abyssal: still a dark ground (this board is stared at at 3am), surfaces
+ * stepped through the fish's steel-blue body instead of neutral grey, accent
+ * pulled from the bioluminescent spine-dots. The logo's red stays out of it
+ * entirely — that hue is already spoken for by --ui-critical, and reusing it
+ * here would be exactly the "status colour competes with the accent"
+ * collision the rest of the palette is built to avoid. Severity keeps the
+ * same Wong-derived values as dark: the ground shifting hue doesn't change
+ * what contrast those hues need, and severity should mean the same colour on
+ * every theme.
+ */
+:root[data-theme="abyssal"] {
+  --ui-l0:     #0a1620;
+  --ui-l1:     #0f2130;
+  --ui-l2:     #15293f;
+  --ui-l3:     #1c3550;
+
+  --ui-line:   #244660;
+  --ui-line-2: #305a78;
+
+  --ui-ink:   #e7eff7;
+  --ui-ink-2: #90a8c0;
+  --ui-ink-3: #62788f;
+
+  --ui-accent:      #23b8dd;
+  --ui-accent-fg:   #052229;
+  --ui-accent-soft: #0c2c36;
+
+  --ui-critical: #f2705a;
+  --ui-major:    #eda54a;
+  --ui-minor:    #d4bc5e;
+  --ui-info:     #8b95a3;
+  --ui-cleared:  #4fc79a;
+
+  --ui-water:           #123c52;
+  --ui-water-highlight: #35c6cf;
 }
 
 @theme inline {

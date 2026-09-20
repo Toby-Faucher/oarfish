@@ -16,7 +16,7 @@
   import Template from './Template.svelte';
   import type { Density, Severity as SeverityLevel } from '../lib/severity';
   import type { AlarmDetail, VerdictAnswer } from '../lib/bindings/oarfish';
-  import { connect, connectionAlarms } from '../lib/connection.svelte';
+  import { connect, connectionAlarms, connectionStatus } from '../lib/connection.svelte';
   import { clockOf } from '../lib/time';
   import { demoModeEnabled } from '../lib/settings.svelte';
   import { DEMO_ALARM, DEMO_DETAIL } from '../lib/demo';
@@ -24,10 +24,14 @@
   onMount(connect);
 
   let live = $derived(connectionAlarms());
+  let status = $derived(connectionStatus());
   // Dev-only, set from the Settings page rather than a `?demo` URL param —
   // persisted in localStorage, always false in a production build.
   let demoMode = $derived(demoModeEnabled());
   let rows = $derived(demoMode ? [DEMO_ALARM, ...live] : live);
+  // Before the stream has confirmed anything, an empty list isn't evidence
+  // of a quiet night — same distinction OverviewBoard already makes.
+  let connecting = $derived(status !== 'live' && rows.length === 0);
   let density = $state<Density>('compact');
   let query = $state('');
   let severityFilter = $state<SeverityLevel | 'all'>('all');
@@ -229,7 +233,14 @@
 
   <div class="grid items-start lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
     <div aria-label="Alarm list">
-      {#if rows.length === 0}
+      {#if connecting}
+        <div class="px-3.5 py-10 text-center">
+          <p class="text-[13.5px] text-ink-2">Connecting to the daemon.</p>
+          <p class="mt-1 font-mono text-[11px] text-ink-3">
+            Showing nothing rather than a false all-clear.
+          </p>
+        </div>
+      {:else if rows.length === 0}
         <div class="px-3.5 py-10 text-center">
           <p class="text-[13.5px] text-ink-2">Nothing is firing.</p>
           <p class="mt-1 font-mono text-[11px] text-ink-3">

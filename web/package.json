@@ -18,6 +18,7 @@
     "@fontsource/barlow": "^5.3.0",
     "@fontsource/barlow-condensed": "^5.3.0",
     "@lucide/svelte": "^1.47.0",
+    "@paper-design/shaders": "^0.0.81",
     "@tailwindcss/vite": "^4.3.3",
     "@tanstack/svelte-table": "^9.2.4",
     "@tanstack/svelte-virtual": "^3.13.39",

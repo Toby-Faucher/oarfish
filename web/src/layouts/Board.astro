@@ -9,6 +9,7 @@
  */
 import '../styles/global.css';
 import { TriangleAlert, LayoutGrid, Layers, Settings } from '@lucide/svelte';
+import OceanBackground from '../components/OceanBackground.svelte';
 
 interface Props {
   title: string;
@@ -34,8 +35,16 @@ const nav = [
     <link rel="icon" href="/favicon.ico" sizes="any" />
     <link rel="icon" href="/favicon.png" type="image/png" />
     <link rel="apple-touch-icon" href="/logo.png" />
+    <script is:inline>
+      // Runs before first paint so a stored theme never flashes as "dark".
+      try {
+        const stored = localStorage.getItem('oarfish:theme');
+        if (stored) document.documentElement.dataset.theme = stored;
+      } catch {}
+    </script>
   </head>
   <body class="min-h-dvh">
+    <OceanBackground client:load />
     <div class="flex min-h-dvh">
       <nav class="flex w-14 shrink-0 flex-col items-center gap-1 border-r border-line bg-l1 py-3" aria-label="Sections">
         <a
