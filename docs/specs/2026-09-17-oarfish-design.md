@@ -424,9 +424,11 @@ bundle covers M1 through M6, and synthesis lands after.
 
 ## 12. Open questions
 
-1. **Which model synthesizes masks.** DeepParse fine-tuned a local 8B model, which we
-   can't ship. A general LLM called once at install is the likely answer, but the
-   prompt and its validation need designing.
+1. **Resolved 2026-09-19** (`docs/specs/2026-09-19-mask-synthesis-design.md`): a
+   general LLM via a separate `oarfish-synth` transport, called once via `oarfish
+   masks synthesize`. Candidates come from a throwaway Drain pass over the masked
+   corpus, not raw-line sampling; validation is the existing `Bundle::parse` plus an
+   idempotency check, with one model retry per rejected slot before it's dropped.
 2. **Light theme.** Specified in tokens, not yet drawn or reviewed. Needs its own pass.
 
 *Resolved 2026-09-18: transport is OpenRouter (§5.11); the contextual check reads a

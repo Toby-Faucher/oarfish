@@ -192,7 +192,7 @@ there. "Fast" without a regression guard is a claim, not a property.
 |---|---|---|
 | The nine source packs (kernel, systemd, sshd, nginx, postgres, docker, ZFS, smartd, Proxmox) | A follow-up to M1 | They are data, not code. The format, the harness and the precedence rules are what need proving; nine packs of regexes prove them nine times over. |
 | `oarfish masks synthesize` | After M6 | §11 already places it off the critical path. The curated bundle covers M1 through M6. |
-| Loading a bundle from a config path | M4 or later | Nothing configures oarfish yet, and the embedded bundle is what every milestone through M6 runs on. |
+| Loading a bundle from a config path | Delivered in `docs/specs/2026-09-19-mask-synthesis-design.md` | The daemon's `--bundle` flag. |
 | Anything touching `Event` | M3 | The crate's input is a `&str` body until `oarfish-ingest` exists to produce something better. |
 
 ## 10. Changes to existing documents

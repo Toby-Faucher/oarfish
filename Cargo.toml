@@ -16,6 +16,7 @@ oarfish-core   = { path = "crates/oarfish-core" }
 oarfish-mask   = { path = "crates/oarfish-mask" }
 oarfish-drain  = { path = "crates/oarfish-drain" }
 oarfish-jev    = { path = "crates/oarfish-jev" }
+oarfish-synth  = { path = "crates/oarfish-synth" }
 oarfish-store  = { path = "crates/oarfish-store" }
 oarfish-ingest = { path = "crates/oarfish-ingest" }
 oarfish-engine = { path = "crates/oarfish-engine" }

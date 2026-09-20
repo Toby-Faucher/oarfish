@@ -8,8 +8,11 @@ repository.workspace   = true
 authors.workspace      = true
 
 [dependencies]
+oarfish-drain.workspace = true
+oarfish-synth.workspace = true
 regex.workspace     = true
 serde.workspace     = true
+serde_json.workspace = true
 toml.workspace      = true
 blake3.workspace    = true
 thiserror.workspace = true
@@ -19,6 +22,7 @@ insta.workspace     = true
 rstest.workspace    = true
 proptest.workspace  = true
 criterion.workspace = true
+tokio = { version = "1.53", features = ["macros", "rt"] }
 
 [[bench]]
 name    = "mask"

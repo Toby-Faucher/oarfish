@@ -7,7 +7,7 @@
 use std::collections::HashSet;
 use std::fmt;
 
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 /// The slot name the masker reserves for itself. A bundle may not declare it:
 /// `mask` injects it as the first alternate so existing placeholders pass
@@ -18,7 +18,7 @@ pub const RESERVED_SLOT: &str = "MASKED";
 const SUPPORTED_VERSION: u32 = 1;
 
 /// One slot definition, exactly as written in the bundle file.
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct SlotDef {
     /// The placeholder name without decoration: `DEV` renders as `<VAR:DEV>`.
     pub name: String,
@@ -43,6 +43,23 @@ struct BundleFile {
     version: u32,
     #[serde(default, rename = "slot")]
     slots: Vec<SlotDef>,
+}
+
+/// Serialize `slots` back to the bundle TOML format, in the given order.
+/// Shared by [`Bundle::to_toml`] (an already-valid bundle) and merge
+/// validation (a candidate combination that might not parse yet).
+pub(crate) fn slots_to_toml(version: u32, slots: &[&SlotDef]) -> String {
+    #[derive(Serialize)]
+    struct File<'a> {
+        version: u32,
+        #[serde(rename = "slot")]
+        slot: &'a [&'a SlotDef],
+    }
+    toml::to_string(&File {
+        version,
+        slot: slots,
+    })
+    .expect("a slot list always serializes")
 }
 
 impl Bundle {
@@ -128,6 +145,13 @@ impl Bundle {
     /// template id moves; this is how M4 notices instead of serving stale answers.
     pub fn hash(&self) -> BundleHash {
         self.hash
+    }
+
+    /// The bundle's slots, serialized back to the on-disk TOML format. What
+    /// `masks synthesize` writes to `--out` (Task 8).
+    pub fn to_toml(&self) -> String {
+        let refs: Vec<&SlotDef> = self.slots.iter().collect();
+        slots_to_toml(self.version, &refs)
     }
 }
 
@@ -319,5 +343,34 @@ why     = "the catch-all, declared last on purpose"
             Bundle::parse(GOOD).expect("parse").hash(),
             Bundle::parse(&changed).expect("parse").hash()
         );
+    }
+
+    #[test]
+    fn a_parsed_bundle_round_trips_through_to_toml() {
+        let bundle = Bundle::parse(
+            r#"
+        version = 1
+
+        [[slot]]
+        name    = "DEV"
+        pattern = '/dev/[a-z0-9]+'
+        why     = "device paths"
+
+        [[slot]]
+        name    = "NUM"
+        pattern = '\d+'
+        why     = "bare numbers, last because it is the most general"
+        "#,
+        )
+        .expect("valid bundle");
+
+        let text = bundle.to_toml();
+        let reparsed = Bundle::parse(&text).expect("serialized bundle re-parses");
+
+        assert_eq!(reparsed.version(), bundle.version());
+        assert_eq!(reparsed.slots(), bundle.slots());
+        // No hash assertion: `BundleHash` is blake3 over the exact source
+        // bytes, and serialization normalizes formatting, so a round-tripped
+        // bundle legitimately hashes differently — same as any reformatting.
     }
 }

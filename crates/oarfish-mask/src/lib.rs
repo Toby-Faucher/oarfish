@@ -21,16 +21,27 @@
 //! per line, and it makes no network call. It applies bundles and never writes
 //! them.
 //!
+//! `synth` is the one exception, and it is cold-path only: `masks synthesize`
+//! finds corpus positions the bundle doesn't cover via a throwaway
+//! `oarfish-drain` pass, proposes slots for them through `oarfish-synth`, and
+//! merges what validates. The daemon's ingest loop never touches this module.
+//!
 //! In: a `&str` body. Out: a `Masked` holding the raw line, its template, and
 //! every `SlotMatch` that filled it. Depends on `regex`, `toml`, `serde`,
-//! `blake3` and `thiserror`, and on nothing else in the workspace.
+//! `blake3`, `thiserror`, `oarfish-drain` and `oarfish-synth` — the latter two
+//! only reachable through `synth`, never on the every-line path — and on
+//! nothing else in the workspace.
 
 #![forbid(unsafe_code)]
 
 mod bundle;
 mod curated;
 mod masker;
+mod synth;
 
 pub use bundle::{Bundle, BundleError, BundleHash, RESERVED_SLOT, SlotDef};
 pub use curated::curated;
 pub use masker::{Masked, SlotMatch};
+pub use synth::{
+    Candidate, SynthesisError, SynthesisReport, Synthesize, find_candidates, merge, run,
+};
