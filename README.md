@@ -237,7 +237,8 @@ Milestones and their acceptance criteria are specified in
 - [x] **M5.5** — merge review + the contextual check (`wake_someone`)
 - [ ] **M6** — the board on live data, ntfy delivery
 
-Not on the critical path: `oarfish masks synthesize`. The curated bundle carries M1–M6.
+`oarfish masks synthesize` (design: `docs/specs/2026-09-19-mask-synthesis-design.md`)
+augments the curated bundle with an LLM call at install time, run manually.
 
 ---
 
