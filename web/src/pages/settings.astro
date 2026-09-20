@@ -2,6 +2,7 @@
 import Board from '../layouts/Board.astro';
 import ConnectionPulse from '../components/ConnectionPulse.svelte';
 import DemoToggle from '../components/DemoToggle.svelte';
+import ThemeToggle from '../components/ThemeToggle.svelte';
 
 const ingest = [
   { name: 'Syslog, UDP and TCP', value: '0.0.0.0:514' },
@@ -32,6 +33,24 @@ const policy = [
   <main class="min-w-0 flex-1 p-4">
     <section
       class="overflow-hidden rounded-(--radius-ui) border border-line bg-l1"
+      aria-label="Appearance"
+    >
+      <div class="flex items-center gap-3 border-b border-line px-3.5 py-2">
+        <h2 class="label text-[13px]">Appearance</h2>
+      </div>
+      <div class="flex items-center gap-3 px-3.5 py-3">
+        <div class="min-w-0">
+          <p class="text-[12.5px] text-ink-2">Theme</p>
+          <p class="mt-0.5 font-mono text-[11px] text-ink-3">Applies immediately, saved to this browser.</p>
+        </div>
+        <div class="ml-auto shrink-0">
+          <ThemeToggle client:load />
+        </div>
+      </div>
+    </section>
+
+    <section
+      class="mt-4 overflow-hidden rounded-(--radius-ui) border border-line bg-l1"
       aria-label="Daemon configuration"
     >
       <div class="flex items-center gap-3 border-b border-line px-3.5 py-2">

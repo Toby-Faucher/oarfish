@@ -34,6 +34,13 @@ const nav = [
     <link rel="icon" href="/favicon.ico" sizes="any" />
     <link rel="icon" href="/favicon.png" type="image/png" />
     <link rel="apple-touch-icon" href="/logo.png" />
+    <script is:inline>
+      // Runs before first paint so a stored theme never flashes as "dark".
+      try {
+        const stored = localStorage.getItem('oarfish:theme');
+        if (stored) document.documentElement.dataset.theme = stored;
+      } catch {}
+    </script>
   </head>
   <body class="min-h-dvh">
     <div class="flex min-h-dvh">
