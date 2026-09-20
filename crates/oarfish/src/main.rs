@@ -44,7 +44,54 @@ async fn shutdown_signal() {
 
 /// Log-driven alarms for homelabs.
 #[derive(Debug, Parser)]
-struct Args {
+struct Cli {
+    #[command(subcommand)]
+    command: Option<Command>,
+    #[command(flatten)]
+    daemon: DaemonArgs,
+}
+
+#[derive(Debug, clap::Subcommand)]
+enum Command {
+    /// Mask bundle tooling.
+    Masks {
+        #[command(subcommand)]
+        action: MasksAction,
+    },
+}
+
+#[derive(Debug, clap::Subcommand)]
+enum MasksAction {
+    /// Find corpus patterns the current bundle doesn't cover, propose regex
+    /// slots with an LLM, and write a merged bundle.
+    Synthesize {
+        /// A log file, or a directory of them, to learn from.
+        #[arg(long)]
+        corpus: PathBuf,
+        /// Bundle to start from. Defaults to the embedded curated bundle.
+        #[arg(long)]
+        bundle: Option<PathBuf>,
+        /// A slot needs at least this many corpus occurrences to be proposed.
+        #[arg(long, default_value_t = 3)]
+        min_occurrences: u64,
+        /// At most this many candidates go to the model in one call.
+        #[arg(long, default_value_t = 50)]
+        max_candidates: usize,
+        /// Where to write the merged bundle.
+        #[arg(long)]
+        out: PathBuf,
+        /// The OpenRouter model id to synthesize with. No default: this is a
+        /// rare, deliberate command, and guessing a model would assert a
+        /// choice with no basis.
+        #[arg(long)]
+        model: String,
+    },
+}
+
+/// The daemon's own flags. Flattened into [`Cli`] so `oarfish --syslog ...`
+/// keeps working exactly as before subcommands existed.
+#[derive(Debug, Parser)]
+struct DaemonArgs {
     /// Address to listen on for syslog over UDP and TCP.
     #[arg(long, default_value = "0.0.0.0:514")]
     syslog: SocketAddr,
@@ -69,11 +116,16 @@ struct Args {
     /// the board lands: the API and the stream work without it.
     #[arg(long)]
     static_dir: Option<PathBuf>,
+
+    /// Mask bundle to load instead of the embedded curated default. Unset
+    /// means exactly the M1–M6 behavior: `oarfish_mask::curated()`.
+    #[arg(long)]
+    bundle: Option<PathBuf>,
 }
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    let args = Args::parse();
+    let cli = Cli::parse();
 
     // Non-blocking: the daemon's own writes must never stall the path they
     // report on. The guard is held to the end of main so no line is lost.
@@ -86,6 +138,100 @@ async fn main() -> anyhow::Result<()> {
         .with_writer(writer)
         .init();
 
+    match cli.command {
+        None => run_daemon(cli.daemon).await,
+        Some(Command::Masks { action }) => run_masks(action).await,
+    }
+}
+
+async fn run_masks(action: MasksAction) -> anyhow::Result<()> {
+    match action {
+        MasksAction::Synthesize {
+            corpus,
+            bundle,
+            min_occurrences,
+            max_candidates,
+            out,
+            model,
+        } => {
+            run_masks_synthesize(corpus, bundle, min_occurrences, max_candidates, out, model).await
+        }
+    }
+}
+
+/// Read every non-empty line from `path`: the file itself, or every regular
+/// file directly inside it if it's a directory (non-recursive).
+fn read_corpus(path: &PathBuf) -> anyhow::Result<Vec<String>> {
+    let mut lines = Vec::new();
+    let metadata =
+        std::fs::metadata(path).with_context(|| format!("cannot read {}", path.display()))?;
+    if metadata.is_file() {
+        let text = std::fs::read_to_string(path)
+            .with_context(|| format!("cannot read {}", path.display()))?;
+        lines.extend(text.lines().filter(|l| !l.is_empty()).map(str::to_owned));
+    } else if metadata.is_dir() {
+        for entry in std::fs::read_dir(path)
+            .with_context(|| format!("cannot read directory {}", path.display()))?
+        {
+            let entry = entry?;
+            if entry.file_type()?.is_file() {
+                let text = std::fs::read_to_string(entry.path())
+                    .with_context(|| format!("cannot read {}", entry.path().display()))?;
+                lines.extend(text.lines().filter(|l| !l.is_empty()).map(str::to_owned));
+            }
+        }
+    } else {
+        anyhow::bail!("{} is neither a file nor a directory", path.display());
+    }
+    Ok(lines)
+}
+
+async fn run_masks_synthesize(
+    corpus_path: PathBuf,
+    bundle_path: Option<PathBuf>,
+    min_occurrences: u64,
+    max_candidates: usize,
+    out: PathBuf,
+    model: String,
+) -> anyhow::Result<()> {
+    let corpus = read_corpus(&corpus_path)?;
+    tracing::info!(lines = corpus.len(), path = %corpus_path.display(), "read corpus");
+
+    let starting: oarfish_mask::Bundle = match &bundle_path {
+        Some(path) => {
+            let text = std::fs::read_to_string(path)
+                .with_context(|| format!("cannot read bundle at {}", path.display()))?;
+            oarfish_mask::Bundle::parse(&text)
+                .with_context(|| format!("bundle at {} is invalid", path.display()))?
+        }
+        None => oarfish_mask::curated().clone(),
+    };
+
+    let client =
+        oarfish_synth::Client::from_env(model).context("cannot build the synthesis client")?;
+
+    let report = oarfish_mask::run(&client, &starting, &corpus, min_occurrences, max_candidates)
+        .await
+        .map_err(|e| anyhow::anyhow!("synthesis failed: {e}"))?;
+
+    std::fs::write(&out, report.bundle.to_toml())
+        .with_context(|| format!("cannot write {}", out.display()))?;
+
+    let added = report.bundle.slots().len() - starting.slots().len();
+    tracing::info!(
+        out = %out.display(),
+        added,
+        dropped = report.dropped.len(),
+        "wrote bundle"
+    );
+    if !report.dropped.is_empty() {
+        tracing::warn!(slots = ?report.dropped, "dropped after a failed retry");
+    }
+
+    Ok(())
+}
+
+async fn run_daemon(args: DaemonArgs) -> anyhow::Result<()> {
     #[cfg(not(feature = "journald"))]
     if args.journal {
         anyhow::bail!(
@@ -115,6 +261,21 @@ async fn main() -> anyhow::Result<()> {
     let api_listener = tokio::net::TcpListener::bind(args.api)
         .await
         .with_context(|| format!("cannot bind API on {}", args.api))?;
+
+    // The bundle: the embedded curated default, or a file the operator
+    // pointed at with --bundle — most often one `masks synthesize` wrote.
+    // Byte-for-byte the M1-through-M6 behavior when --bundle is absent.
+    let bundle: oarfish_mask::Bundle = match &args.bundle {
+        Some(path) => {
+            let text = std::fs::read_to_string(path)
+                .with_context(|| format!("cannot read bundle at {}", path.display()))?;
+            let bundle = oarfish_mask::Bundle::parse(&text)
+                .with_context(|| format!("bundle at {} is invalid", path.display()))?;
+            tracing::info!(path = %path.display(), hash = %bundle.hash(), "loaded bundle");
+            bundle
+        }
+        None => oarfish_mask::curated().clone(),
+    };
 
     // The verdict cache and the open alarms. The question set is the
     // engine's static policy; the bundle hash is the mask identity the
@@ -148,7 +309,7 @@ async fn main() -> anyhow::Result<()> {
             client,
             oarfish_engine::static_questions(),
             oarfish_engine::merge_questions(),
-            oarfish_mask::curated().hash(),
+            bundle.hash(),
         )
         .with_context(|| format!("cannot open store at {}", args.data_dir.display()))?,
     );
@@ -170,7 +331,7 @@ async fn main() -> anyhow::Result<()> {
     let (engine_tx, engine_rx) = mpsc::channel(1024);
 
     let pipeline = Pipeline::new(
-        oarfish_mask::curated().clone(),
+        bundle,
         oarfish_drain::Drain::new(oarfish_drain::Config::default())?,
     )
     .with_merges(verdicts.merges_handle());
@@ -259,4 +420,72 @@ async fn main() -> anyhow::Result<()> {
     }
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn bundle_flag_parses_into_daemon_args() {
+        let cli = Cli::try_parse_from(["oarfish", "--bundle", "/etc/oarfish/bundle.toml"])
+            .expect("parses");
+        assert_eq!(
+            cli.daemon.bundle,
+            Some(PathBuf::from("/etc/oarfish/bundle.toml"))
+        );
+        assert!(cli.command.is_none());
+    }
+
+    #[test]
+    fn omitting_bundle_leaves_it_none_and_keeps_the_daemon_default_path() {
+        let cli = Cli::try_parse_from(["oarfish"]).expect("parses");
+        assert_eq!(cli.daemon.bundle, None);
+        assert_eq!(cli.daemon.api, "127.0.0.1:4000".parse().unwrap());
+    }
+
+    #[test]
+    fn masks_synthesize_parses_with_its_defaults() {
+        let cli = Cli::try_parse_from([
+            "oarfish",
+            "masks",
+            "synthesize",
+            "--corpus",
+            "/var/log",
+            "--out",
+            "/etc/oarfish/bundle.toml",
+            "--model",
+            "some-model",
+        ])
+        .expect("parses");
+        match cli.command {
+            Some(Command::Masks {
+                action:
+                    MasksAction::Synthesize {
+                        corpus,
+                        bundle,
+                        min_occurrences,
+                        max_candidates,
+                        out,
+                        model,
+                    },
+            }) => {
+                assert_eq!(corpus, PathBuf::from("/var/log"));
+                assert_eq!(bundle, None);
+                assert_eq!(min_occurrences, 3);
+                assert_eq!(max_candidates, 50);
+                assert_eq!(out, PathBuf::from("/etc/oarfish/bundle.toml"));
+                assert_eq!(model, "some-model");
+            }
+            other => panic!("expected Masks::Synthesize, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn masks_synthesize_requires_model_corpus_and_out() {
+        let err = Cli::try_parse_from(["oarfish", "masks", "synthesize"])
+            .expect_err("missing required args must fail to parse");
+        let message = err.to_string();
+        assert!(message.contains("--corpus"), "got {message:?}");
+    }
 }

@@ -1875,6 +1875,7 @@ dependencies = [
  "oarfish-jev",
  "oarfish-mask",
  "oarfish-store",
+ "oarfish-synth",
  "serde",
  "tokio",
  "tokio-util",

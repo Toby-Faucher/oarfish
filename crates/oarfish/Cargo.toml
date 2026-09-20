@@ -16,6 +16,7 @@ oarfish-store.workspace  = true
 oarfish-ingest.workspace = true
 oarfish-engine.workspace = true
 oarfish-api.workspace    = true
+oarfish-synth.workspace  = true
 
 tokio.workspace              = true
 tokio-util.workspace         = true
