@@ -9,6 +9,7 @@ web/.astro/
 
 # oarfish runtime state
 /data/
+/oarfish-data/
 *.fjall/
 
 # secrets

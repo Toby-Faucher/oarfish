@@ -194,6 +194,15 @@ impl Verdicts {
         Arc::clone(&self.merges)
     }
 
+    /// Wire the engine's notification channel in, once it exists. Call this
+    /// after both `Verdicts` and the engine are built — the engine can't be
+    /// constructed before the store it depends on is, so this is a
+    /// post-construction step rather than a constructor parameter. A second
+    /// call is a no-op: the channel is set once, for the life of the store.
+    pub fn set_judged_notifier(&self, notify: tokio::sync::mpsc::Sender<(TemplateId, String)>) {
+        let _ = self.shared.judged_notify.set(notify);
+    }
+
     /// The question-set hash this instance judges under. A reworded question
     /// changes this, which moves every key.
     pub fn questions_hash(&self) -> QuestionsHash {

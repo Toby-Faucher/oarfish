@@ -18,17 +18,15 @@
   import type { AlarmDetail, VerdictAnswer } from '../lib/bindings/oarfish';
   import { connect, connectionAlarms } from '../lib/connection.svelte';
   import { clockOf } from '../lib/time';
+  import { demoModeEnabled } from '../lib/settings.svelte';
   import { DEMO_ALARM, DEMO_DETAIL } from '../lib/demo';
 
-  onMount(() => {
-    connect();
-    // Dev-only, URL-gated demo: `bun run dev` plus `?demo`. Evaluated after
-    // mount so the server-rendered first paint never diverges.
-    demoMode = import.meta.env.DEV && new URLSearchParams(location.search).has('demo');
-  });
+  onMount(connect);
 
   let live = $derived(connectionAlarms());
-  let demoMode = $state(false);
+  // Dev-only, set from the Settings page rather than a `?demo` URL param —
+  // persisted in localStorage, always false in a production build.
+  let demoMode = $derived(demoModeEnabled());
   let rows = $derived(demoMode ? [DEMO_ALARM, ...live] : live);
   let density = $state<Density>('compact');
   let query = $state('');

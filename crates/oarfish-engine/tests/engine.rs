@@ -186,6 +186,129 @@ async fn a_critical_template_raises_on_first_sight() {
     let _ = std::fs::remove_dir_all(&dir);
 }
 
+/// A first-and-only sighting no longer has to wait for a repeat: the
+/// unjudged sighting is remembered, and the judgment landing raises it
+/// directly, at the exact severity bar `bypass_severity` already names.
+#[tokio::test]
+async fn a_first_and_only_sighting_raises_once_judgment_lands() {
+    tokio::time::pause();
+    let dir = tempdir();
+    let (mut engine, _store) = engine_at(&dir);
+    let mut rx = engine.subscribe();
+    let (id, text) = template();
+
+    engine.on_classified(&event("nas01"), id, &text, None);
+    assert!(engine.open_alarms().is_empty(), "unjudged, nothing yet");
+
+    engine.on_judged(id, &text, &verdict(3.0, 0.9));
+
+    let open = engine.open_alarms();
+    assert_eq!(open.len(), 1, "got {open:?}");
+    assert_eq!(open[0].host, "nas01");
+    assert_eq!(open[0].count, 1);
+    match published(&mut rx).as_slice() {
+        [AlarmChange::Raised(alarm)] => assert_eq!(alarm.id, open[0].id),
+        other => panic!("expected one Raised, got {other:?}"),
+    }
+    let _ = std::fs::remove_dir_all(&dir);
+}
+
+/// A judgment below `bypass_severity` does not raise just for having
+/// finally arrived — it falls back to the normal window-driven path for
+/// whatever comes next, exactly as if it had been judged before the first
+/// sighting instead of after.
+#[tokio::test]
+async fn on_judged_does_not_raise_below_the_bypass_bar() {
+    tokio::time::pause();
+    let dir = tempdir();
+    let (mut engine, _store) = engine_at(&dir);
+    let mut rx = engine.subscribe();
+    let (id, text) = template();
+
+    engine.on_classified(&event("web01"), id, &text, None);
+    engine.on_judged(id, &text, &verdict(1.0, 0.9));
+
+    assert!(engine.open_alarms().is_empty());
+    assert!(published(&mut rx).is_empty());
+    let _ = std::fs::remove_dir_all(&dir);
+}
+
+/// Two hosts independently saw the same never-before-seen template while it
+/// was unjudged. One judgment, once it lands, raises both — dedupe is per
+/// `(template, host)`, and both were waiting.
+#[tokio::test]
+async fn on_judged_raises_every_host_that_was_waiting() {
+    tokio::time::pause();
+    let dir = tempdir();
+    let (mut engine, _store) = engine_at(&dir);
+    let mut rx = engine.subscribe();
+    let (id, text) = template();
+
+    engine.on_classified(&event("nas01"), id, &text, None);
+    engine.on_classified(&event("proxy01"), id, &text, None);
+    engine.on_judged(id, &text, &verdict(3.0, 0.9));
+
+    let mut hosts: Vec<String> = engine.open_alarms().into_iter().map(|a| a.host).collect();
+    hosts.sort();
+    assert_eq!(hosts, vec!["nas01".to_owned(), "proxy01".to_owned()]);
+    assert_eq!(published(&mut rx).len(), 2);
+    let _ = std::fs::remove_dir_all(&dir);
+}
+
+/// A template nothing was ever waiting on is a no-op: no panic, no raise,
+/// nothing published. `on_judged` firing for a template the engine never
+/// saw unjudged is a reachable, harmless case.
+#[tokio::test]
+async fn on_judged_with_nothing_waiting_is_a_noop() {
+    tokio::time::pause();
+    let dir = tempdir();
+    let (mut engine, _store) = engine_at(&dir);
+    let mut rx = engine.subscribe();
+    let (id, text) = template();
+
+    engine.on_judged(id, &text, &verdict(3.0, 0.9));
+
+    assert!(engine.open_alarms().is_empty());
+    assert!(published(&mut rx).is_empty());
+    let _ = std::fs::remove_dir_all(&dir);
+}
+
+/// The two notification paths can race — a normal line for the same
+/// template can raise through `on_classified` before the judge's own
+/// notification is processed, since they travel on separate channels with
+/// no ordering guarantee. `on_judged` must not raise a second time for a
+/// host that already has one open.
+#[tokio::test]
+async fn on_judged_skips_a_host_that_already_raised_through_the_normal_path() {
+    tokio::time::pause();
+    let dir = tempdir();
+    let (mut engine, _store) = engine_at(&dir);
+    let mut rx = engine.subscribe();
+    let (id, text) = template();
+    let judged = verdict(3.0, 0.9);
+
+    // Unjudged sighting, then a second line for the same template arrives
+    // after the verdict is already known — the normal path raises it.
+    engine.on_classified(&event("nas01"), id, &text, None);
+    engine.on_classified(&event("nas01"), id, &text, Some(&judged));
+    assert_eq!(
+        engine.open_alarms().len(),
+        1,
+        "raised through on_classified"
+    );
+    let _ = published(&mut rx);
+
+    // The judge's own notification arrives after: must not double-raise.
+    engine.on_judged(id, &text, &judged);
+
+    assert_eq!(engine.open_alarms().len(), 1, "still exactly one");
+    assert!(
+        published(&mut rx).is_empty(),
+        "no second Raised for the same host"
+    );
+    let _ = std::fs::remove_dir_all(&dir);
+}
+
 /// The window triggers: a gated minor template raises only once count
 /// breaches — four events are silent, the fifth raises.
 #[tokio::test]

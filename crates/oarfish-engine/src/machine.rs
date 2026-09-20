@@ -107,6 +107,13 @@ pub struct Engine {
     /// the window cools below the raise rule — one check per burst, never one
     /// per line.
     suppressed: HashMap<AlarmKey, tokio::time::Instant>,
+    judged_tx: mpsc::Sender<(TemplateId, String)>,
+    judged_rx: mpsc::Receiver<(TemplateId, String)>,
+    /// Hosts that saw a template while it was still unjudged, by template.
+    /// Resolved exactly once, when that template's first-ever judgment
+    /// lands — a template is judged once, ever, so there is nothing to keep
+    /// waiting for afterward, win or lose.
+    unjudged: HashMap<TemplateId, HashSet<String>>,
 }
 
 impl Engine {
@@ -117,6 +124,7 @@ impl Engine {
     pub fn new(verdicts: Arc<Verdicts>, decide: Client, config: EngineConfig) -> Self {
         let (tx, _) = broadcast::channel(config.broadcast_capacity.max(1));
         let (pending_tx, pending_rx) = mpsc::channel(config.pending_capacity);
+        let (judged_tx, judged_rx) = mpsc::channel(config.judged_capacity);
         let mut engine = Self {
             verdicts,
             decide,
@@ -131,6 +139,9 @@ impl Engine {
             pending_rx,
             in_flight: HashSet::new(),
             suppressed: HashMap::new(),
+            judged_tx,
+            judged_rx,
+            unjudged: HashMap::new(),
             config,
         };
         for alarm in engine.verdicts.load_open_alarms() {
@@ -149,6 +160,14 @@ impl Engine {
     /// The broadcast sender, for SSE handlers to subscribe per connection.
     pub fn sender(&self) -> broadcast::Sender<AlarmChange> {
         self.tx.clone()
+    }
+
+    /// The judge-completion sender. Wire this into
+    /// [`oarfish_store::Verdicts::set_judged_notifier`] once both the store
+    /// and the engine exist, so a first-and-only sighting of a template
+    /// judged severe enough doesn't have to wait for a repeat.
+    pub fn judged_sender(&self) -> mpsc::Sender<(TemplateId, String)> {
+        self.judged_tx.clone()
     }
 
     /// The live open-alarm set for `GET /api/alarms`.
@@ -203,7 +222,16 @@ impl Engine {
     ) {
         let now = tokio::time::Instant::now();
         let stats = self.windows.record(&template_id, &event.host, now);
-        let Some(verdict) = verdict else { return };
+        let Some(verdict) = verdict else {
+            // Unjudged: nothing to gate on yet. Remembered so a first-ever
+            // judgment that lands severe enough can raise without waiting
+            // for this host to see the template a second time.
+            self.unjudged
+                .entry(template_id)
+                .or_default()
+                .insert(event.host.clone());
+            return;
+        };
         let Some(Gate { severity }) = gate(verdict, &self.config) else {
             return;
         };
@@ -314,6 +342,51 @@ impl Engine {
         tracing::info!(alarm_id = %alarm.id, ?severity, ?lane, "alarm raised");
         self.insert_open(alarm.clone(), self.config.silence);
         self.publish(AlarmChange::Raised(alarm));
+    }
+
+    /// Wraps [`Engine::on_judged`] with the store lookup, the same
+    /// relationship [`Engine::on_event`] has to [`Engine::on_classified`]:
+    /// the wrapper touches the store, the inner method is a pure function of
+    /// its verdict so tests drive it with a hand-built one, no store or
+    /// model required.
+    fn on_judged_event(&mut self, template_id: TemplateId, template: String) {
+        let Some(verdict) = self.verdicts.verdict_for(&template_id, &template) else {
+            return;
+        };
+        self.on_judged(template_id, &template, &verdict);
+    }
+
+    /// A template's first-ever judgment just landed. Any host that saw it
+    /// while it was still unjudged is checked against the same
+    /// `bypass_severity` bar a later sighting would otherwise need a whole
+    /// window to reach — a first-and-only sighting no longer has to wait for
+    /// a repeat, since the repeat was only ever standing in for "nothing was
+    /// known yet to gate on," not a requirement in its own right.
+    ///
+    /// Resolves the template's `unjudged` entry unconditionally, whether or
+    /// not anything ends up raising: a template is judged exactly once,
+    /// ever, so there is nothing left to react to on a second look.
+    pub fn on_judged(&mut self, template_id: TemplateId, template: &str, verdict: &Verdict) {
+        let Some(hosts) = self.unjudged.remove(&template_id) else {
+            return;
+        };
+        let Some(Gate { severity }) = gate(verdict, &self.config) else {
+            return;
+        };
+        if severity < self.config.bypass_severity {
+            return;
+        }
+        for host in hosts {
+            let key: AlarmKey = (template_id, host.clone());
+            // A normal line for this exact template may have already
+            // arrived and raised through on_classified before this
+            // notification was processed — the two travel on separate
+            // channels with no ordering guarantee between them.
+            if self.open.contains_key(&key) {
+                continue;
+            }
+            self.raise(&host, template_id, template, severity, Lane::Dashboard);
+        }
     }
 
     /// Spawn the contextual check for one flagged burst and mark the key
@@ -593,6 +666,14 @@ impl Engine {
                 outcome = self.pending_rx.recv() => {
                     if let Some(outcome) = outcome {
                         self.apply(outcome);
+                    }
+                }
+                // A first-ever judgment landing. `judged_tx` lives in
+                // `self`, same as `pending_tx`, so `None` is unreachable
+                // while the loop is.
+                judged = self.judged_rx.recv() => {
+                    if let Some((template_id, template)) = judged {
+                        self.on_judged_event(template_id, template);
                     }
                 }
             }

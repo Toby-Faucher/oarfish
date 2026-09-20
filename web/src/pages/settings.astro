@@ -1,6 +1,7 @@
 ---
 import Board from '../layouts/Board.astro';
 import ConnectionPulse from '../components/ConnectionPulse.svelte';
+import DemoToggle from '../components/DemoToggle.svelte';
 
 const ingest = [
   { name: 'Syslog, UDP and TCP', value: '0.0.0.0:514' },
@@ -51,5 +52,28 @@ const policy = [
         </div>
       ))}
     </section>
+
+    {import.meta.env.DEV && (
+      <section
+        class="mt-4 overflow-hidden rounded-(--radius-ui) border border-line bg-l1"
+        aria-label="Development"
+      >
+        <div class="flex items-center gap-3 border-b border-line px-3.5 py-2">
+          <h2 class="label text-[13px]">Development</h2>
+          <span class="font-mono text-[10.5px] text-ink-3">dev builds only, never shipped</span>
+        </div>
+        <div class="flex items-center gap-3 px-3.5 py-3">
+          <div class="min-w-0">
+            <p class="text-[12.5px] text-ink-2">Demo alarm</p>
+            <p class="mt-0.5 font-mono text-[11px] text-ink-3">
+              One fake alarm with forensics, for working on the board without a live daemon.
+            </p>
+          </div>
+          <div class="ml-auto shrink-0">
+            <DemoToggle client:load />
+          </div>
+        </div>
+      </section>
+    )}
   </main>
 </Board>
