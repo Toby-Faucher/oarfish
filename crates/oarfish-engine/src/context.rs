@@ -3,7 +3,7 @@
 //! Only templates the static verdict marked `contextual` reach here — the
 //! template alone cannot settle whether their bursts matter, so the engine
 //! asks Jev with the burst's window stats and its host's open alarms as
-//! state. Three questions, §5.8's own set, separate from the static six so
+//! state. Three questions, §5.8's own set, separate from the static nine so
 //! adding them cannot move `questions_hash` and invalidate the verdict table.
 //!
 //! The engine never blocks on the check: the raise is what waits. When a

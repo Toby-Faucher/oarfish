@@ -56,7 +56,8 @@ pub use machine::{Engine, route};
 /// in `oarfish-core`, the only crate that may write into `oarfish.ts`.
 pub use oarfish_core::{AlarmChange, Lane};
 pub use questions::{
-    ACTIONABLE_QUESTION, CONTEXTUAL_QUESTION, SEVERITY_QUESTION, merge_questions, static_questions,
+    ACTIONABLE_QUESTION, BLAST_RADIUS_QUESTION, CONTEXTUAL_QUESTION, PAGE_DELAY_QUESTION,
+    RUNBOOK_QUESTION, SEVERITY_QUESTION, merge_questions, static_questions,
 };
 pub use windows::WindowStats;
 pub(crate) use windows::WindowTable;
