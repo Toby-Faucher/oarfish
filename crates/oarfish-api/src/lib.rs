@@ -27,24 +27,31 @@ use std::net::SocketAddr;
 use std::path::PathBuf;
 use std::time::Duration;
 
+use std::sync::Arc;
+
 use axum::Json;
-use axum::extract::State;
+use axum::extract::{Path, State};
 use axum::http::StatusCode;
 use axum::response::sse::{Event as SseEvent, KeepAlive, Sse};
 use axum::routing::get;
-use oarfish_core::{Alarm, Snapshot};
+use oarfish_core::{Alarm, AlarmDetail, AlarmId, DecisionRecordView, Snapshot, Verdict};
 use oarfish_engine::AlarmChange;
+use oarfish_store::{DecisionRecord, Verdicts};
 use tokio::sync::broadcast;
 use tokio_util::sync::CancellationToken;
 use tower_http::services::ServeDir;
 
-/// What the server needs: the live open-alarm set, the change stream, and
-/// optionally the built board to serve around them. The shutdown token ends
-/// open SSE streams: without it `serve` waits for in-flight connections that
-/// wait for a sender that lives inside `serve`, and shutdown deadlocks.
-#[derive(Debug, Clone)]
+/// What the server needs: the live open-alarm set, the cached judgments, the
+/// change stream, and optionally the built board to serve around them. The
+/// shutdown token ends open SSE streams: without it `serve` waits for
+/// in-flight connections that wait for a sender that lives inside `serve`,
+/// and shutdown deadlocks.
+///
+/// Clone but not Debug: `Verdicts` holds judge channels, which do not render.
+#[derive(Clone)]
 pub struct ApiState {
     snapshot: Snapshot,
+    verdicts: Arc<Verdicts>,
     sender: broadcast::Sender<AlarmChange>,
     static_dir: Option<PathBuf>,
     shutdown: CancellationToken,
@@ -53,12 +60,14 @@ pub struct ApiState {
 impl ApiState {
     pub fn new(
         snapshot: Snapshot,
+        verdicts: Arc<Verdicts>,
         sender: broadcast::Sender<AlarmChange>,
         static_dir: Option<PathBuf>,
         shutdown: CancellationToken,
     ) -> Self {
         Self {
             snapshot,
+            verdicts,
             sender,
             static_dir,
             shutdown,
@@ -72,6 +81,48 @@ impl ApiState {
 /// poisoned lock serves the last-known state, never a silent empty list.
 async fn alarms(State(state): State<ApiState>) -> Json<Vec<Alarm>> {
     Json(state.snapshot.snapshot())
+}
+
+/// Map one stored record to the board's provenance row.
+fn record_view_of(record: &DecisionRecord) -> DecisionRecordView {
+    DecisionRecordView {
+        model: record.model.clone(),
+        recorded_at: record.recorded_at(),
+        input_tokens: record.input_tokens,
+        output_tokens: record.output_tokens,
+        cost: record.cost,
+    }
+}
+
+/// Pure assembly, so tests pin the shape without a store: latest verdict and
+/// latest record win, and either may be absent.
+fn detail_for(alarm: Alarm, verdicts: Vec<Verdict>, records: Vec<DecisionRecord>) -> AlarmDetail {
+    AlarmDetail {
+        alarm,
+        verdict: verdicts.into_iter().last(),
+        record: records
+            .into_iter()
+            .last()
+            .map(|record| record_view_of(&record)),
+    }
+}
+
+/// One open alarm with its forensics. Reads the prefix-scan helpers, never
+/// the judging read: a board view must not enqueue judge work. A cleared or
+/// unknown id is 404; the snapshot is the open set, not history.
+async fn alarm_detail(
+    State(state): State<ApiState>,
+    Path(id): Path<AlarmId>,
+) -> Result<Json<AlarmDetail>, StatusCode> {
+    let alarm = state
+        .snapshot
+        .snapshot()
+        .into_iter()
+        .find(|alarm| alarm.id == id)
+        .ok_or(StatusCode::NOT_FOUND)?;
+    let verdicts = state.verdicts.verdicts_for_template(&alarm.template_id);
+    let records = state.verdicts.records_for_template(&alarm.template_id);
+    Ok(Json(detail_for(alarm, verdicts, records)))
 }
 
 /// One [`AlarmChange`] as one SSE event. Serialization cannot fail for these
@@ -136,11 +187,12 @@ async fn not_found() -> StatusCode {
     StatusCode::NOT_FOUND
 }
 
-/// The alarm routes: JSON first paint plus the SSE stream. The static board
-/// is a separate adapter, composed in [`router`].
+/// The alarm routes: JSON first paint, per-alarm forensics, plus the SSE
+/// stream. The static board is a separate adapter, composed in [`router`].
 pub fn alarm_router(state: ApiState) -> axum::Router {
     axum::Router::new()
         .route("/api/alarms", get(alarms))
+        .route("/api/alarms/{id}/detail", get(alarm_detail))
         .route("/api/alarms/stream", get(stream))
         .with_state(state)
 }
@@ -191,7 +243,97 @@ pub async fn serve_on_listener(
 mod tests {
     use super::*;
     use axum::response::IntoResponse;
-    use oarfish_core::AlarmId;
+    use oarfish_core::{AlarmId, QuestionsHash, TemplateId, Verdict};
+    use std::collections::BTreeMap;
+    use time::OffsetDateTime;
+
+    fn an_alarm() -> Alarm {
+        Alarm {
+            id: AlarmId::generate(),
+            template_id: TemplateId::of("task <VAR:NUM> failed"),
+            template: "task <VAR:NUM> failed".to_owned(),
+            severity: oarfish_core::Severity::Minor,
+            host: "web01".to_owned(),
+            lane: oarfish_core::Lane::Dashboard,
+            count: 3,
+            opened_at: OffsetDateTime::UNIX_EPOCH,
+        }
+    }
+
+    fn a_verdict(model: &str) -> Verdict {
+        Verdict {
+            template_id: TemplateId::of("task <VAR:NUM> failed"),
+            questions_hash: QuestionsHash::of(b"{}"),
+            model: model.to_owned(),
+            answers: BTreeMap::new(),
+            judged_at: OffsetDateTime::UNIX_EPOCH,
+        }
+    }
+
+    fn a_record(model: &str, at_unix: i64) -> DecisionRecord {
+        DecisionRecord {
+            id: ulid::Ulid::from_parts(at_unix as u64, 0),
+            template_id: TemplateId::of("task <VAR:NUM> failed"),
+            questions_hash: QuestionsHash::of(b"{}"),
+            model: model.to_owned(),
+            template: "task <VAR:NUM> failed".to_owned(),
+            state_json: "{}".to_owned(),
+            questions_json: "{}".to_owned(),
+            answers_json: "{}".to_owned(),
+            input_tokens: 100,
+            output_tokens: 20,
+            cost: Some(0.001),
+            recorded_at_unix: at_unix,
+        }
+    }
+
+    /// Latest verdict and latest record win; either may be absent.
+    #[test]
+    fn detail_keeps_the_latest_verdict_and_record() {
+        let alarm = an_alarm();
+        let detail = detail_for(
+            alarm.clone(),
+            vec![
+                a_verdict("typesafe/jev-1.13-20260901"),
+                a_verdict("typesafe/jev-1.13-20260917"),
+            ],
+            vec![
+                a_record("typesafe/jev-1.13-20260901", 100),
+                a_record("typesafe/jev-1.13-20260917", 200),
+            ],
+        );
+        assert_eq!(detail.alarm, alarm);
+        assert_eq!(
+            detail.verdict.expect("verdict").model,
+            "typesafe/jev-1.13-20260917"
+        );
+        let record = detail.record.expect("record");
+        assert_eq!(record.model, "typesafe/jev-1.13-20260917");
+        assert_eq!(record.input_tokens, 100);
+        assert_eq!(
+            record.recorded_at,
+            OffsetDateTime::from_unix_timestamp(200).expect("time")
+        );
+    }
+
+    /// An open but unjudged alarm details without forensics, never as an error.
+    #[test]
+    fn detail_without_judgment_carries_no_forensics() {
+        let detail = detail_for(an_alarm(), vec![], vec![]);
+        assert!(detail.verdict.is_none());
+        assert!(detail.record.is_none());
+    }
+
+    /// The wire pins RFC 3339 for the record timestamp, matching `opened_at`.
+    #[test]
+    fn detail_record_timestamp_serializes_as_rfc3339() {
+        let detail = detail_for(an_alarm(), vec![], vec![a_record("m", 0)]);
+        let json = serde_json::to_value(&detail).expect("serialize");
+        assert_eq!(
+            json["record"]["recorded_at"],
+            serde_json::json!("1970-01-01T00:00:00Z")
+        );
+    }
 
     /// Render a body stream to its SSE wire text. Dropping the sender ends
     /// the stream, so collection terminates; the keep-alive never fires in

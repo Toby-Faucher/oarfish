@@ -2,9 +2,10 @@
   /**
    * The triage island: the board's first job is working through open alarms,
    * so filtering, the list, and the detail live in one component sharing one
-   * selection. The list reads the live SSE snapshot; the forensic sections
-   * (template, verdicts, hosts, raw lines) are example content until the
-   * daemon serves live detail, and the panel says so with an Example badge.
+   * selection. The list reads the live SSE snapshot; selecting an alarm
+   * fetches its forensics from `/api/alarms/{id}/detail`. Nothing here is
+   * mock: no selection shows a prompt, a failed fetch shows an error with a
+   * retry, and an unjudged alarm says so.
    */
   import { onMount } from 'svelte';
   import { fly } from 'svelte/transition';
@@ -14,31 +15,9 @@
   import Severity from './Severity.svelte';
   import Template from './Template.svelte';
   import type { Density, Severity as SeverityLevel } from '../lib/severity';
-  import type { Alarm, Slot } from '../lib/bindings/oarfish';
+  import type { AlarmDetail, VerdictAnswer } from '../lib/bindings/oarfish';
   import { connect, connectionAlarms } from '../lib/connection.svelte';
-
-  interface Verdict {
-    label: string;
-    p: number;
-  }
-
-  interface HostCount {
-    name: string;
-    count: number;
-  }
-
-  interface Props {
-    /** Shown in the detail panel when no live alarm is selected. */
-    fallback: Alarm;
-    template: string;
-    slots: Slot[];
-    raw: string[];
-    verdicts: Verdict[];
-    hosts: HostCount[];
-    buckets: number[];
-  }
-
-  let { fallback, template, slots, raw, verdicts, hosts, buckets }: Props = $props();
+  import { clockOf } from '../lib/time';
 
   onMount(connect);
 
@@ -49,6 +28,7 @@
   let laneFilter = $state<'all' | 'Page' | 'Dashboard' | 'Record'>('all');
   let sortBy = $state<'opened' | 'count'>('opened');
   let selectedId = $state<string | null>(null);
+  let retryNonce = $state(0);
 
   /*
    * Motion budget, moment one of two: a new alarm enters the list. It is rare,
@@ -72,10 +52,8 @@
     );
   });
 
-  let selected = $derived(
-    (selectedId !== null && live.find((a) => a.id === selectedId)) || fallback,
-  );
-  let showingExample = $derived(selected.id === fallback.id);
+  /* A cleared alarm leaves no dangling selection behind. */
+  let selected = $derived(selectedId !== null ? (live.find((a) => a.id === selectedId) ?? null) : null);
 
   let isFiltered = $derived(
     query.trim() !== '' || severityFilter !== 'all' || laneFilter !== 'all',
@@ -87,22 +65,74 @@
     laneFilter = 'all';
   }
 
-  /* Static example series for the detail sparkline. */
-  const W = 260;
-  const H = 44;
-  const maxBucket = $derived(Math.max(...buckets));
-  const pts = $derived(
-    buckets
-      .map(
-        (v, i) =>
-          `${((i / (buckets.length - 1)) * W).toFixed(1)},${(H - 3 - (v / maxBucket) * (H - 8)).toFixed(1)}`,
+  /*
+   * Forensics for the selected alarm. A late arrival for a previous row is
+   * discarded rather than painted under the wrong alarm.
+   */
+  let detail = $state<AlarmDetail | null>(null);
+  let detailState = $state<'idle' | 'loading' | 'live' | 'error'>('idle');
+
+  $effect(() => {
+    retryNonce;
+    if (selected === null) {
+      detail = null;
+      detailState = 'idle';
+      return;
+    }
+    const id = selected.id;
+    detailState = 'loading';
+    let cancelled = false;
+    fetch(`/api/alarms/${id}/detail`)
+      .then((response) =>
+        response.ok ? response.json() : Promise.reject(new Error(String(response.status))),
       )
-      .join(' '),
+      .then((loaded: AlarmDetail) => {
+        if (!cancelled) {
+          detail = loaded;
+          detailState = 'live';
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          detail = null;
+          detailState = 'error';
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  });
+
+  let liveDetail = $derived(
+    detailState === 'live' && detail !== null && selected !== null && detail.alarm.id === selected.id
+      ? detail
+      : null,
   );
-  const lastX = W.toFixed(1);
-  const lastY = $derived((H - 3 - (buckets[buckets.length - 1] / maxBucket) * (H - 8)).toFixed(1));
-  const hostMax = $derived(Math.max(...hosts.map((h) => h.count)));
-  const topVerdict = $derived(verdicts[0].label);
+
+  function distributionOf(answer: VerdictAnswer): Array<{ label: string; p: number }> {
+    if ('choice' in answer) return entriesOf(answer.choice.probabilities);
+    if ('score' in answer) return entriesOf(answer.score.probabilities);
+    return [{ label: 'yes', p: answer.noul.noul }];
+  }
+
+  function entriesOf(probabilities: { [key in string]: number }): Array<{
+    label: string;
+    p: number;
+  }> {
+    return Object.entries(probabilities)
+      .map(([label, p]) => ({ label, p }))
+      .sort((a, b) => b.p - a.p)
+      .slice(0, 4);
+  }
+
+  function headlineOf(answer: VerdictAnswer): { value: string; confidence: number | null } {
+    if ('choice' in answer) return { value: answer.choice.choice, confidence: answer.choice.confidence };
+    if ('score' in answer)
+      return { value: answer.score.score.toFixed(1), confidence: answer.score.confidence };
+    // `noul` carries no separate confidence on the wire; its value is the
+    // probability, so none is shown rather than one invented.
+    return { value: answer.noul.noul >= 0.5 ? 'yes' : 'no', confidence: null };
+  }
 </script>
 
 <section class="overflow-hidden rounded-(--radius-ui) border border-line bg-l1" aria-label="Alarm triage">
@@ -235,130 +265,133 @@
     </div>
 
     <aside class="border-t border-line lg:border-t-0 lg:border-l" aria-label="Alarm detail">
-      <div class="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-line bg-l2 px-3.5 py-2">
-        <Severity level={selected.severity} />
-        <span class="font-mono text-[11px] text-ink-3">{selected.template_id}</span>
-        <span class="rounded-(--radius-ui) bg-l3 px-1.5 py-0.5 font-mono text-[10px] text-ink-2">{selected.lane}</span>
-        {#if showingExample}
-          <span class="rounded-(--radius-ui) border border-line-2 px-1.5 py-0.5 font-mono text-[10px] tracking-[0.06em] text-ink-3 uppercase">Example</span>
-        {/if}
-        <span class="ml-auto font-mono text-[11px] tabular-nums text-ink-2">
-          {selected.count} hits · {selected.host}
-        </span>
-      </div>
-
-      <div class="border-b border-line px-4 pt-3 pb-4">
-        <h3 class="label text-[11px] text-ink-3">Hits per 5 min</h3>
-        <svg
-          viewBox={`0 0 ${W} ${H}`}
-          class="mt-2 block w-full"
-          role="img"
-          aria-label="Hits rising over the last 50 minutes"
-        >
-          <polyline
-            points={pts}
-            fill="none"
-            stroke="var(--ui-ink-3)"
-            stroke-width="1.5"
-            stroke-linejoin="round"
-            stroke-linecap="round"
-          />
-          <circle cx={lastX} cy={lastY} r="3" fill="var(--ui-major)" />
-        </svg>
-        <div class="mt-1 flex justify-between font-mono text-[10px] tabular-nums text-ink-3" aria-hidden="true">
-          <span>−50 min</span>
-          <span>now</span>
+      {#if selected === null}
+        <div class="px-4 py-10 text-center">
+          <p class="text-[13.5px] text-ink-2">No alarm selected.</p>
+          <p class="mt-1 font-mono text-[11px] text-ink-3">Select a row to inspect it.</p>
         </div>
-      </div>
+      {:else}
+        <div class="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-line bg-l2 px-3.5 py-2">
+          <Severity level={selected.severity} />
+          <span class="font-mono text-[11px] text-ink-3">{selected.template_id}</span>
+          <span class="rounded-(--radius-ui) bg-l3 px-1.5 py-0.5 font-mono text-[10px] text-ink-2">{selected.lane}</span>
+          {#if liveDetail}
+            <span class="rounded-(--radius-ui) bg-accent-soft px-1.5 py-0.5 font-mono text-[10px] tracking-[0.06em] text-accent uppercase">Live</span>
+          {/if}
+          <span class="ml-auto font-mono text-[11px] tabular-nums text-ink-2">
+            {selected.count} hits · {selected.host}
+          </span>
+        </div>
 
-      <div class="border-b border-line p-4">
-        <Template {template} {slots} />
-      </div>
+        {#if liveDetail}
+          {@const forensic = liveDetail}
+          <div class="border-b border-line p-4">
+            <Template template={forensic.alarm.template} slots={[]} />
+          </div>
 
-      <div class="border-b border-line px-4 py-3">
-        <h3 class="label text-[11px] text-ink-3">Why it fired</h3>
-        <ul class="mt-2.5 flex list-none flex-col gap-2 p-0">
-          {#each verdicts as v}
-            <li class="grid grid-cols-[minmax(0,1fr)_44px] items-center gap-3">
-              <span class="min-w-0">
-                <span class="block truncate text-[12.5px] {v.label === topVerdict ? 'text-ink' : 'text-ink-2'}">{v.label}</span>
-                <span
-                  class="mt-1 block h-[3px] overflow-hidden rounded-full bg-l3"
-                  role="img"
-                  aria-label={`${v.label}: ${(v.p * 100).toFixed(0)} percent`}
-                >
-                  <span
-                    class="block h-full rounded-full {v.label === topVerdict ? 'bg-major' : 'bg-line-2'}"
-                    style={`width: ${(v.p * 100).toFixed(0)}%`}
-                  ></span>
-                </span>
-              </span>
-              <span class="text-right font-mono text-[12px] tabular-nums text-ink-2">{v.p.toFixed(2)}</span>
-            </li>
-          {/each}
-        </ul>
-      </div>
+          <div class="border-b border-line px-4 py-3">
+            <h3 class="label text-[11px] text-ink-3">Why it fired</h3>
+            {#if forensic.verdict}
+              {@const answers = Object.entries(forensic.verdict.answers)}
+              <div class="mt-2.5 flex flex-col gap-4">
+                {#each answers as [qid, answer]}
+                  {@const head = headlineOf(answer)}
+                  {@const rows = distributionOf(answer)}
+                  {@const top = rows.length ? rows[0].label : ''}
+                  <div>
+                    <div class="flex items-baseline gap-2">
+                      <h4 class="label text-[10.5px] text-ink-2">{qid}</h4>
+                      <span class="truncate text-[12.5px] text-ink">{head.value}</span>
+                      {#if head.confidence !== null}
+                        <span class="ml-auto shrink-0 font-mono text-[11px] tabular-nums text-ink-3">
+                          conf {head.confidence.toFixed(2)}
+                        </span>
+                      {/if}
+                    </div>
+                    <ul class="mt-1.5 flex list-none flex-col gap-1.5 p-0">
+                      {#each rows as row}
+                        <li class="grid grid-cols-[minmax(0,1fr)_44px] items-center gap-3">
+                          <span class="min-w-0">
+                            <span class="block truncate text-[12px] {row.label === top ? 'text-ink' : 'text-ink-2'}">{row.label}</span>
+                            <span
+                              class="mt-1 block h-[3px] overflow-hidden rounded-full bg-l3"
+                              role="img"
+                              aria-label={`${row.label}: ${(row.p * 100).toFixed(0)} percent`}
+                            >
+                              <span
+                                class="block h-full rounded-full {row.label === top ? 'bg-major' : 'bg-line-2'}"
+                                style={`width: ${(row.p * 100).toFixed(0)}%`}
+                              ></span>
+                            </span>
+                          </span>
+                          <span class="text-right font-mono text-[11.5px] tabular-nums text-ink-2">{row.p.toFixed(2)}</span>
+                        </li>
+                      {/each}
+                    </ul>
+                  </div>
+                {/each}
+              </div>
+            {:else}
+              <p class="mt-2 text-[12.5px] text-ink-2">Not yet judged. The verdict lands here when Jev answers.</p>
+            {/if}
+          </div>
 
-      <div class="border-b border-line px-4 py-3">
-        <h3 class="label text-[11px] text-ink-3">Hosts</h3>
-        <ul class="mt-2 flex list-none flex-col gap-1.5 p-0">
-          {#each hosts as h}
-            <li class="grid grid-cols-[minmax(0,1fr)_44px] items-center gap-3 font-mono text-[11.5px]">
-              <span class="flex min-w-0 items-center gap-2">
-                <span class="truncate text-ink-2">{h.name}</span>
-                <span class="h-[3px] min-w-0 flex-1 rounded-full bg-l3" aria-hidden="true">
-                  <span
-                    class="block h-full rounded-full bg-line-2"
-                    style={`width: ${((h.count / hostMax) * 100).toFixed(0)}%`}
-                  ></span>
-                </span>
-              </span>
-              <span class="text-right tabular-nums text-ink-2">{h.count}</span>
-            </li>
-          {/each}
-        </ul>
-        <dl class="mt-3 grid grid-cols-[96px_minmax(0,1fr)] gap-x-3 gap-y-1 font-mono text-[11.5px]">
-          <dt class="text-ink-3">First seen</dt>
-          <dd class="m-0 tabular-nums text-ink-2">03:12 UTC</dd>
-          <dt class="text-ink-3">Last seen</dt>
-          <dd class="m-0 tabular-nums text-ink-2">04:02 UTC</dd>
-        </dl>
-      </div>
+          <div class="border-b border-line px-4 py-3">
+            <h3 class="label text-[11px] text-ink-3">Decision record</h3>
+            {#if forensic.record}
+              <dl class="mt-2 grid grid-cols-[96px_minmax(0,1fr)] gap-x-3 gap-y-1 font-mono text-[11.5px]">
+                <dt class="text-ink-3">Model</dt>
+                <dd class="m-0 break-all text-ink-2">{forensic.record.model}</dd>
+                <dt class="text-ink-3">Recorded</dt>
+                <dd class="m-0 tabular-nums text-ink-2">{clockOf(forensic.record.recorded_at)} UTC</dd>
+                <dt class="text-ink-3">Tokens</dt>
+                <dd class="m-0 tabular-nums text-ink-2">
+                  {forensic.record.input_tokens.toLocaleString()} in · {forensic.record.output_tokens.toLocaleString()} out
+                </dd>
+                {#if forensic.record.cost !== null && forensic.record.cost !== undefined}
+                  <dt class="text-ink-3">Cost</dt>
+                  <dd class="m-0 tabular-nums text-ink-2">${forensic.record.cost.toFixed(4)}</dd>
+                {/if}
+              </dl>
+            {:else}
+              <p class="mt-2 text-[12.5px] text-ink-2">No decision record yet.</p>
+            {/if}
+          </div>
+        {:else if detailState === 'loading'}
+          <div class="px-4 py-10 text-center">
+            <p class="font-mono text-[11.5px] text-ink-3">Reading forensics…</p>
+          </div>
+        {:else}
+          <div class="px-4 py-10 text-center">
+            <p class="text-[13.5px] text-ink-2">Forensics unavailable.</p>
+            <p class="mt-1 font-mono text-[11px] text-ink-3">The daemon did not answer.</p>
+            <button
+              type="button"
+              onclick={() => (retryNonce += 1)}
+              class="mt-2 rounded-(--radius-ui) px-2 py-1 font-mono text-[11.5px] text-accent transition-colors duration-[120ms] hover:bg-accent-soft"
+            >
+              Retry
+            </button>
+          </div>
+        {/if}
+      {/if}
 
-      <div class="border-b border-line px-4 py-3">
-        <h3 class="label text-[11px] text-ink-3">Raw lines</h3>
-        <pre class="mt-2 overflow-x-auto rounded-(--radius-ui) border border-line bg-l0 p-3 font-mono text-[11.5px] leading-relaxed text-ink-2">{raw.join('\n')}</pre>
-        <p class="mt-2 font-mono text-[10.5px] text-ink-3">Kept verbatim. What arrived is what you read.</p>
-      </div>
-
-      <div class="border-b border-line px-4 py-3">
-        <h3 class="label text-[11px] text-ink-3">Decision record</h3>
-        <dl class="mt-2 grid grid-cols-[96px_minmax(0,1fr)] gap-x-3 gap-y-1 font-mono text-[11.5px]">
-          <dt class="text-ink-3">Model</dt>
-          <dd class="m-0 text-ink-2">typesafe/jev-1.13</dd>
-          <dt class="text-ink-3">Resolved</dt>
-          <dd class="m-0 text-ink-2">typesafe/jev-1.13-20260917</dd>
-          <dt class="text-ink-3">Confidence</dt>
-          <dd class="m-0 tabular-nums text-ink-2">0.81</dd>
-          <dt class="text-ink-3">Actionable</dt>
-          <dd class="m-0 text-ink-2">yes</dd>
-        </dl>
-      </div>
-
-      <div class="flex flex-wrap gap-2 px-4 py-3">
-        <button
-          type="button"
-          class="rounded-(--radius-ui) bg-accent px-3 py-1.5 text-[13px] font-medium text-accent-fg transition-colors duration-[120ms] hover:brightness-110"
-        >
-          Acknowledge
-        </button>
-        <button
-          type="button"
-          class="rounded-(--radius-ui) border border-line px-3 py-1.5 text-[13px] text-ink-2 transition-colors duration-[120ms] hover:bg-l2 hover:text-ink"
-        >
-          Not an alarm
-        </button>
-      </div>
+      {#if selected !== null}
+        <div class="flex flex-wrap gap-2 px-4 py-3">
+          <button
+            type="button"
+            class="rounded-(--radius-ui) bg-accent px-3 py-1.5 text-[13px] font-medium text-accent-fg transition-colors duration-[120ms] hover:brightness-110"
+          >
+            Acknowledge
+          </button>
+          <button
+            type="button"
+            class="rounded-(--radius-ui) border border-line px-3 py-1.5 text-[13px] text-ink-2 transition-colors duration-[120ms] hover:bg-l2 hover:text-ink"
+          >
+            Not an alarm
+          </button>
+        </div>
+      {/if}
     </aside>
   </div>
 </section>

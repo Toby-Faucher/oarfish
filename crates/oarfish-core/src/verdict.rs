@@ -19,7 +19,7 @@ use std::str::FromStr;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use ts_rs::TS;
 
-use crate::TemplateId;
+use crate::{Alarm, TemplateId};
 
 /// The blake3 hash of the canonicalised question set, truncated to 16 bytes.
 ///
@@ -178,6 +178,38 @@ pub struct Verdict {
     #[serde(with = "judged_at_serde")]
     #[ts(type = "string")]
     pub judged_at: time::OffsetDateTime,
+}
+
+/// One alarm with the judgment behind it, in the shape the board's detail
+/// panel reads. The verdict and the record are optional by construction: an
+/// alarm can be open while its template is still unjudged, and the board
+/// renders that as "not yet judged" rather than a missing panel.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
+#[ts(export, export_to = "oarfish.ts")]
+pub struct AlarmDetail {
+    pub alarm: Alarm,
+    pub verdict: Option<Verdict>,
+    pub record: Option<DecisionRecordView>,
+}
+
+/// The decision record cut down to what the board renders. The full record
+/// (kept in `oarfish-store`) carries the exact state, questions and answers
+/// JSON for replay tooling; the panel shows the provenance row: who answered,
+/// when, at what token cost. Plain fields, so the store maps into it without
+/// core depending on the store.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
+#[ts(export, export_to = "oarfish.ts")]
+pub struct DecisionRecordView {
+    /// The resolved, dated build that answered — never the requested pin.
+    pub model: String,
+    #[serde(with = "time::serde::rfc3339")]
+    #[ts(type = "string")]
+    pub recorded_at: time::OffsetDateTime,
+    #[ts(type = "number")]
+    pub input_tokens: u64,
+    #[ts(type = "number")]
+    pub output_tokens: u64,
+    pub cost: Option<f64>,
 }
 
 /// `OffsetDateTime` on both wires. Human-readable formats (JSON, and through

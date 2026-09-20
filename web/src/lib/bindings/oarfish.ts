@@ -42,9 +42,30 @@ opened_at: string, };
 export type AlarmChange = { "Raised": Alarm } | { "Updated": Alarm } | { "Cleared": AlarmId } | "Resync";
 
 /**
+ * One alarm with the judgment behind it, in the shape the board's detail
+ * panel reads. The verdict and the record are optional by construction: an
+ * alarm can be open while its template is still unjudged, and the board
+ * renders that as "not yet judged" rather than a missing panel.
+ */
+export type AlarmDetail = { alarm: Alarm, verdict: Verdict | null, record: DecisionRecordView | null, };
+
+/**
  * A ULID, so the store gets chronological range scans for free.
  */
 export type AlarmId = string;
+
+/**
+ * The decision record cut down to what the board renders. The full record
+ * (kept in `oarfish-store`) carries the exact state, questions and answers
+ * JSON for replay tooling; the panel shows the provenance row: who answered,
+ * when, at what token cost. Plain fields, so the store maps into it without
+ * core depending on the store.
+ */
+export type DecisionRecordView = { 
+/**
+ * The resolved, dated build that answered — never the requested pin.
+ */
+model: string, recorded_at: string, input_tokens: number, output_tokens: number, cost: number | null, };
 
 /**
  * One line, normalized. The raw bytes are kept verbatim: at 3am the operator

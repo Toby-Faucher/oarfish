@@ -324,6 +324,7 @@ async fn run_daemon(args: DaemonArgs) -> anyhow::Result<()> {
     );
     let api_state = oarfish_api::ApiState::new(
         engine.snapshot_handle(),
+        Arc::clone(&verdicts),
         engine.sender(),
         args.static_dir.clone(),
         cancel.child_token(),
