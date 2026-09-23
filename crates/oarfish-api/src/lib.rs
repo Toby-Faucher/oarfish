@@ -145,11 +145,18 @@ fn sse_event(change: &AlarmChange) -> SseEvent {
 /// closed sender ends the stream, and so does shutdown: the `ApiState`
 /// sender clone would otherwise keep `Closed` unreachable while `serve`
 /// waits for this stream, deadlocking shutdown with any board connected.
+///
+/// The stream opens with a `connected` comment, sent at subscribe time. A
+/// proxy that holds headers until the first body write (Vite's dev proxy
+/// does, to decide on compression) would otherwise keep the board on
+/// "connecting" until the first change or keep-alive tick, up to 15s.
 fn sse_body_stream(
     rx: broadcast::Receiver<AlarmChange>,
     shutdown: CancellationToken,
 ) -> impl futures::Stream<Item = Result<SseEvent, Infallible>> {
-    futures::stream::unfold((rx, shutdown), |(mut rx, shutdown)| async move {
+    use futures::StreamExt as _;
+    let opened = futures::stream::once(async { Ok(SseEvent::default().comment("connected")) });
+    let changes = futures::stream::unfold((rx, shutdown), |(mut rx, shutdown)| async move {
         tokio::select! {
             _ = shutdown.cancelled() => None,
             received = rx.recv() => match received {
@@ -163,7 +170,8 @@ fn sse_body_stream(
                 Err(broadcast::error::RecvError::Closed) => None,
             },
         }
-    })
+    });
+    opened.chain(changes)
 }
 
 /// SSE over the engine's broadcast. Keep-alive comments hold the connection
@@ -361,9 +369,12 @@ mod tests {
         }
         drop(tx);
         let text = wire_text(rx).await;
-        // The first thing a lagged stream emits is `resync`, before any
-        // buffered state: the board re-fetches rather than trusting a stream
-        // it knows skipped messages. The buffered tail still follows — those
+        let text = text
+            .strip_prefix(OPENING_COMMENT)
+            .expect("every stream opens with the connect comment");
+        // After the connect comment, the first thing a lagged stream emits
+        // is `resync`, before any buffered state: the board re-fetches
+        // rather than trusting a stream it knows skipped messages. The buffered tail still follows — those
         // are live changes, not replays — and the re-fetch covers them.
         assert!(
             text.starts_with("event: resync"),
@@ -376,6 +387,34 @@ mod tests {
             text.contains(&expected),
             "the lag resync rides as JSON {expected:?}, got {text:?}"
         );
+    }
+
+    /// The comment every stream opens with, as it lands on the wire.
+    const OPENING_COMMENT: &str = ": connected\n\n";
+
+    /// The first byte goes out at subscribe time, not at the first change or
+    /// keep-alive tick: a proxy that buffers headers until the first body
+    /// write (Vite's dev proxy does) would otherwise hold the board on
+    /// "connecting" for up to the full keep-alive interval.
+    #[tokio::test]
+    async fn the_stream_opens_without_waiting_for_a_change() {
+        let (_tx, rx) = broadcast::channel::<AlarmChange>(16);
+        let mut stream = Box::pin(sse_body_stream(rx, CancellationToken::new()));
+        use futures::StreamExt as _;
+        let first = tokio::time::timeout(std::time::Duration::from_millis(100), stream.next())
+            .await
+            .expect("the first item is immediate, with the sender still open and silent");
+        assert!(first.is_some(), "the stream opens with a comment");
+
+        let (_tx, rx) = broadcast::channel::<AlarmChange>(16);
+        let response = Sse::new(sse_body_stream(rx, CancellationToken::new())).into_response();
+        let mut body = response.into_body().into_data_stream();
+        let chunk = tokio::time::timeout(std::time::Duration::from_millis(100), body.next())
+            .await
+            .expect("the first body chunk is immediate")
+            .expect("a chunk")
+            .expect("no body error");
+        assert_eq!(&chunk[..], OPENING_COMMENT.as_bytes());
     }
 
     /// Changes map to named events carrying their JSON.
@@ -400,8 +439,9 @@ mod tests {
         let (_tx, rx) = broadcast::channel::<AlarmChange>(16);
         let shutdown = CancellationToken::new();
         let mut stream = Box::pin(sse_body_stream(rx, shutdown.clone()));
-        shutdown.cancel();
         use futures::StreamExt as _;
+        let _connected = stream.next().await.expect("the connect comment");
+        shutdown.cancel();
         let next = tokio::time::timeout(std::time::Duration::from_secs(5), stream.next()).await;
         assert!(
             matches!(next, Ok(None)),
