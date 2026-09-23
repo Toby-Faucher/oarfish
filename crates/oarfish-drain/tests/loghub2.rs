@@ -289,3 +289,43 @@ fn grouping_accuracy_matches_the_loghub_definition() {
         (0.0, 0.0)
     );
 }
+
+/// Write what the port saw and decided, one TSV per system, for
+/// `scripts/compare-drain3.py`: ground truth, port cluster, masked body, raw
+/// line. drain3 then runs on the same masked input, so any difference is the
+/// algorithm, not the mask. Ignored: run it with
+/// `OARFISH_DRAIN3_EXPORT=$PWD/target/drain3 cargo test -p oarfish-drain --test loghub2 -- --ignored export`.
+#[test]
+#[ignore]
+fn export_for_drain3() {
+    let Some(dir) = corpus_dir() else {
+        panic!("corpus/loghub-2.0 is absent; run scripts/fetch-corpus.sh");
+    };
+    let out_dir = PathBuf::from(
+        std::env::var_os("OARFISH_DRAIN3_EXPORT")
+            .expect("set OARFISH_DRAIN3_EXPORT to a directory"),
+    );
+    std::fs::create_dir_all(&out_dir).expect("create export dir");
+    let bundle = oarfish_mask::curated();
+    // Tabs and newlines inside a field would break the row; none of the
+    // corpus has them, but a flattened space is the honest fallback.
+    let field = |s: &str| s.replace(['\t', '\n', '\r'], " ");
+    for &(system, _, _) in PUBLISHED {
+        let sample = load(&dir, system);
+        let bodies: Vec<String> = sample.lines.iter().map(|l| ingest_body(l)).collect();
+        let (_, seqs) = cluster(&bodies);
+        let mut tsv = String::new();
+        for (i, body) in bodies.iter().enumerate() {
+            writeln!(
+                tsv,
+                "{}\t{}\t{}\t{}",
+                field(&sample.truth[i]),
+                seqs[i],
+                field(bundle.mask(body).template()),
+                field(&sample.lines[i]),
+            )
+            .expect("write to string");
+        }
+        std::fs::write(out_dir.join(format!("{system}.tsv")), tsv).expect("write export");
+    }
+}
