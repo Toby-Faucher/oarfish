@@ -1,0 +1,11 @@
+name = "oarfish-drain"
+version = "0.1.0"
+defaultTargets = ["OarfishDrain"]
+
+[[require]]
+name = "plausible"
+git = "https://github.com/leanprover-community/plausible"
+rev = "v4.34.0"
+
+[[lean_lib]]
+name = "OarfishDrain"

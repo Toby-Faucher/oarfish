@@ -20,6 +20,12 @@ impl Node {
         }
     }
 
+    /// The edges out of this node, for tests that walk the whole tree.
+    #[cfg(test)]
+    pub(crate) fn children(&self) -> impl Iterator<Item = (&str, &Node)> {
+        self.children.iter().map(|(k, n)| (k.as_str(), n))
+    }
+
     fn child(&self, key: &str) -> Option<&Node> {
         self.children.iter().find(|(k, _)| k == key).map(|(_, n)| n)
     }
@@ -59,8 +65,15 @@ pub(crate) fn search<'a>(root: &'a Node, tokens: &[&str], config: &Config) -> Op
 /// Equal tokens over total, parameter positions in the cluster skipped rather
 /// than counted. Returns the similarity and the parameter count (for
 /// tie-breaking); lengths are equal by construction.
+///
+/// Two empty token lists are identical: 1.0, not `0.0 / 0.0`. NaN fails
+/// every comparison, so an empty line would never rejoin the empty cluster
+/// and each `""` would open a new one.
 pub(crate) fn similarity(cluster_tokens: &[String], tokens: &[&str], param: &str) -> (f64, usize) {
     debug_assert_eq!(cluster_tokens.len(), tokens.len());
+    if cluster_tokens.is_empty() {
+        return (1.0, 0);
+    }
     let mut similar = 0;
     let mut params = 0;
     for (ct, t) in cluster_tokens.iter().zip(tokens) {
@@ -102,15 +115,24 @@ fn has_numbers(token: &str) -> bool {
 /// specific nodes; tokens with digits (including `<VAR:IP4>`) descend the
 /// parameter path when one exists. (Loki's source comments label these two
 /// branches backwards; the conditions are what is ported.)
-pub(crate) fn insert(root: &mut Node, cluster_id: u64, template: &[&str], config: &Config) {
+///
+/// Returns the edge keys walked, root to leaf, so eviction can find the id
+/// again with [`remove`] after generalization has changed the template.
+pub(crate) fn insert(
+    root: &mut Node,
+    cluster_id: u64,
+    template: &[&str],
+    config: &Config,
+) -> Vec<String> {
     let count_key = template.len().to_string();
     if root.child(&count_key).is_none() {
         root.children.push((count_key.clone(), Node::new()));
     }
+    let mut path = vec![count_key.clone()];
     let mut node = root.child_mut(&count_key).expect("just inserted");
     if template.is_empty() {
         node.cluster_ids.push(cluster_id);
-        return;
+        return path;
     }
 
     for (node_depth, token) in (1..).zip(template.iter()) {
@@ -120,26 +142,32 @@ pub(crate) fn insert(root: &mut Node, cluster_id: u64, template: &[&str], config
         }
 
         if node.child(token).is_some() {
+            path.push((*token).to_owned());
             node = node.child_mut(token).expect("just checked");
         } else if !has_numbers(token) {
             let has_param = node.child(&config.param).is_some();
             if has_param {
                 if node.children.len() < config.max_children {
                     node.children.push(((*token).to_owned(), Node::new()));
+                    path.push((*token).to_owned());
                     node = node.child_mut(token).expect("just inserted");
                 } else {
                     let param = config.param.clone();
+                    path.push(param.clone());
                     node = node.child_mut(&param).expect("checked");
                 }
             } else if node.children.len() + 1 < config.max_children {
                 node.children.push(((*token).to_owned(), Node::new()));
+                path.push((*token).to_owned());
                 node = node.child_mut(token).expect("just inserted");
             } else if node.children.len() + 1 == config.max_children {
                 node.children.push((config.param.clone(), Node::new()));
                 let param = config.param.clone();
+                path.push(param.clone());
                 node = node.child_mut(&param).expect("just inserted");
             } else {
                 let param = config.param.clone();
+                path.push(param.clone());
                 node = node
                     .child_mut(&param)
                     .expect("exists: else-branch means over cap");
@@ -147,11 +175,38 @@ pub(crate) fn insert(root: &mut Node, cluster_id: u64, template: &[&str], config
         } else if node.child(&config.param).is_none() {
             node.children.push((config.param.clone(), Node::new()));
             let param = config.param.clone();
+            path.push(param.clone());
             node = node.child_mut(&param).expect("just inserted");
         } else {
             let param = config.param.clone();
+            path.push(param.clone());
             node = node.child_mut(&param).expect("checked");
         }
+    }
+    path
+}
+
+/// Take `cluster_id` out of the leaf at `path` and prune every node the
+/// removal leaves with no ids and no children, bottom up. The inverse of
+/// [`insert`]: after it, the tree holds exactly what it held before that
+/// insert, apart from edge order. A path or id that is not there is a no-op.
+///
+/// Order-preserving within the leaf: search breaks ties by leaf order, so
+/// `swap_remove` would change which cluster wins.
+pub(crate) fn remove(node: &mut Node, path: &[String], cluster_id: u64) {
+    let Some((key, rest)) = path.split_first() else {
+        if let Some(pos) = node.cluster_ids.iter().position(|id| *id == cluster_id) {
+            node.cluster_ids.remove(pos);
+        }
+        return;
+    };
+    let Some(index) = node.children.iter().position(|(k, _)| k == key) else {
+        return;
+    };
+    let child = &mut node.children[index].1;
+    remove(child, rest, cluster_id);
+    if child.cluster_ids.is_empty() && child.children.is_empty() {
+        node.children.remove(index);
     }
 }
 
@@ -225,6 +280,23 @@ mod tests {
         let a = drain2.train(base);
         let c = drain2.train(eight);
         assert_ne!(a.seq, c.seq, "8/10 must not reach the 0.90 threshold");
+    }
+
+    /// The Lean model (`lean/OarfishDrain/Model.lean`) states the threshold
+    /// exactly, as `10 * similar >= 9 * n`, and its proofs rest on that. This
+    /// pins the `f64` comparison the Rust actually runs to the same answer at
+    /// every length a line can have, so the proofs carry over.
+    #[test]
+    fn the_float_threshold_agrees_with_the_exact_one() {
+        let config = crate::Config::default();
+        assert_eq!(config.similarity, 0.90, "the exact form below assumes 0.90");
+        for n in 1..=config.max_tokens {
+            for similar in 0..=n {
+                let float = similar as f64 / n as f64 >= config.similarity;
+                let exact = 10 * similar >= 9 * n;
+                assert_eq!(float, exact, "disagree at {similar}/{n}");
+            }
+        }
     }
 
     #[test]

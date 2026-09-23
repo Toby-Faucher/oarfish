@@ -176,11 +176,10 @@ these describe the same event type?* Cached by pair. Runs perhaps a dozen times 
 
 *Resolved 2026-09-19 in M5.5 (`docs/specs/2026-09-19-m5.5-merge-context-design.md`
 §4): "structurally close" is a Jaccard score over token multisets in
-`[0.65, 0.90)`, searched across token counts on purpose — the motivating case
+`[0.65, 1.0]` (revised 2026-09-22 from `[0.65, 0.90)`; see M5.5 §4), searched across token counts on purpose — the motivating case
 is one real event split in two because an optional field changed the token
 count, and Drain's first tree level is token count, so a tree-based search
-would systematically miss it. The ceiling is Drain's own threshold, not a
-tuning choice; the floor is configuration. The search is a read-only
+would systematically miss it. There is no ceiling; the floor is configuration. The search is a read-only
 `Drain::neighbours` query over a token-count index, referred by the pipeline
 when a genuinely new cluster appears.*
 

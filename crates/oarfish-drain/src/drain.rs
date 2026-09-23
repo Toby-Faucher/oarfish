@@ -47,20 +47,20 @@ pub struct Assignment {
 /// directly rather than rebuilding tables under edited configs.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct NeighbourQuery {
-    /// Pairs scoring below this are not referred. Must sit below the table's
-    /// similarity: the band is `[floor, similarity)`.
+    /// Pairs scoring below this are not referred. There is no ceiling: see
+    /// [`Drain::neighbours`].
     pub floor: f64,
 }
 
 /// One referred pair: a live cluster structurally close to the queried one,
-/// in the referral band and across token counts on purpose.
+/// at or above the referral floor and across token counts on purpose.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Candidate {
     /// The candidate cluster's internal sequence. Never persisted.
     pub seq: u64,
     /// The candidate cluster's current template id.
     pub template_id: TemplateId,
-    /// Jaccard over token multisets, in `[floor, similarity)`.
+    /// Jaccard over token multisets, in `[floor, 1]`.
     pub score: f64,
 }
 
@@ -70,16 +70,18 @@ pub struct Candidate {
 pub enum DrainError {
     #[error("depth must be at least 3 (a count level and a token level), got {0}")]
     DepthBelowMinimum(usize),
+    #[error("max_children must be at least 1, room for the parameter node")]
+    MaxChildrenZero,
 }
 
 /// The clusterer. Single-threaded by construction: `train` takes `&mut self`.
 ///
 /// The table is bounded: past `max_clusters` entries the least-recently-used
 /// cluster is forgotten (a clock-based LRU — a tick per train, stamps ordered
-/// in a `BTreeMap`, so touch and eviction are O(log n)). An evicted id stays
-/// in tree nodes as a stale entry and is filtered on read; seqs are never
-/// reused, so a stale entry can never resurrect. `max_clusters == 0` means
-/// unbounded, mirroring Loki.
+/// in a `BTreeMap`, so touch and eviction are O(log n)). Eviction takes the id
+/// out of its tree leaf too and prunes nodes it leaves empty, so the tree holds
+/// exactly the live clusters and is bounded with the table. `max_clusters == 0`
+/// means unbounded, mirroring Loki.
 pub struct Drain {
     config: Config,
     root: tree::Node,
@@ -97,13 +99,21 @@ pub struct Drain {
 struct Entry {
     cluster: Cluster,
     tick: u64,
+    /// The edge keys from the root to the leaf holding this id. Recorded at
+    /// insert because generalization changes `cluster.tokens`, and with it
+    /// the path those tokens would take today.
+    path: Vec<String>,
 }
 
 impl Drain {
-    /// Build a clusterer. The only failure is a depth that cannot hold a tree.
+    /// Build a clusterer. The failures are shapes that cannot hold a tree: a
+    /// depth under 3, or no room for even the parameter node.
     pub fn new(config: Config) -> Result<Self, DrainError> {
         if config.depth < 3 {
             return Err(DrainError::DepthBelowMinimum(config.depth));
+        }
+        if config.max_children == 0 {
+            return Err(DrainError::MaxChildrenZero);
         }
         Ok(Self {
             config,
@@ -162,10 +172,12 @@ impl Drain {
                             size: 1,
                         },
                         tick,
+                        path: Vec::new(),
                     },
                 );
                 self.stamps.insert(tick, seq);
-                tree::insert(&mut self.root, seq, &tokens, &self.config);
+                let path = tree::insert(&mut self.root, seq, &tokens, &self.config);
+                self.table.get_mut(&seq).expect("just inserted").path = path;
                 self.evict();
                 seq
             }
@@ -211,6 +223,7 @@ impl Drain {
         while self.table.len() > cap {
             let oldest = self.stamps.pop_first().expect("stamps track the table");
             if let Some(entry) = self.table.remove(&oldest.1) {
+                tree::remove(&mut self.root, &entry.path, oldest.1);
                 let len = entry.cluster.tokens.len();
                 if let Some(bucket) = self.counts.get_mut(&len) {
                     if let Some(pos) = bucket.iter().position(|seq| *seq == oldest.1) {
@@ -226,15 +239,13 @@ impl Drain {
 
     /// Best candidate at or above threshold among the leaf's live clusters.
     /// Compares the stored token vectors in place: no re-parsing.
+    ///
+    /// Every length faces the threshold, one-token lines included. Loki
+    /// returns a short line's first cluster unchecked, which is safe there
+    /// only because Loki drops lines under four tokens; oarfish clusters
+    /// every line, so the shortcut merged `succeeded` into `failed`.
     fn search(&self, tokens: &[&str]) -> Option<u64> {
         let leaf = tree::search(&self.root, tokens, &self.config)?;
-        if tokens.len() < 2 {
-            return leaf
-                .cluster_ids
-                .iter()
-                .find(|id| self.table.contains_key(id))
-                .copied();
-        }
         let (mut best_seq, mut best_sim, mut best_params) = (0, -1.0, 0);
         let mut found = false;
         for id in &leaf.cluster_ids {
@@ -268,11 +279,14 @@ impl Drain {
     ///
     /// Buckets within ±2 tokens of the cluster are read through the
     /// token-count index (a handful of bucket reads, not a table walk) and
-    /// scored by Jaccard over token multisets. Only the referral band is
-    /// returned: at or above [`Config::similarity`] the two lines would
-    /// already be one cluster, so such a pair cannot exist as two clusters,
-    /// and below the floor the pair is different events rather than close
-    /// ones. Results arrive highest score first.
+    /// scored by Jaccard over token multisets. Everything at or above the
+    /// floor is returned; below it the pair is different events rather than
+    /// close ones. There is no ceiling. A high Jaccard does not mean Drain
+    /// already merged the pair: Jaccard ignores position, and Drain never
+    /// compares across token counts or across tree paths (a word varying at
+    /// an early position splits at the tree). Those pairs score highest and
+    /// are the over-splits most worth repairing. Results arrive highest
+    /// score first.
     pub fn neighbours(&self, seq: u64, query: &NeighbourQuery) -> Vec<Candidate> {
         let entry = match self.table.get(&seq) {
             Some(entry) => entry,
@@ -280,9 +294,6 @@ impl Drain {
         };
         let len = entry.cluster.tokens.len();
         let floor = query.floor;
-        if floor >= self.config.similarity {
-            return Vec::new();
-        }
         let mut out = Vec::new();
         let lo = len.saturating_sub(2);
         let hi = len.saturating_add(2);
@@ -300,7 +311,7 @@ impl Drain {
                     None => continue,
                 };
                 let score = jaccard(&entry.cluster.tokens, &candidate.tokens);
-                if score >= floor && score < self.config.similarity {
+                if score >= floor {
                     out.push(Candidate {
                         seq: *candidate_seq,
                         template_id: candidate.template_id,
@@ -397,6 +408,22 @@ mod tests {
         );
     }
 
+    /// A one-token line faces the threshold like any other. `succeeded` then
+    /// `failed` used to share a cluster templated `<*>`: invariant 4's own
+    /// example, merged. Found by `plausible` against the Lean model
+    /// (`lean/OarfishDrain`), which proves join soundness at every length.
+    #[test]
+    fn one_token_lines_join_only_when_equal() {
+        let mut drain = drain();
+        let ok = drain.train("succeeded");
+        let failed = drain.train("failed");
+        assert_ne!(ok.seq, failed.seq, "succeeded and failed must stay apart");
+        assert_eq!(drain.get(ok.seq).expect("live").template, "succeeded");
+        assert_eq!(drain.get(failed.seq).expect("live").template, "failed");
+        // An equal line still joins.
+        assert_eq!(drain.train("succeeded").seq, ok.seq);
+    }
+
     #[test]
     fn the_table_evicts_least_recently_used_past_the_cap() {
         let mut drain = Drain::new(Config {
@@ -480,27 +507,123 @@ mod tests {
         assert_eq!(back[0].seq, base.seq);
     }
 
-    /// The ceiling is Drain's own threshold: at or above it the pair cannot
-    /// exist as two clusters at equal counts — and across counts it is still
-    /// not referred. Near-identical lines sharing every token but one extra
-    /// on a long line score past the ceiling and stay out.
+    /// There is no ceiling: a high score does not mean Drain already merged
+    /// the pair. Jaccard ignores position and Drain never compares across
+    /// token counts or across tree paths, so pairs scoring 0.90 and above
+    /// exist as two clusters, and they are the closest over-splits of all.
     #[test]
-    fn no_pair_scoring_at_or_above_threshold_is_ever_referred() {
+    fn high_scoring_pairs_that_drain_split_are_referred() {
+        // An optional eleventh field: 10/11 ≈ 0.909, two counts, never compared.
         let mut drain = drain();
-        // Ten tokens plus one optional eleventh: 10/11 ≈ 0.909, past the
-        // ceiling — two clusters Drain never compares, and no referral.
         let base = drain.train("t1 t2 t3 t4 t5 t6 t7 t8 t9 t10");
         let extended = drain.train("t1 t2 t3 t4 t5 t6 t7 t8 t9 t10 extra");
         assert_ne!(base.seq, extended.seq);
-        assert!(neighbours_of(&drain, base.seq).is_empty());
-        assert!(neighbours_of(&drain, extended.seq).is_empty());
+        let referred = neighbours_of(&drain, base.seq);
+        assert_eq!(referred.len(), 1, "got {referred:?}");
+        assert_eq!(referred[0].seq, extended.seq);
+        assert!(referred[0].score >= 0.90, "score {}", referred[0].score);
 
-        // And below the floor: different events stay unreferred.
-        let mut other = Drain::new(Config::default()).expect("default config is valid");
-        let a = other.train("alpha bravo charlie delta echo foxtrot");
-        let b = other.train("zulu yankee xray whiskey victor tango");
+        // A word varying at token 2 of 20: the tree splits the pair at an
+        // early level, so they never meet. 19/21 ≈ 0.905.
+        let words = "alpha bravo charlie delta echo foxtrot golf hotel india juliet \
+                     kilo lima mike november oscar papa quebec romeo sierra tango";
+        let mut drain = self::drain();
+        let a = drain.train(words);
+        let b = drain.train(&words.replacen("bravo", "zulu", 1));
         assert_ne!(a.seq, b.seq);
-        assert!(neighbours_of(&other, a.seq).is_empty());
+        assert_eq!(
+            neighbours_of(&drain, a.seq).first().map(|c| c.seq),
+            Some(b.seq)
+        );
+
+        // Same tokens, different order: Jaccard 1.0, two clusters.
+        let mut drain = self::drain();
+        let a = drain.train("a b c d");
+        let b = drain.train("d c b a");
+        assert_ne!(a.seq, b.seq);
+        assert_eq!(
+            neighbours_of(&drain, a.seq).first().map(|c| c.seq),
+            Some(b.seq)
+        );
+    }
+
+    /// Below the floor, different events stay unreferred.
+    #[test]
+    fn pairs_below_the_floor_are_not_referred() {
+        let mut drain = drain();
+        let a = drain.train("alpha bravo charlie delta echo foxtrot");
+        let b = drain.train("zulu yankee xray whiskey victor tango");
+        assert_ne!(a.seq, b.seq);
+        assert!(neighbours_of(&drain, a.seq).is_empty());
+    }
+
+    /// Every tree leaf id is a live cluster, each live cluster sits in the
+    /// tree exactly once, and no node is left empty. Eviction used to leave
+    /// ids behind (spec §3 said "cleaned on insert"; nothing cleaned them),
+    /// so leaves grew without bound under exactly the hostile input
+    /// `max_clusters` exists to bound.
+    fn assert_tree_matches_table(drain: &Drain) {
+        fn walk(node: &crate::tree::Node, ids: &mut Vec<u64>, depth: usize) {
+            ids.extend(&node.cluster_ids);
+            for (key, child) in node.children() {
+                assert!(
+                    !child.cluster_ids.is_empty() || child.children().next().is_some(),
+                    "empty node {key:?} left at depth {depth}"
+                );
+                walk(child, ids, depth + 1);
+            }
+        }
+        let mut ids = Vec::new();
+        walk(&drain.root, &mut ids, 0);
+        ids.sort_unstable();
+        let mut live: Vec<u64> = drain.table.keys().copied().collect();
+        live.sort_unstable();
+        assert_eq!(ids, live, "tree ids and live clusters differ");
+
+        let mut stamped: Vec<u64> = drain.stamps.values().copied().collect();
+        stamped.sort_unstable();
+        assert_eq!(stamped, live, "stamps and live clusters differ");
+        let mut counted: Vec<u64> = drain.counts.values().flatten().copied().collect();
+        counted.sort_unstable();
+        assert_eq!(counted, live, "the count index and live clusters differ");
+        if drain.config.max_clusters > 0 {
+            assert!(drain.table.len() <= drain.config.max_clusters);
+        }
+    }
+
+    #[test]
+    fn eviction_removes_the_cluster_from_the_tree() {
+        let mut drain = Drain::new(Config {
+            max_clusters: 4,
+            ..Config::default()
+        })
+        .expect("valid");
+        for i in 0..200 {
+            let word = ["alpha", "bravo", "charlie", "delta", "echo"][i % 5];
+            drain.train(&format!("{word} event number {i} happened here now"));
+            assert_tree_matches_table(&drain);
+        }
+    }
+
+    /// `max_children: 0` has no room for even the parameter node; it used to
+    /// panic on the first three-token line.
+    #[test]
+    fn max_children_zero_is_rejected() {
+        assert_eq!(
+            Drain::new(Config {
+                max_children: 0,
+                ..Config::default()
+            })
+            .err(),
+            Some(crate::DrainError::MaxChildrenZero)
+        );
+        let mut one = Drain::new(Config {
+            max_children: 1,
+            ..Config::default()
+        })
+        .expect("one child is room for the parameter node");
+        one.train("a b c");
+        one.train("x y z");
     }
 
     /// Referrals arrive highest score first, and a cluster never refers to
@@ -566,6 +689,23 @@ mod tests {
                 !referred.iter().any(|c| c.seq == first.seq),
                 "evicted seq referred: {referred:?}"
             );
+        }
+    }
+
+    proptest::proptest! {
+        /// The tree, the stamps and the count index all track exactly the
+        /// live clusters, under any sequence of lines and any small cap.
+        #[test]
+        fn the_tree_and_indexes_track_the_live_table(
+            lines in proptest::collection::vec("([a-e0-9]{1,3} ){0,5}[a-e0-9]{1,3}", 1..60),
+            cap in 1usize..6,
+        ) {
+            let mut drain = Drain::new(Config { max_clusters: cap, ..Config::default() })
+                .expect("valid");
+            for line in &lines {
+                drain.train(line);
+                assert_tree_matches_table(&drain);
+            }
         }
     }
 }
