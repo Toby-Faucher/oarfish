@@ -24,6 +24,7 @@ web/.astro/
 # Third-party corpora, fetched by scripts/fetch-corpus.sh. Never committed:
 # see the licence note in corpus/manifest.toml.
 /corpus/loghub/
+/corpus/loghub-2.0/
 
 # SDD scratch: ledgers, briefs, review packages
 .superpowers/

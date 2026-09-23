@@ -1,292 +1,262 @@
 ---
 source: crates/oarfish-drain/tests/corpus.rs
-assertion_line: 331
+assertion_line: 350
 ---
-truth_templates: 118 port_clusters: 134
+truth_templates: 118 port_clusters: 124
 unambiguous: 2000 unmatched: 0 ambiguous: 0
-impure_clusters: 5
-  seq 21 mixes ["E18", "E19"]: Jul <VAR:NUM> <VAR:TS> combo sshd(pam_unix)<VAR:PID>: authentication failure; logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=NODEVssh ruser= rhost=<VAR:IP4> <*>
-  seq 55 mixes ["E21", "E20"]: Jul <VAR:NUM> <VAR:TS> combo kernel: BIOS-e820: <VAR:HEX> - <VAR:HEX> <*>
-  seq 61 mixes ["E41", "E74", "E50"]: Jul <VAR:NUM> <VAR:TS> combo kernel: <*> zone: <VAR:NUM> pages, LIFO batch:<VAR:NUM>
-  seq 89 mixes ["E55", "E71"]: Jul <VAR:NUM> <VAR:TS> combo kernel: <*> hash table entries: <VAR:NUM> (order: <VAR:NUM>, <VAR:SIZE>)
-  seq 108 mixes ["E111", "E110"]: Jul <VAR:NUM> <VAR:TS> combo kernel: usbcore: registered new driver <*>
-split_events: 10
-  E29 in 7 clusters
-  E101 in 5 clusters
-  E102 in 4 clusters
-  E18 in 3 clusters
-  E27 in 3 clusters
-  E16 in 2 clusters
-  E37 in 2 clusters
-  E38 in 2 clusters
-  E8 in 2 clusters
-  E90 in 2 clusters
-lines: 2000 clusters: 134
-485 Jul <VAR:NUM> <VAR:TS> combo ftpd<VAR:PID>: connection from <VAR:IP4> () at <*> Jul <VAR:NUM> <VAR:TS> <VAR:NUM>
-  eg: Jul  1 07:57:30 combo ftpd[21952]: connection from 202.82.200.188 () at Fri Jul  1 07:57:30 2005 
-216 Jul <VAR:NUM> <VAR:TS> combo ftpd<VAR:PID>: connection from <VAR:IP4> <*> at Sun Jul <VAR:NUM> <VAR:TS> <VAR:NUM>
-  eg: Jul  3 10:05:25 combo ftpd[32069]: connection from 203.101.45.59 (dsl-Chn-static-059.45.101.203.touchtelindia.net) at Sun Jul  3 10:05:25 2005 
-210 Jul <VAR:NUM> <VAR:TS> combo sshd(pam_unix)<VAR:PID>: authentication failure; logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=NODEVssh ruser= rhost=<VAR:IP4> <*>
-  eg: Jul  1 00:21:28 combo sshd(pam_unix)[19630]: authentication failure; logname= uid=0 euid=0 tty=NODEVssh ruser= rhost=60.30.224.116  user=root
-119 Jun <VAR:NUM> <VAR:TS> combo ftpd<VAR:PID>: connection from <VAR:IP4> () at <*> Jun <VAR:NUM> <VAR:TS> <VAR:NUM>
+impure_clusters: 1
+  seq 9 mixes ["E17", "E19"]: <VAR:TS> combo sshd(pam_unix)<VAR:PID>: authentication failure; logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=NODEVssh ruser= rhost=<VAR:IP4> <*>
+split_events: 4
+  E101 in 4 clusters
+  E29 in 3 clusters
+  E102 in 2 clusters
+  E27 in 2 clusters
+lines: 2000 clusters: 124
+617 <VAR:TS> combo ftpd<VAR:PID>: connection from <VAR:IP4> () at <VAR:TS>
   eg: Jun 20 03:40:59 combo ftpd[8829]: connection from 222.33.90.199 () at Mon Jun 20 03:40:59 2005 
-104 Jun <VAR:NUM> <VAR:TS> combo sshd(pam_unix)<VAR:PID>: authentication failure; logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=NODEVssh ruser= <*> user=root
+351 <VAR:TS> combo sshd(pam_unix)<VAR:PID>: authentication failure; logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=NODEVssh ruser= <*> user=root
   eg: Jun 15 02:04:59 combo sshd(pam_unix)[20882]: authentication failure; logname= uid=0 euid=0 tty=NODEVssh ruser= rhost=220-135-151-1.hinet-ip.hinet.net  user=root
-83 Jun <VAR:NUM> <VAR:TS> combo sshd(pam_unix)<VAR:PID>: authentication failure; logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=NODEVssh ruser= <*>
-  eg: Jun 14 15:16:01 combo sshd(pam_unix)[19939]: authentication failure; logname= uid=0 euid=0 tty=NODEVssh ruser= rhost=218.188.2.4 
-82 Jun <VAR:NUM> <VAR:TS> combo sshd(pam_unix)<VAR:PID>: check pass; user unknown
-  eg: Jun 14 15:16:02 combo sshd(pam_unix)[19937]: check pass; user unknown
-54 Jul <VAR:NUM> <VAR:TS> combo su(pam_unix)<VAR:PID>: session closed for user <*>
-  eg: Jul  1 04:05:18 combo su(pam_unix)[20298]: session closed for user cyrus
-54 Jul <VAR:NUM> <VAR:TS> combo su(pam_unix)<VAR:PID>: session opened for user <*> by (uid=<VAR:NUM>)
-  eg: Jul  1 04:05:17 combo su(pam_unix)[20298]: session opened for user cyrus by (uid=0)
-41 Jul <VAR:NUM> <VAR:TS> combo sshd(pam_unix)<VAR:PID>: authentication failure; logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=NODEVssh ruser= <*> user=root
-  eg: Jul  9 19:34:06 combo sshd(pam_unix)[23780]: authentication failure; logname= uid=0 euid=0 tty=NODEVssh ruser= rhost=p15105218.pureserver.info  user=root
-34 Jul <VAR:NUM> <VAR:TS> combo sshd(pam_unix)<VAR:PID>: authentication failure; logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=NODEVssh ruser= <*>
-  eg: Jul  2 04:15:33 combo sshd(pam_unix)[24588]: authentication failure; logname= uid=0 euid=0 tty=NODEVssh ruser= rhost=zummit.com 
-34 Jul <VAR:NUM> <VAR:TS> combo sshd(pam_unix)<VAR:PID>: check pass; user unknown
-  eg: Jul  2 04:15:33 combo sshd(pam_unix)[24588]: check pass; user unknown
-32 Jun <VAR:NUM> <VAR:TS> combo su(pam_unix)<VAR:PID>: session closed for user <*>
-  eg: Jun 15 04:06:19 combo su(pam_unix)[21416]: session closed for user cyrus
-32 Jun <VAR:NUM> <VAR:TS> combo su(pam_unix)<VAR:PID>: session opened for user <*> by (uid=<VAR:NUM>)
-  eg: Jun 15 04:06:18 combo su(pam_unix)[21416]: session opened for user cyrus by (uid=0)
-28 Jun <VAR:NUM> <VAR:TS> combo ftpd<VAR:PID>: connection from <VAR:IP4> <*> at Fri Jun <VAR:NUM> <VAR:TS> <VAR:NUM>
+269 <VAR:TS> combo ftpd<VAR:PID>: connection from <VAR:IP4> (<VAR:HOST>) at <VAR:TS>
   eg: Jun 17 07:07:00 combo ftpd[29504]: connection from 24.54.76.216 (24-54-76-216.bflony.adelphia.net) at Fri Jun 17 07:07:00 2005 
-27 Jul <VAR:NUM> <VAR:TS> combo logrotate: ALERT exited abnormally with <VAR:PID>
-  eg: Jul  1 04:05:19 combo logrotate: ALERT exited abnormally with [1]
-25 Jul <VAR:NUM> <VAR:TS> combo sshd(pam_unix)<VAR:PID>: session closed for user test
-  eg: Jul  1 05:02:26 combo sshd(pam_unix)[21689]: session closed for user test
-25 Jul <VAR:NUM> <VAR:TS> combo sshd(pam_unix)<VAR:PID>: session opened for user test by (uid=<VAR:NUM>)
-  eg: Jul  1 05:02:26 combo sshd(pam_unix)[21689]: session opened for user test by (uid=509)
-23 Jul <VAR:NUM> <VAR:TS> combo ftpd<VAR:PID>: connection from <VAR:IP4> (adsl-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>.dsl.mtry01.pacbell.net) at Mon Jul <VAR:NUM> <VAR:TS> <VAR:NUM>
-  eg: Jul  4 12:52:44 combo ftpd[2839]: connection from 63.197.98.106 (adsl-63-197-98-106.dsl.mtry01.pacbell.net) at Mon Jul  4 12:52:44 2005 
-23 Jul <VAR:NUM> <VAR:TS> combo ftpd<VAR:PID>: connection from <VAR:IP4> (host129.<VAR:NUM>.<VAR:NUM>.maximumasp.com) at Sat Jul <VAR:NUM> <VAR:TS> <VAR:NUM>
-  eg: Jul  9 22:53:19 combo ftpd[24085]: connection from 206.196.21.129 (host129.206.196.21.maximumasp.com) at Sat Jul  9 22:53:19 2005 
-23 Jun <VAR:NUM> <VAR:TS> combo klogind<VAR:PID>: Kerberos authentication failed
-  eg: Jun 30 20:53:04 combo klogind[19272]: Kerberos authentication failed 
-17 Jun <VAR:NUM> <VAR:TS> combo sshd(pam_unix)<VAR:PID>: authentication failure; logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=NODEVssh ruser= rhost=<VAR:IP4> user=guest
-  eg: Jun 17 19:43:13 combo sshd(pam_unix)[30565]: authentication failure; logname= uid=0 euid=0 tty=NODEVssh ruser= rhost=211.46.224.253  user=guest
-16 Jul <VAR:NUM> <VAR:TS> combo named<VAR:PID>: notify question section contains no SOA
-  eg: Jul 25 12:09:06 combo named[2306]: notify question section contains no SOA
-16 Jun <VAR:NUM> <VAR:TS> combo logrotate: ALERT exited abnormally with <VAR:PID>
+117 <VAR:TS> combo sshd(pam_unix)<VAR:PID>: authentication failure; logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=NODEVssh ruser= <*>
+  eg: Jun 14 15:16:01 combo sshd(pam_unix)[19939]: authentication failure; logname= uid=0 euid=0 tty=NODEVssh ruser= rhost=218.188.2.4 
+116 <VAR:TS> combo sshd(pam_unix)<VAR:PID>: check pass; user unknown
+  eg: Jun 14 15:16:02 combo sshd(pam_unix)[19937]: check pass; user unknown
+86 <VAR:TS> combo su(pam_unix)<VAR:PID>: session opened for user <*> by (uid=<VAR:NUM>)
+  eg: Jun 15 04:06:18 combo su(pam_unix)[21416]: session opened for user cyrus by (uid=0)
+43 <VAR:TS> combo logrotate: ALERT exited abnormally with <VAR:PID>
   eg: Jun 15 04:06:20 combo logrotate: ALERT exited abnormally with [1]
-15 Jun <VAR:NUM> <VAR:TS> combo ftpd<VAR:PID>: connection from <VAR:IP4> (lns-vlq-<VAR:NUM>-tou-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>.adsl.proxad.net) at Sat Jun <VAR:NUM> <VAR:TS> <VAR:NUM>
-  eg: Jun 18 02:08:10 combo ftpd[31272]: connection from 82.252.162.81 (lns-vlq-45-tou-82-252-162-81.adsl.proxad.net) at Sat Jun 18 02:08:10 2005 
-15 Jun <VAR:NUM> <VAR:TS> combo klogind<VAR:PID>: Authentication failed from <VAR:IP4> (<VAR:IP4>): Software caused connection abort
-  eg: Jun 30 20:53:04 combo klogind[19274]: Authentication failed from 163.27.187.39 (163.27.187.39): Software caused connection abort 
-11 Jun <VAR:NUM> <VAR:TS> combo sshd(pam_unix)<VAR:PID>: session closed for user test
+43 <VAR:TS> combo su(pam_unix)<VAR:PID>: session closed for user cyrus
+  eg: Jun 15 04:06:19 combo su(pam_unix)[21416]: session closed for user cyrus
+43 <VAR:TS> combo su(pam_unix)<VAR:PID>: session closed for user news
+  eg: Jun 15 04:12:43 combo su(pam_unix)[22644]: session closed for user news
+36 <VAR:TS> combo sshd(pam_unix)<VAR:PID>: session closed for user test
   eg: Jun 17 20:34:57 combo sshd(pam_unix)[30631]: session closed for user test
-11 Jun <VAR:NUM> <VAR:TS> combo sshd(pam_unix)<VAR:PID>: session opened for user test by (uid=<VAR:NUM>)
+36 <VAR:TS> combo sshd(pam_unix)<VAR:PID>: session opened for user test by (uid=<VAR:NUM>)
   eg: Jun 17 20:29:26 combo sshd(pam_unix)[30631]: session opened for user test by (uid=509)
-8 Jun <VAR:NUM> <VAR:TS> combo klogind<VAR:PID>: Authentication failed from <VAR:IP4> (<VAR:IP4>): Permission denied in replay cache code
+23 <VAR:TS> combo ftpd<VAR:PID>: connection from <VAR:IP4> (<VAR:IP4>.sh.interxion.inode.at) at <VAR:TS>
+  eg: Jul  3 23:16:09 combo ftpd[768]: connection from 62.99.164.82 (62.99.164.82.sh.interxion.inode.at) at Sun Jul  3 23:16:09 2005 
+23 <VAR:TS> combo klogind<VAR:PID>: Kerberos authentication failed
+  eg: Jun 30 20:53:04 combo klogind[19272]: Kerberos authentication failed 
+21 <VAR:TS> combo sshd(pam_unix)<VAR:PID>: authentication failure; logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=NODEVssh ruser= rhost=<VAR:IP4> <*>
+  eg: Jun 17 19:43:13 combo sshd(pam_unix)[30565]: authentication failure; logname= uid=0 euid=0 tty=NODEVssh ruser= rhost=211.46.224.253  user=guest
+16 <VAR:TS> combo named<VAR:PID>: notify question section contains no SOA
+  eg: Jul 25 12:09:06 combo named[2306]: notify question section contains no SOA
+15 <VAR:TS> combo klogind<VAR:PID>: Authentication failed from <VAR:IP4> (<VAR:IP4>): Software caused connection abort
+  eg: Jun 30 20:53:04 combo klogind[19274]: Authentication failed from 163.27.187.39 (163.27.187.39): Software caused connection abort 
+8 <VAR:TS> combo klogind<VAR:PID>: Authentication failed from <VAR:IP4> (<VAR:IP4>): Permission denied in replay cache code
   eg: Jun 30 20:53:04 combo klogind[19272]: Authentication failed from 163.27.187.39 (163.27.187.39): Permission denied in replay cache code 
-5 Jul <VAR:NUM> <VAR:TS> combo kernel: BIOS-e820: <VAR:HEX> - <VAR:HEX> <*>
-  eg: Jul 27 14:41:57 combo kernel:  BIOS-e820: 0000000000000000 - 00000000000a0000 (usable)
-5 Jul <VAR:NUM> <VAR:TS> combo syslogd <VAR:NUM>.<VAR:NUM>: restart.
-  eg: Jul  3 04:08:03 combo syslogd 1.4.1: restart.
-4 Jul <VAR:NUM> <VAR:TS> combo cups: cupsd shutdown succeeded
-  eg: Jul  3 04:07:49 combo cups: cupsd shutdown succeeded
-4 Jul <VAR:NUM> <VAR:TS> combo cups: cupsd startup succeeded
-  eg: Jul  3 04:07:55 combo cups: cupsd startup succeeded
-4 Jul <VAR:NUM> <VAR:TS> combo ftpd<VAR:PID>: getpeername (ftpd): Transport endpoint is not connected
-  eg: Jul 25 23:23:13 combo ftpd[26463]: getpeername (ftpd): Transport endpoint is not connected
-4 Jul <VAR:NUM> <VAR:TS> combo udev<VAR:PID>: creating device node '<VAR:PATH>'
-  eg: Jul  7 08:09:11 combo udev[12777]: creating device node '/udev/vcs2'
-4 Jul <VAR:NUM> <VAR:TS> combo udev<VAR:PID>: removing device node '<VAR:PATH>'
-  eg: Jul  7 08:09:11 combo udev[12754]: removing device node '/udev/vcsa2'
-3 Jul <VAR:NUM> <VAR:TS> combo kernel: <*> zone: <VAR:NUM> pages, LIFO batch:<VAR:NUM>
-  eg: Jul 27 14:41:57 combo kernel:   DMA zone: 4096 pages, LIFO batch:1
-2 Jul <VAR:NUM> <VAR:TS> combo ftpd<VAR:PID>: ANONYMOUS FTP LOGIN FROM <VAR:IP4>, (anonymous)
-  eg: Jul 24 02:38:23 combo ftpd[16781]: ANONYMOUS FTP LOGIN FROM 84.102.20.2,  (anonymous)
-2 Jul <VAR:NUM> <VAR:TS> combo kernel: <*> hash table entries: <VAR:NUM> (order: <VAR:NUM>, <VAR:SIZE>)
-  eg: Jul 27 14:41:58 combo kernel: Inode-cache hash table entries: 8192 (order: 3, 32768 bytes)
-2 Jul <VAR:NUM> <VAR:TS> combo kernel: usbcore: registered new driver <*>
-  eg: Jul 27 14:41:58 combo kernel: usbcore: registered new driver usbfs
-2 Jul <VAR:NUM> <VAR:TS> combo xinetd<VAR:PID>: warning: can't get client address: Connection reset by peer
-  eg: Jul 25 23:23:13 combo xinetd[26482]: warning: can't get client address: Connection reset by peer
-2 Jun <VAR:NUM> <VAR:TS> combo cups: cupsd shutdown succeeded
-  eg: Jun 19 04:08:57 combo cups: cupsd shutdown succeeded
-2 Jun <VAR:NUM> <VAR:TS> combo cups: cupsd startup succeeded
-  eg: Jun 19 04:09:02 combo cups: cupsd startup succeeded
-2 Jun <VAR:NUM> <VAR:TS> combo syslogd <VAR:NUM>.<VAR:NUM>: restart.
+7 <VAR:TS> combo syslogd <VAR:NUM>.<VAR:NUM>: restart.
   eg: Jun 19 04:09:11 combo syslogd 1.4.1: restart.
-1 Jul <VAR:NUM> <VAR:TS> combo -- root<VAR:PID>: ROOT LOGIN ON tty2
+6 <VAR:TS> combo cups: cupsd shutdown succeeded
+  eg: Jun 19 04:08:57 combo cups: cupsd shutdown succeeded
+6 <VAR:TS> combo cups: cupsd startup succeeded
+  eg: Jun 19 04:09:02 combo cups: cupsd startup succeeded
+4 <VAR:TS> combo ftpd<VAR:PID>: getpeername (ftpd): Transport endpoint is not connected
+  eg: Jul 25 23:23:13 combo ftpd[26463]: getpeername (ftpd): Transport endpoint is not connected
+4 <VAR:TS> combo udev<VAR:PID>: creating device node '<VAR:PATH>'
+  eg: Jul  7 08:09:11 combo udev[12777]: creating device node '/udev/vcs2'
+4 <VAR:TS> combo udev<VAR:PID>: removing device node '<VAR:PATH>'
+  eg: Jul  7 08:09:11 combo udev[12754]: removing device node '/udev/vcsa2'
+3 <VAR:TS> combo kernel: BIOS-e820: <VAR:HEX> - <VAR:NUM> (reserved)
+  eg: Jul 27 14:41:57 combo kernel:  BIOS-e820: 00000000000f0000 - 0000000000100000 (reserved)
+2 <VAR:TS> combo ftpd<VAR:PID>: ANONYMOUS FTP LOGIN FROM <VAR:IP4>, (anonymous)
+  eg: Jul 24 02:38:23 combo ftpd[16781]: ANONYMOUS FTP LOGIN FROM 84.102.20.2,  (anonymous)
+2 <VAR:TS> combo kernel: BIOS-e820: <VAR:NUM> - <VAR:HEX> (usable)
+  eg: Jul 27 14:41:57 combo kernel:  BIOS-e820: 0000000000000000 - 00000000000a0000 (usable)
+2 <VAR:TS> combo xinetd<VAR:PID>: warning: can't get client address: Connection reset by peer
+  eg: Jul 25 23:23:13 combo xinetd[26482]: warning: can't get client address: Connection reset by peer
+1 <VAR:TS> combo -- root<VAR:PID>: ROOT LOGIN ON tty2
   eg: Jul  7 08:06:15 combo  -- root[2421]: ROOT LOGIN ON tty2
-1 Jul <VAR:NUM> <VAR:TS> combo <VAR:DEV><VAR:PID>: <VAR:DEV> v1.<VAR:NUM> started
+1 <VAR:TS> combo <VAR:DEV><VAR:PID>: <VAR:DEV> v1.<VAR:NUM> started
   eg: Jul 27 14:41:59 combo sdpd[1696]: sdpd v1.5 started 
-1 Jul <VAR:NUM> <VAR:TS> combo bluetooth: <VAR:DEV> startup succeeded
+1 <VAR:TS> combo bluetooth: <VAR:DEV> startup succeeded
   eg: Jul 27 14:41:59 combo bluetooth: sdpd startup succeeded
-1 Jul <VAR:NUM> <VAR:TS> combo bluetooth: hcid startup succeeded
+1 <VAR:TS> combo bluetooth: hcid startup succeeded
   eg: Jul 27 14:41:59 combo bluetooth: hcid startup succeeded
-1 Jul <VAR:NUM> <VAR:TS> combo gdm(pam_unix)<VAR:PID>: authentication failure; logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=:<VAR:NUM> ruser= rhost=
-  eg: Jul 11 11:33:13 combo gdm(pam_unix)[2803]: authentication failure; logname= uid=0 euid=0 tty=:0 ruser= rhost= 
-1 Jul <VAR:NUM> <VAR:TS> combo gdm(pam_unix)<VAR:PID>: check pass; user unknown
-  eg: Jul 11 11:33:13 combo gdm(pam_unix)[2803]: check pass; user unknown
-1 Jul <VAR:NUM> <VAR:TS> combo gdm-binary<VAR:PID>: Couldn't authenticate user
-  eg: Jul 11 11:33:17 combo gdm-binary[2803]: Couldn't authenticate user
-1 Jul <VAR:NUM> <VAR:TS> combo gpm<VAR:PID>: *** info [mice.c(<VAR:NUM>)]:
-  eg: Jul  7 08:06:12 combo gpm[2094]: *** info [mice.c(1766)]: 
-1 Jul <VAR:NUM> <VAR:TS> combo gpm<VAR:PID>: imps2: Auto-detected intellimouse PS/<VAR:NUM>
-  eg: Jul  7 08:06:12 combo gpm[2094]: imps2: Auto-detected intellimouse PS/2
-1 Jul <VAR:NUM> <VAR:TS> combo hcid<VAR:PID>: HCI daemon ver <VAR:NUM> started
-  eg: Jul 27 14:41:59 combo hcid[1690]: HCI daemon ver 2.4 started
-1 Jul <VAR:NUM> <VAR:TS> combo irqbalance: irqbalance startup succeeded
-  eg: Jul 27 14:41:57 combo irqbalance: irqbalance startup succeeded
-1 Jul <VAR:NUM> <VAR:TS> combo kernel: <VAR:SIZE> HIGHMEM available.
-  eg: Jul 27 14:41:57 combo kernel: 0MB HIGHMEM available.
-1 Jul <VAR:NUM> <VAR:TS> combo kernel: <VAR:SIZE> LOWMEM available.
-  eg: Jul 27 14:41:57 combo kernel: 126MB LOWMEM available.
-1 Jul <VAR:NUM> <VAR:TS> combo kernel: ACPI disabled because your bios is from <VAR:NUM> and too old
-  eg: Jul 27 14:41:57 combo kernel: ACPI disabled because your bios is from 2000 and too old
-1 Jul <VAR:NUM> <VAR:TS> combo kernel: ACPI: ACPI tables contain no PCI IRQ routing entries
-  eg: Jul 27 14:41:58 combo kernel: ACPI: ACPI tables contain no PCI IRQ routing entries
-1 Jul <VAR:NUM> <VAR:TS> combo kernel: ACPI: Interpreter disabled.
-  eg: Jul 27 14:41:58 combo kernel: ACPI: Interpreter disabled.
-1 Jul <VAR:NUM> <VAR:TS> combo kernel: ACPI: Subsystem revision <VAR:HEX>
-  eg: Jul 27 14:41:58 combo kernel: ACPI: Subsystem revision 20040326
-1 Jul <VAR:NUM> <VAR:TS> combo kernel: BIOS-provided physical RAM map:
-  eg: Jul 27 14:41:57 combo kernel: BIOS-provided physical RAM map:
-1 Jul <VAR:NUM> <VAR:TS> combo kernel: Built <VAR:NUM> zonelists
-  eg: Jul 27 14:41:57 combo kernel: Built 1 zonelists
-1 Jul <VAR:NUM> <VAR:TS> combo kernel: CPU <VAR:NUM> irqstacks, hard=<VAR:HEX> soft=<VAR:HEX>
-  eg: Jul 27 14:41:57 combo kernel: CPU 0 irqstacks, hard=02345000 soft=02344000
-1 Jul <VAR:NUM> <VAR:TS> combo kernel: CPU: Intel Pentium III (Coppermine) stepping <VAR:NUM>
-  eg: Jul 27 14:41:58 combo kernel: CPU: Intel Pentium III (Coppermine) stepping 06
-1 Jul <VAR:NUM> <VAR:TS> combo kernel: CPU: L1 I cache: 16K, L1 D cache: 16K
-  eg: Jul 27 14:41:58 combo kernel: CPU: L1 I cache: 16K, L1 D cache: 16K
-1 Jul <VAR:NUM> <VAR:TS> combo kernel: CPU: L2 cache: 256K
-  eg: Jul 27 14:41:58 combo kernel: CPU: L2 cache: 256K
-1 Jul <VAR:NUM> <VAR:TS> combo kernel: Calibrating delay loop... <VAR:NUM> BogoMIPS
-  eg: Jul 27 14:41:58 combo kernel: Calibrating delay loop... 1445.88 BogoMIPS
-1 Jul <VAR:NUM> <VAR:TS> combo kernel: Capability LSM initialized
-  eg: Jul 27 14:41:58 combo kernel: Capability LSM initialized
-1 Jul <VAR:NUM> <VAR:TS> combo kernel: Checking 'hlt' instruction... OK.
-  eg: Jul 27 14:41:58 combo kernel: Checking 'hlt' instruction... OK.
-1 Jul <VAR:NUM> <VAR:TS> combo kernel: Console: colour VGA+ 80x25
-  eg: Jul 27 14:41:58 combo kernel: Console: colour VGA+ 80x25
-1 Jul <VAR:NUM> <VAR:TS> combo kernel: DMI <VAR:NUM> present.
-  eg: Jul 27 14:41:57 combo kernel: DMI 2.3 present.
-1 Jul <VAR:NUM> <VAR:TS> combo kernel: Dentry cache hash table entries: <VAR:NUM> (order: <VAR:NUM>, <VAR:SIZE>)
-  eg: Jul 27 14:41:58 combo kernel: Dentry cache hash table entries: 16384 (order: 4, 65536 bytes)
-1 Jul <VAR:NUM> <VAR:TS> combo kernel: Detected <VAR:NUM> MHz processor.
-  eg: Jul 27 14:41:57 combo kernel: Detected 731.219 MHz processor.
-1 Jul <VAR:NUM> <VAR:TS> combo kernel: Dquot-cache hash table entries: <VAR:NUM> (order <VAR:NUM>, <VAR:SIZE>)
-  eg: Jul 27 14:41:59 combo kernel: Dquot-cache hash table entries: 1024 (order 0, 4096 bytes)
-1 Jul <VAR:NUM> <VAR:TS> combo kernel: Enabling fast FPU save and restore... done.
-  eg: Jul 27 14:41:58 combo kernel: Enabling fast FPU save and restore... done.
-1 Jul <VAR:NUM> <VAR:TS> combo kernel: Enabling unmasked SIMD FPU exception support... done.
-  eg: Jul 27 14:41:58 combo kernel: Enabling unmasked SIMD FPU exception support... done.
-1 Jul <VAR:NUM> <VAR:TS> combo kernel: Failure registering capabilities with the kernel
-  eg: Jul 27 14:41:58 combo kernel: Failure registering capabilities with the kernel
-1 Jul <VAR:NUM> <VAR:TS> combo kernel: Initializing CPU#<VAR:NUM>
-  eg: Jul 27 14:41:57 combo kernel: Initializing CPU#0
-1 Jul <VAR:NUM> <VAR:TS> combo kernel: Initializing Cryptographic API
-  eg: Jul 27 14:41:59 combo kernel: Initializing Cryptographic API
-1 Jul <VAR:NUM> <VAR:TS> combo kernel: Intel machine check architecture supported.
-  eg: Jul 27 14:41:58 combo kernel: Intel machine check architecture supported.
-1 Jul <VAR:NUM> <VAR:TS> combo kernel: Intel machine check reporting enabled on CPU#<VAR:NUM>.
-  eg: Jul 27 14:41:58 combo kernel: Intel machine check reporting enabled on CPU#0.
-1 Jul <VAR:NUM> <VAR:TS> combo kernel: Kernel command line: ro root=LABEL=/ rhgb quiet
-  eg: Jul 27 14:41:57 combo kernel: Kernel command line: ro root=LABEL=/ rhgb quiet
-1 Jul <VAR:NUM> <VAR:TS> combo kernel: Linux Plug and Play Support v0.<VAR:NUM> (c) Adam Belay
-  eg: Jul 27 14:41:58 combo kernel: Linux Plug and Play Support v0.97 (c) Adam Belay
-1 Jul <VAR:NUM> <VAR:TS> combo kernel: Linux agpgart interface v0.<VAR:NUM> (c) Dave Jones
-  eg: Jul 27 14:42:00 combo kernel: Linux agpgart interface v0.100 (c) Dave Jones
-1 Jul <VAR:NUM> <VAR:TS> combo kernel: Linux version <VAR:NUM>.<VAR:NUM>-<VAR:NUM> (<VAR:EMAIL>) (gcc version <VAR:NUM>.<VAR:NUM> <VAR:HEX> (Red Hat Linux <VAR:NUM>.<VAR:NUM>-<VAR:NUM>)) #<VAR:NUM> Sat May <VAR:NUM> <VAR:TS> EDT <VAR:NUM>
-  eg: Jul 27 14:41:57 combo kernel: Linux version 2.6.5-1.358 (bhcompile@bugs.build.redhat.com) (gcc version 3.3.3 20040412 (Red Hat Linux 3.3.3-7)) #1 Sat May 8 09:04:50 EDT 2004
-1 Jul <VAR:NUM> <VAR:TS> combo kernel: Memory: 125312k/129720k available (1540k kernel code, 3860k reserved, 599k data, 144k init, 0k highmem)
-  eg: Jul 27 14:41:58 combo kernel: Memory: 125312k/129720k available (1540k kernel code, 3860k reserved, 599k data, 144k init, 0k highmem)
-1 Jul <VAR:NUM> <VAR:TS> combo kernel: NET: Registered protocol family <VAR:NUM>
-  eg: Jul 27 14:41:58 combo kernel: NET: Registered protocol family 16
-1 Jul <VAR:NUM> <VAR:TS> combo kernel: On node <VAR:NUM> totalpages: <VAR:NUM>
-  eg: Jul 27 14:41:57 combo kernel: On node 0 totalpages: 32430
-1 Jul <VAR:NUM> <VAR:TS> combo kernel: PCI: Invalid ACPI-PCI IRQ routing table
-  eg: Jul 27 14:41:59 combo kernel: PCI: Invalid ACPI-PCI IRQ routing table
-1 Jul <VAR:NUM> <VAR:TS> combo kernel: PCI: PCI BIOS revision <VAR:NUM> entry at <VAR:HEX>, last bus=<VAR:NUM>
-  eg: Jul 27 14:41:58 combo kernel: PCI: PCI BIOS revision 2.10 entry at 0xfc0ce, last bus=1
-1 Jul <VAR:NUM> <VAR:TS> combo kernel: PCI: Probing PCI hardware
-  eg: Jul 27 14:41:59 combo kernel: PCI: Probing PCI hardware
-1 Jul <VAR:NUM> <VAR:TS> combo kernel: PCI: Probing PCI hardware (bus <VAR:NUM>)
-  eg: Jul 27 14:41:59 combo kernel: PCI: Probing PCI hardware (bus 00)
-1 Jul <VAR:NUM> <VAR:TS> combo kernel: PCI: Using IRQ router PIIX/ICH [<VAR:NUM>/<VAR:NUM>] at <VAR:IP6>.<VAR:NUM>
-  eg: Jul 27 14:41:59 combo kernel: PCI: Using IRQ router PIIX/ICH [8086/2410] at 0000:00:1f.0
-1 Jul <VAR:NUM> <VAR:TS> combo kernel: PCI: Using configuration type <VAR:NUM>
-  eg: Jul 27 14:41:58 combo kernel: PCI: Using configuration type 1
-1 Jul <VAR:NUM> <VAR:TS> combo kernel: PID hash table entries: <VAR:NUM> (order <VAR:NUM>: <VAR:SIZE>)
-  eg: Jul 27 14:41:57 combo kernel: PID hash table entries: 512 (order 9: 4096 bytes)
-1 Jul <VAR:NUM> <VAR:TS> combo kernel: POSIX conformance testing by UNIFIX
-  eg: Jul 27 14:41:58 combo kernel: POSIX conformance testing by UNIFIX
-1 Jul <VAR:NUM> <VAR:TS> combo kernel: Real Time Clock Driver v1.<VAR:NUM>
-  eg: Jul 27 14:42:00 combo kernel: Real Time Clock Driver v1.12
-1 Jul <VAR:NUM> <VAR:TS> combo kernel: SELinux: Initializing.
-  eg: Jul 27 14:41:58 combo kernel: SELinux:  Initializing.
-1 Jul <VAR:NUM> <VAR:TS> combo kernel: SELinux: Registering netfilter hooks
-  eg: Jul 27 14:41:59 combo kernel: SELinux:  Registering netfilter hooks
-1 Jul <VAR:NUM> <VAR:TS> combo kernel: SELinux: Starting in permissive mode
-  eg: Jul 27 14:41:58 combo kernel: SELinux:  Starting in permissive mode
-1 Jul <VAR:NUM> <VAR:TS> combo kernel: Security Scaffold v1.<VAR:NUM> initialized
-  eg: Jul 27 14:41:58 combo kernel: Security Scaffold v1.0.0 initialized
-1 Jul <VAR:NUM> <VAR:TS> combo kernel: There is already a security framework initialized, register_security failed.
-  eg: Jul 27 14:41:58 combo kernel: There is already a security framework initialized, register_security failed.
-1 Jul <VAR:NUM> <VAR:TS> combo kernel: Total HugeTLB memory allocated, <VAR:NUM>
-  eg: Jul 27 14:41:59 combo kernel: Total HugeTLB memory allocated, 0
-1 Jul <VAR:NUM> <VAR:TS> combo kernel: Transparent bridge - <VAR:IP6>.<VAR:NUM>
-  eg: Jul 27 14:41:59 combo kernel: Transparent bridge - 0000:00:1e.0
-1 Jul <VAR:NUM> <VAR:TS> combo kernel: Using tsc for high-res timesource
-  eg: Jul 27 14:41:57 combo kernel: Using tsc for high-res timesource
-1 Jul <VAR:NUM> <VAR:TS> combo kernel: VFS: Disk quotas dquot_6.<VAR:NUM>
-  eg: Jul 27 14:41:59 combo kernel: VFS: Disk quotas dquot_6.5.1
-1 Jul <VAR:NUM> <VAR:TS> combo kernel: You can enable it with acpi=force
-  eg: Jul 27 14:41:57 combo kernel: You can enable it with acpi=force
-1 Jul <VAR:NUM> <VAR:TS> combo kernel: apm: BIOS version <VAR:NUM> Flags <VAR:HEX> (Driver version <VAR:NUM>.16ac)
-  eg: Jul 27 14:41:59 combo kernel: apm: BIOS version 1.2 Flags 0x03 (Driver version 1.16ac)
-1 Jul <VAR:NUM> <VAR:TS> combo kernel: audit(<VAR:HEX>.<VAR:HEX>:<VAR:NUM>): initialized
-  eg: Jul 27 14:41:59 combo kernel: audit(1122475266.4294965305:0): initialized
-1 Jul <VAR:NUM> <VAR:TS> combo kernel: audit: initializing netlink socket (disabled)
-  eg: Jul 27 14:41:59 combo kernel: audit: initializing netlink socket (disabled)
-1 Jul <VAR:NUM> <VAR:TS> combo kernel: isapnp: No Plug & Play device found
-  eg: Jul 27 14:42:00 combo kernel: isapnp: No Plug & Play device found
-1 Jul <VAR:NUM> <VAR:TS> combo kernel: isapnp: Scanning for PnP cards...
-  eg: Jul 27 14:42:00 combo kernel: isapnp: Scanning for PnP cards...
-1 Jul <VAR:NUM> <VAR:TS> combo kernel: klogd <VAR:NUM>.<VAR:NUM>, log source = <VAR:PATH> started.
-  eg: Jul 27 14:41:57 combo kernel: klogd 1.4.1, log source = /proc/kmsg started.
-1 Jul <VAR:NUM> <VAR:TS> combo kernel: mapped 4G/4G trampoline to <VAR:HEX>.
-  eg: Jul 27 14:41:57 combo kernel: mapped 4G/4G trampoline to ffff3000.
-1 Jul <VAR:NUM> <VAR:TS> combo kernel: mtrr: v2.<VAR:NUM> (<VAR:HEX>)
-  eg: Jul 27 14:41:58 combo kernel: mtrr: v2.0 (20020519)
-1 Jul <VAR:NUM> <VAR:TS> combo kernel: pci_hotplug: PCI Hot Plug PCI Core version: <VAR:NUM>
-  eg: Jul 27 14:41:59 combo kernel: pci_hotplug: PCI Hot Plug PCI Core version: 0.5
-1 Jul <VAR:NUM> <VAR:TS> combo kernel: selinux_register_security: Registering secondary module capability
-  eg: Jul 27 14:41:58 combo kernel: selinux_register_security:  Registering secondary module capability
-1 Jul <VAR:NUM> <VAR:TS> combo kernel: zapping low mappings.
-  eg: Jul 27 14:41:57 combo kernel: zapping low mappings.
-1 Jul <VAR:NUM> <VAR:TS> combo login(pam_unix)<VAR:PID>: session closed for user root
-  eg: Jul  7 08:09:10 combo login(pam_unix)[2421]: session closed for user root
-1 Jul <VAR:NUM> <VAR:TS> combo login(pam_unix)<VAR:PID>: session opened for user root by LOGIN(uid=<VAR:NUM>)
-  eg: Jul  7 08:06:15 combo login(pam_unix)[2421]: session opened for user root by LOGIN(uid=0)
-1 Jul <VAR:NUM> <VAR:TS> combo network: Bringing up loopback interface: succeeded
-  eg: Jul 27 14:41:54 combo network: Bringing up loopback interface:  succeeded 
-1 Jul <VAR:NUM> <VAR:TS> combo network: Setting network parameters: succeeded
-  eg: Jul 27 14:41:54 combo network: Setting network parameters:  succeeded 
-1 Jul <VAR:NUM> <VAR:TS> combo nfslock: rpc.statd startup succeeded
-  eg: Jul 27 14:41:58 combo nfslock: rpc.statd startup succeeded
-1 Jul <VAR:NUM> <VAR:TS> combo portmap: portmap startup succeeded
-  eg: Jul 27 14:41:57 combo portmap: portmap startup succeeded
-1 Jul <VAR:NUM> <VAR:TS> combo random: Initializing random number generator: succeeded
-  eg: Jul 27 14:41:58 combo random: Initializing random number generator:  succeeded
-1 Jul <VAR:NUM> <VAR:TS> combo rc: Starting pcmcia: succeeded
-  eg: Jul 27 14:41:58 combo rc: Starting pcmcia:  succeeded
-1 Jul <VAR:NUM> <VAR:TS> combo rpc.statd<VAR:PID>: Version <VAR:NUM>.<VAR:NUM> Starting
-  eg: Jul 27 14:41:57 combo rpc.statd[1618]: Version 1.0.6 Starting
-1 Jul <VAR:NUM> <VAR:TS> combo rpcidmapd: rpc.idmapd startup succeeded
-  eg: Jul 27 14:41:58 combo rpcidmapd: rpc.idmapd startup succeeded
-1 Jul <VAR:NUM> <VAR:TS> combo sysctl: kernel.core_uses_pid = <VAR:NUM>
-  eg: Jul 27 14:41:54 combo sysctl: kernel.core_uses_pid = 1 
-1 Jul <VAR:NUM> <VAR:TS> combo syslog: klogd startup succeeded
-  eg: Jul 27 14:41:57 combo syslog: klogd startup succeeded
-1 Jul <VAR:NUM> <VAR:TS> combo syslog: syslogd startup succeeded
-  eg: Jul 27 14:41:57 combo syslog: syslogd startup succeeded
-1 Jun <VAR:NUM> <VAR:TS> combo ftpd<VAR:PID>: User unknown timed out after <VAR:NUM> seconds at Sat Jun <VAR:NUM> <VAR:TS> <VAR:NUM>
+1 <VAR:TS> combo ftpd<VAR:PID>: User unknown timed out after <VAR:NUM> seconds at <VAR:TS>
   eg: Jun 18 02:23:10 combo ftpd[31277]: User unknown timed out after 900 seconds at Sat Jun 18 02:23:10 2005 
-1 Jun <VAR:NUM> <VAR:TS> combo snmpd<VAR:PID>: Received SNMP packet(s) from <VAR:IP4>
-  eg: Jun 20 04:44:39 combo snmpd[2318]: Received SNMP packet(s) from 67.170.148.126
+1 <VAR:TS> combo gdm(pam_unix)<VAR:PID>: authentication failure; logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=:<VAR:NUM> ruser= rhost=
+  eg: Jul 11 11:33:13 combo gdm(pam_unix)[2803]: authentication failure; logname= uid=0 euid=0 tty=:0 ruser= rhost= 
+1 <VAR:TS> combo gdm(pam_unix)<VAR:PID>: check pass; user unknown
+  eg: Jul 11 11:33:13 combo gdm(pam_unix)[2803]: check pass; user unknown
+1 <VAR:TS> combo gdm-binary<VAR:PID>: Couldn't authenticate user
+  eg: Jul 11 11:33:17 combo gdm-binary[2803]: Couldn't authenticate user
+1 <VAR:TS> combo gpm<VAR:PID>: *** info [mice.c(<VAR:NUM>)]:
+  eg: Jul  7 08:06:12 combo gpm[2094]: *** info [mice.c(1766)]: 
+1 <VAR:TS> combo gpm<VAR:PID>: imps2: Auto-detected intellimouse PS/<VAR:NUM>
+  eg: Jul  7 08:06:12 combo gpm[2094]: imps2: Auto-detected intellimouse PS/2
+1 <VAR:TS> combo hcid<VAR:PID>: HCI daemon ver <VAR:NUM> started
+  eg: Jul 27 14:41:59 combo hcid[1690]: HCI daemon ver 2.4 started
+1 <VAR:TS> combo irqbalance: irqbalance startup succeeded
+  eg: Jul 27 14:41:57 combo irqbalance: irqbalance startup succeeded
+1 <VAR:TS> combo kernel: <VAR:SIZE> HIGHMEM available.
+  eg: Jul 27 14:41:57 combo kernel: 0MB HIGHMEM available.
+1 <VAR:TS> combo kernel: <VAR:SIZE> LOWMEM available.
+  eg: Jul 27 14:41:57 combo kernel: 126MB LOWMEM available.
+1 <VAR:TS> combo kernel: ACPI disabled because your bios is from <VAR:NUM> and too old
+  eg: Jul 27 14:41:57 combo kernel: ACPI disabled because your bios is from 2000 and too old
+1 <VAR:TS> combo kernel: ACPI: ACPI tables contain no PCI IRQ routing entries
+  eg: Jul 27 14:41:58 combo kernel: ACPI: ACPI tables contain no PCI IRQ routing entries
+1 <VAR:TS> combo kernel: ACPI: Interpreter disabled.
+  eg: Jul 27 14:41:58 combo kernel: ACPI: Interpreter disabled.
+1 <VAR:TS> combo kernel: ACPI: Subsystem revision <VAR:NUM>
+  eg: Jul 27 14:41:58 combo kernel: ACPI: Subsystem revision 20040326
+1 <VAR:TS> combo kernel: BIOS-provided physical RAM map:
+  eg: Jul 27 14:41:57 combo kernel: BIOS-provided physical RAM map:
+1 <VAR:TS> combo kernel: Built <VAR:NUM> zonelists
+  eg: Jul 27 14:41:57 combo kernel: Built 1 zonelists
+1 <VAR:TS> combo kernel: CPU <VAR:NUM> irqstacks, hard=<VAR:NUM> soft=<VAR:NUM>
+  eg: Jul 27 14:41:57 combo kernel: CPU 0 irqstacks, hard=02345000 soft=02344000
+1 <VAR:TS> combo kernel: CPU: Intel Pentium III (Coppermine) stepping <VAR:NUM>
+  eg: Jul 27 14:41:58 combo kernel: CPU: Intel Pentium III (Coppermine) stepping 06
+1 <VAR:TS> combo kernel: CPU: L1 I cache: 16K, L1 D cache: 16K
+  eg: Jul 27 14:41:58 combo kernel: CPU: L1 I cache: 16K, L1 D cache: 16K
+1 <VAR:TS> combo kernel: CPU: L2 cache: 256K
+  eg: Jul 27 14:41:58 combo kernel: CPU: L2 cache: 256K
+1 <VAR:TS> combo kernel: Calibrating delay loop... <VAR:NUM> BogoMIPS
+  eg: Jul 27 14:41:58 combo kernel: Calibrating delay loop... 1445.88 BogoMIPS
+1 <VAR:TS> combo kernel: Capability LSM initialized
+  eg: Jul 27 14:41:58 combo kernel: Capability LSM initialized
+1 <VAR:TS> combo kernel: Checking 'hlt' instruction... OK.
+  eg: Jul 27 14:41:58 combo kernel: Checking 'hlt' instruction... OK.
+1 <VAR:TS> combo kernel: Console: colour VGA+ 80x25
+  eg: Jul 27 14:41:58 combo kernel: Console: colour VGA+ 80x25
+1 <VAR:TS> combo kernel: DMA zone: <VAR:NUM> pages, LIFO batch:<VAR:NUM>
+  eg: Jul 27 14:41:57 combo kernel:   DMA zone: 4096 pages, LIFO batch:1
+1 <VAR:TS> combo kernel: DMI <VAR:NUM> present.
+  eg: Jul 27 14:41:57 combo kernel: DMI 2.3 present.
+1 <VAR:TS> combo kernel: Dentry cache hash table entries: <VAR:NUM> (order: <VAR:NUM>, <VAR:SIZE>)
+  eg: Jul 27 14:41:58 combo kernel: Dentry cache hash table entries: 16384 (order: 4, 65536 bytes)
+1 <VAR:TS> combo kernel: Detected <VAR:NUM> MHz processor.
+  eg: Jul 27 14:41:57 combo kernel: Detected 731.219 MHz processor.
+1 <VAR:TS> combo kernel: Dquot-cache hash table entries: <VAR:NUM> (order <VAR:NUM>, <VAR:SIZE>)
+  eg: Jul 27 14:41:59 combo kernel: Dquot-cache hash table entries: 1024 (order 0, 4096 bytes)
+1 <VAR:TS> combo kernel: Enabling fast FPU save and restore... done.
+  eg: Jul 27 14:41:58 combo kernel: Enabling fast FPU save and restore... done.
+1 <VAR:TS> combo kernel: Enabling unmasked SIMD FPU exception support... done.
+  eg: Jul 27 14:41:58 combo kernel: Enabling unmasked SIMD FPU exception support... done.
+1 <VAR:TS> combo kernel: Failure registering capabilities with the kernel
+  eg: Jul 27 14:41:58 combo kernel: Failure registering capabilities with the kernel
+1 <VAR:TS> combo kernel: HighMem zone: <VAR:NUM> pages, LIFO batch:<VAR:NUM>
+  eg: Jul 27 14:41:57 combo kernel:   HighMem zone: 0 pages, LIFO batch:1
+1 <VAR:TS> combo kernel: Initializing CPU#<VAR:NUM>
+  eg: Jul 27 14:41:57 combo kernel: Initializing CPU#0
+1 <VAR:TS> combo kernel: Initializing Cryptographic API
+  eg: Jul 27 14:41:59 combo kernel: Initializing Cryptographic API
+1 <VAR:TS> combo kernel: Inode-cache hash table entries: <VAR:NUM> (order: <VAR:NUM>, <VAR:SIZE>)
+  eg: Jul 27 14:41:58 combo kernel: Inode-cache hash table entries: 8192 (order: 3, 32768 bytes)
+1 <VAR:TS> combo kernel: Intel machine check architecture supported.
+  eg: Jul 27 14:41:58 combo kernel: Intel machine check architecture supported.
+1 <VAR:TS> combo kernel: Intel machine check reporting enabled on CPU#<VAR:NUM>.
+  eg: Jul 27 14:41:58 combo kernel: Intel machine check reporting enabled on CPU#0.
+1 <VAR:TS> combo kernel: Kernel command line: ro root=LABEL=/ rhgb quiet
+  eg: Jul 27 14:41:57 combo kernel: Kernel command line: ro root=LABEL=/ rhgb quiet
+1 <VAR:TS> combo kernel: Linux Plug and Play Support v0.<VAR:NUM> (c) Adam Belay
+  eg: Jul 27 14:41:58 combo kernel: Linux Plug and Play Support v0.97 (c) Adam Belay
+1 <VAR:TS> combo kernel: Linux agpgart interface v0.<VAR:NUM> (c) Dave Jones
+  eg: Jul 27 14:42:00 combo kernel: Linux agpgart interface v0.100 (c) Dave Jones
+1 <VAR:TS> combo kernel: Linux version <VAR:NUM>.<VAR:NUM>-<VAR:NUM> (<VAR:EMAIL>) (gcc version <VAR:NUM>.<VAR:NUM> <VAR:NUM> (Red Hat Linux <VAR:NUM>.<VAR:NUM>-<VAR:NUM>)) #<VAR:NUM> <VAR:TS> EDT <VAR:NUM>
+  eg: Jul 27 14:41:57 combo kernel: Linux version 2.6.5-1.358 (bhcompile@bugs.build.redhat.com) (gcc version 3.3.3 20040412 (Red Hat Linux 3.3.3-7)) #1 Sat May 8 09:04:50 EDT 2004
+1 <VAR:TS> combo kernel: Memory: 125312k/129720k available (1540k kernel code, 3860k reserved, 599k data, 144k init, 0k highmem)
+  eg: Jul 27 14:41:58 combo kernel: Memory: 125312k/129720k available (1540k kernel code, 3860k reserved, 599k data, 144k init, 0k highmem)
+1 <VAR:TS> combo kernel: Mount-cache hash table entries: <VAR:NUM> (order: <VAR:NUM>, <VAR:SIZE>)
+  eg: Jul 27 14:41:58 combo kernel: Mount-cache hash table entries: 512 (order: 0, 4096 bytes)
+1 <VAR:TS> combo kernel: NET: Registered protocol family <VAR:NUM>
+  eg: Jul 27 14:41:58 combo kernel: NET: Registered protocol family 16
+1 <VAR:TS> combo kernel: Normal zone: <VAR:NUM> pages, LIFO batch:<VAR:NUM>
+  eg: Jul 27 14:41:57 combo kernel:   Normal zone: 28334 pages, LIFO batch:6
+1 <VAR:TS> combo kernel: On node <VAR:NUM> totalpages: <VAR:NUM>
+  eg: Jul 27 14:41:57 combo kernel: On node 0 totalpages: 32430
+1 <VAR:TS> combo kernel: PCI: Invalid ACPI-PCI IRQ routing table
+  eg: Jul 27 14:41:59 combo kernel: PCI: Invalid ACPI-PCI IRQ routing table
+1 <VAR:TS> combo kernel: PCI: PCI BIOS revision <VAR:NUM> entry at <VAR:HEX>, last bus=<VAR:NUM>
+  eg: Jul 27 14:41:58 combo kernel: PCI: PCI BIOS revision 2.10 entry at 0xfc0ce, last bus=1
+1 <VAR:TS> combo kernel: PCI: Probing PCI hardware
+  eg: Jul 27 14:41:59 combo kernel: PCI: Probing PCI hardware
+1 <VAR:TS> combo kernel: PCI: Probing PCI hardware (bus <VAR:NUM>)
+  eg: Jul 27 14:41:59 combo kernel: PCI: Probing PCI hardware (bus 00)
+1 <VAR:TS> combo kernel: PCI: Using IRQ router PIIX/ICH [<VAR:NUM>/<VAR:NUM>] at <VAR:NUM>:<VAR:NUM>:1f.<VAR:NUM>
+  eg: Jul 27 14:41:59 combo kernel: PCI: Using IRQ router PIIX/ICH [8086/2410] at 0000:00:1f.0
+1 <VAR:TS> combo kernel: PCI: Using configuration type <VAR:NUM>
+  eg: Jul 27 14:41:58 combo kernel: PCI: Using configuration type 1
+1 <VAR:TS> combo kernel: PID hash table entries: <VAR:NUM> (order <VAR:NUM>: <VAR:SIZE>)
+  eg: Jul 27 14:41:57 combo kernel: PID hash table entries: 512 (order 9: 4096 bytes)
+1 <VAR:TS> combo kernel: POSIX conformance testing by UNIFIX
+  eg: Jul 27 14:41:58 combo kernel: POSIX conformance testing by UNIFIX
+1 <VAR:TS> combo kernel: Real Time Clock Driver v1.<VAR:NUM>
+  eg: Jul 27 14:42:00 combo kernel: Real Time Clock Driver v1.12
+1 <VAR:TS> combo kernel: SELinux: Initializing.
+  eg: Jul 27 14:41:58 combo kernel: SELinux:  Initializing.
+1 <VAR:TS> combo kernel: SELinux: Registering netfilter hooks
+  eg: Jul 27 14:41:59 combo kernel: SELinux:  Registering netfilter hooks
+1 <VAR:TS> combo kernel: SELinux: Starting in permissive mode
+  eg: Jul 27 14:41:58 combo kernel: SELinux:  Starting in permissive mode
+1 <VAR:TS> combo kernel: Security Scaffold v1.<VAR:NUM> initialized
+  eg: Jul 27 14:41:58 combo kernel: Security Scaffold v1.0.0 initialized
+1 <VAR:TS> combo kernel: There is already a security framework initialized, register_security failed.
+  eg: Jul 27 14:41:58 combo kernel: There is already a security framework initialized, register_security failed.
+1 <VAR:TS> combo kernel: Total HugeTLB memory allocated, <VAR:NUM>
+  eg: Jul 27 14:41:59 combo kernel: Total HugeTLB memory allocated, 0
+1 <VAR:TS> combo kernel: Transparent bridge - <VAR:NUM>:<VAR:NUM>:1e.<VAR:NUM>
+  eg: Jul 27 14:41:59 combo kernel: Transparent bridge - 0000:00:1e.0
+1 <VAR:TS> combo kernel: Using tsc for high-res timesource
+  eg: Jul 27 14:41:57 combo kernel: Using tsc for high-res timesource
+1 <VAR:TS> combo kernel: VFS: Disk quotas dquot_6.<VAR:NUM>
+  eg: Jul 27 14:41:59 combo kernel: VFS: Disk quotas dquot_6.5.1
+1 <VAR:TS> combo kernel: You can enable it with acpi=force
+  eg: Jul 27 14:41:57 combo kernel: You can enable it with acpi=force
+1 <VAR:TS> combo kernel: apm: BIOS version <VAR:NUM> Flags <VAR:HEX> (Driver version <VAR:NUM>.16ac)
+  eg: Jul 27 14:41:59 combo kernel: apm: BIOS version 1.2 Flags 0x03 (Driver version 1.16ac)
+1 <VAR:TS> combo kernel: audit(<VAR:NUM>:<VAR:NUM>): initialized
+  eg: Jul 27 14:41:59 combo kernel: audit(1122475266.4294965305:0): initialized
+1 <VAR:TS> combo kernel: audit: initializing netlink socket (disabled)
+  eg: Jul 27 14:41:59 combo kernel: audit: initializing netlink socket (disabled)
+1 <VAR:TS> combo kernel: isapnp: No Plug & Play device found
+  eg: Jul 27 14:42:00 combo kernel: isapnp: No Plug & Play device found
+1 <VAR:TS> combo kernel: isapnp: Scanning for PnP cards...
+  eg: Jul 27 14:42:00 combo kernel: isapnp: Scanning for PnP cards...
+1 <VAR:TS> combo kernel: klogd <VAR:NUM>.<VAR:NUM>, log source = <VAR:PATH> started.
+  eg: Jul 27 14:41:57 combo kernel: klogd 1.4.1, log source = /proc/kmsg started.
+1 <VAR:TS> combo kernel: mapped 4G/4G trampoline to <VAR:HEX>.
+  eg: Jul 27 14:41:57 combo kernel: mapped 4G/4G trampoline to ffff3000.
+1 <VAR:TS> combo kernel: mtrr: v2.<VAR:NUM> (<VAR:NUM>)
+  eg: Jul 27 14:41:58 combo kernel: mtrr: v2.0 (20020519)
+1 <VAR:TS> combo kernel: pci_hotplug: PCI Hot Plug PCI Core version: <VAR:NUM>
+  eg: Jul 27 14:41:59 combo kernel: pci_hotplug: PCI Hot Plug PCI Core version: 0.5
+1 <VAR:TS> combo kernel: selinux_register_security: Registering secondary module capability
+  eg: Jul 27 14:41:58 combo kernel: selinux_register_security:  Registering secondary module capability
+1 <VAR:TS> combo kernel: usbcore: registered new driver hub
+  eg: Jul 27 14:41:58 combo kernel: usbcore: registered new driver hub
+1 <VAR:TS> combo kernel: usbcore: registered new driver usbfs
+  eg: Jul 27 14:41:58 combo kernel: usbcore: registered new driver usbfs
+1 <VAR:TS> combo kernel: zapping low mappings.
+  eg: Jul 27 14:41:57 combo kernel: zapping low mappings.
+1 <VAR:TS> combo login(pam_unix)<VAR:PID>: session closed for user root
+  eg: Jul  7 08:09:10 combo login(pam_unix)[2421]: session closed for user root
+1 <VAR:TS> combo login(pam_unix)<VAR:PID>: session opened for user root by LOGIN(uid=<VAR:NUM>)
+  eg: Jul  7 08:06:15 combo login(pam_unix)[2421]: session opened for user root by LOGIN(uid=0)
+1 <VAR:TS> combo network: Bringing up loopback interface: succeeded
+  eg: Jul 27 14:41:54 combo network: Bringing up loopback interface:  succeeded 
+1 <VAR:TS> combo network: Setting network parameters: succeeded
+  eg: Jul 27 14:41:54 combo network: Setting network parameters:  succeeded 
+1 <VAR:TS> combo nfslock: rpc.statd startup succeeded
+  eg: Jul 27 14:41:58 combo nfslock: rpc.statd startup succeeded
+1 <VAR:TS> combo portmap: portmap startup succeeded
+  eg: Jul 27 14:41:57 combo portmap: portmap startup succeeded
+1 <VAR:TS> combo random: Initializing random number generator: succeeded
+  eg: Jul 27 14:41:58 combo random: Initializing random number generator:  succeeded
+1 <VAR:TS> combo rc: Starting pcmcia: succeeded
+  eg: Jul 27 14:41:58 combo rc: Starting pcmcia:  succeeded
+1 <VAR:TS> combo rpc.statd<VAR:PID>: Version <VAR:NUM>.<VAR:NUM> Starting
+  eg: Jul 27 14:41:57 combo rpc.statd[1618]: Version 1.0.6 Starting
+1 <VAR:TS> combo rpcidmapd: rpc.idmapd startup succeeded
+  eg: Jul 27 14:41:58 combo rpcidmapd: rpc.idmapd startup succeeded
+1 <VAR:TS> combo snmpd<VAR:PID>: Received SNMP packet(s) from <VAR:IP4>
+  eg: Jun 20 04:44:39 combo snmpd[2318]: Received SNMP packet(s) from 67.170.148.126 
+1 <VAR:TS> combo sysctl: kernel.core_uses_pid = <VAR:NUM>
+  eg: Jul 27 14:41:54 combo sysctl: kernel.core_uses_pid = 1 
+1 <VAR:TS> combo syslog: klogd startup succeeded
+  eg: Jul 27 14:41:57 combo syslog: klogd startup succeeded
+1 <VAR:TS> combo syslog: syslogd startup succeeded
+  eg: Jul 27 14:41:57 combo syslog: syslogd startup succeeded

@@ -1,0 +1,14 @@
+---
+source: crates/oarfish-drain/tests/loghub2.rs
+assertion_line: 248
+---
+line mode: 2 port clusters mix ground-truth groups (181 lines)
+
+91 <VAR:NUM> node-<VAR:NUM> unix.hw net.niff.up <VAR:NUM> <VAR:NUM> NIFF: node node-<VAR:NUM> has detected an available network connection on network <VAR:IP4> via interface <*>
+    45 NIFF: node node-<*> has detected an available network connection on network <*> via interface ee0
+    44 NIFF: node node-<*> has detected an available network connection on network <*> via interface alt0
+     2 NIFF: node node-<*> has detected an available network connection on network <*> via interface scip0
+
+90 <VAR:NUM> Interconnect-0N00 switch_module fan <VAR:NUM> <VAR:NUM> Fan speeds ( <VAR:NUM> <VAR:NUM> <VAR:NUM> <*> <VAR:NUM> <VAR:NUM> )
+    79 Fan speeds ( <*> <*> <*> **** <*> <*> )
+    11 Fan speeds ( <*> <*> <*> <*> <*> <*> )

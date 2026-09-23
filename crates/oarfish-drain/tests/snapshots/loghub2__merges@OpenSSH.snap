@@ -1,0 +1,9 @@
+---
+source: crates/oarfish-drain/tests/loghub2.rs
+assertion_line: 261
+---
+line mode: 1 port clusters mix ground-truth groups (8 lines)
+
+8 sshd<VAR:PID>: PAM <VAR:NUM> more authentication <*> logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=ssh ruser= rhost=<VAR:IP4>
+     6 PAM <*> more authentication failures; logname= uid=<*> euid=<*> tty=ssh ruser= rhost=<*>
+     2 PAM <*> more authentication failure; logname= uid=<*> euid=<*> tty=ssh ruser= rhost=<*>

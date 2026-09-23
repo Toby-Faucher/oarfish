@@ -1,0 +1,27 @@
+---
+source: crates/oarfish-drain/tests/loghub2.rs
+assertion_line: 261
+---
+line mode: 5 port clusters mix ground-truth groups (53 lines)
+
+20 corecaptured<VAR:PID>: CCFile::captureLog Received Capture notice id: <VAR:NUM>, reason = <*>
+    15 CCFile::captureLog Received Capture notice id: <*>, reason = AuthFail:sts:<NUM>_rsn:<NUM>
+     3 CCFile::captureLog Received Capture notice id: <*>, reason = AssocFail:sts:<NUM>_rsn:<NUM>
+     1 CCFile::captureLog Received Capture notice id: <*>, reason = DeauthInd:sts:<NUM>_rsn:<NUM>
+     1 CCFile::captureLog Received Capture notice id: <*>, reason = RoamFail:sts:<NUM>_rsn:<NUM>
+
+13 kernel<VAR:PID>: ARPT: <VAR:NUM>: IOPMPowerSource Information: onSleep, SleepType: Normal Sleep, 'ExternalConnected': <*> 'TimeRemaining': <VAR:NUM>,
+     7 ARPT: <*>: IOPMPowerSource Information: onSleep, SleepType: Normal Sleep, 'ExternalConnected': Yes, 'TimeRemaining': <*>,
+     6 ARPT: <*>: IOPMPowerSource Information: onSleep, SleepType: Normal Sleep, 'ExternalConnected': No, 'TimeRemaining': <*>,
+
+13 networkd<VAR:PID>: -[NETClientConnection effectiveBundleID] using process name <*> as bundle ID (this is expected for daemons without bundle ID
+     9 -[NETClientConnection effectiveBundleID] using process name apsd as bundle ID (this is expected for daemons without bundle ID
+     4 -[NETClientConnection effectiveBundleID] using process name CalendarAgent as bundle ID (this is expected for daemons without bundle ID
+
+5 kernel<VAR:PID>: ARPT: <VAR:NUM>: IOPMPowerSource Information: onWake, SleepType: Normal Sleep, 'ExternalConnected': <*> 'TimeRemaining': <VAR:NUM>,
+     3 ARPT: <*>: IOPMPowerSource Information: onWake, SleepType: Normal Sleep, 'ExternalConnected': Yes, 'TimeRemaining': <*>,
+     2 ARPT: <*>: IOPMPowerSource Information: onWake, SleepType: Normal Sleep, 'ExternalConnected': No, 'TimeRemaining': <*>,
+
+2 QQ<VAR:PID>: tcp_connection_destination_perform_socket_connect <VAR:NUM> connectx to <VAR:IP4>:<VAR:NUM>@<VAR:NUM> failed: <VAR:PID> Network is <*>
+     1 tcp_connection_destination_perform_socket_connect <*> connectx to <*>:<*>@<*> failed: [<*>] Network is down
+     1 tcp_connection_destination_perform_socket_connect <*> connectx to <*>:<*>@<*> failed: [<*>] Network is unreachable

@@ -1,0 +1,35 @@
+---
+source: crates/oarfish-drain/tests/loghub2.rs
+assertion_line: 248
+---
+line mode: 7 port clusters mix ground-truth groups (1180 lines)
+
+809 nova-api.log.<VAR:NUM>-<VAR:NUM>-16_13:<VAR:NUM>:<VAR:NUM> <VAR:TS> <VAR:NUM> INFO nova.osapi_compute.wsgi.server [req-<VAR:UUID> <VAR:HEX> <VAR:HEX> - - -] <VAR:IP4> <*> <*> HTTP/<VAR:NUM>" status: <VAR:NUM> len: <VAR:NUM> time: <VAR:NUM>
+   723 <*> "GET <*>" status: <*> len: <*> time: <*>
+    64 <*> "POST <*>" status: <*> len: <*> time: <*>
+    22 <*> "DELETE <*>" status: <*> len: <*> time: <*>
+
+112 nova-compute.log.<VAR:NUM>-<VAR:NUM>-16_13:<VAR:NUM>:<VAR:NUM> <VAR:TS> <VAR:NUM> INFO nova.virt.libvirt.imagecache [req-<VAR:UUID> - - - - -] <*> base files: <VAR:PATH>
+    82 Active base files: <*>
+    30 Removable base files: <*>
+
+88 nova-compute.log.<VAR:NUM>-<VAR:NUM>-16_13:<VAR:NUM>:<VAR:NUM> <VAR:TS> <VAR:NUM> INFO nova.compute.manager [req-<VAR:UUID> - - - - -] [instance: <VAR:UUID>] VM <*> (Lifecycle Event)
+    44 [instance: <*>] VM Resumed (Lifecycle Event)
+    22 [instance: <*>] VM Paused (Lifecycle Event)
+    22 [instance: <*>] VM Started (Lifecycle Event)
+
+44 nova-compute.log.<VAR:NUM>-<VAR:NUM>-16_13:<VAR:NUM>:<VAR:NUM> <VAR:TS> <VAR:NUM> INFO nova.virt.libvirt.driver [-] [instance: <VAR:UUID>] Instance <*> successfully.
+    22 [instance: <*>] Instance destroyed successfully.
+    22 [instance: <*>] Instance spawned successfully.
+
+43 nova-compute.log.<VAR:NUM>-<VAR:NUM>-16_13:<VAR:NUM>:<VAR:NUM> <VAR:TS> <VAR:NUM> INFO nova.compute.manager [req-<VAR:UUID> <VAR:HEX> <VAR:HEX> - - -] [instance: <VAR:UUID>] Took <VAR:NUM> seconds to <*> the instance on the hypervisor.
+    22 [instance: <*>] Took <*> seconds to spawn the instance on the hypervisor.
+    21 [instance: <*>] Took <*> seconds to destroy the instance on the hypervisor.
+
+42 nova-compute.log.<VAR:NUM>-<VAR:NUM>-16_13:<VAR:NUM>:<VAR:NUM> <VAR:TS> <VAR:NUM> INFO nova.compute.claims [req-<VAR:UUID> <VAR:HEX> <VAR:HEX> - - -] [instance: <VAR:UUID>] <*> limit not specified, defaulting to unlimited
+    21 [instance: <*>] disk limit not specified, defaulting to unlimited
+    21 [instance: <*>] vcpu limit not specified, defaulting to unlimited
+
+42 nova-compute.log.<VAR:NUM>-<VAR:NUM>-16_13:<VAR:NUM>:<VAR:NUM> <VAR:TS> <VAR:NUM> INFO nova.compute.claims [req-<VAR:UUID> <VAR:HEX> <VAR:HEX> - - -] [instance: <VAR:UUID>] Total <*> <VAR:SIZE>, used: <VAR:SIZE>
+    21 [instance: <*>] Total disk: <*> GB, used: <*> GB
+    21 [instance: <*>] Total memory: <*> MB, used: <*> MB

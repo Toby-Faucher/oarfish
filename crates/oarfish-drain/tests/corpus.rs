@@ -198,6 +198,9 @@ enum TruthMatch<'a> {
 /// preserved in the raw lines. Anything outside this list fails the gate:
 ///
 /// - E18/E19: `... user=root` vs `... user=test` (12/13 tokens equal)
+/// - E17/E19: `... user=guest` vs `... user=test`, the same username merge.
+///   Surfaced when TS began taking the month name: the header became one
+///   token, and which two usernames meet first moved with it.
 /// - E55/E71: `Inode-cache ...` vs `Mount-cache ...` (12/13 tokens equal)
 /// - E110/E111: `... driver hub` vs `... driver usbfs` (9/10 tokens equal)
 /// - E20/E21: `BIOS-e820: ... (usable)` vs `... (reserved)` (9/10 tokens equal)
@@ -212,6 +215,7 @@ enum TruthMatch<'a> {
 /// its file.
 const REVIEWED_MERGES: &[(&str, &[&str])] = &[
     ("Linux_2k", &["E18", "E19"]),
+    ("Linux_2k", &["E17", "E19"]),
     ("Linux_2k", &["E55", "E71"]),
     ("Linux_2k", &["E110", "E111"]),
     ("Linux_2k", &["E20", "E21"]),

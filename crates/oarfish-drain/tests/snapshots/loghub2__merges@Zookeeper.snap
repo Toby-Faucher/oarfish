@@ -1,0 +1,13 @@
+---
+source: crates/oarfish-drain/tests/loghub2.rs
+assertion_line: 241
+---
+line mode: 1 port clusters mix ground-truth groups (12 lines)
+
+12 <VAR:TS>,<VAR:NUM> - INFO [WorkerReceiver[myid=<VAR:NUM>]:FastLeaderElection@<VAR:NUM>] - Notification: <VAR:NUM> (n.leader), <VAR:HEX> (n.zxid), <VAR:HEX> (n.round), <*> (n.state), <VAR:NUM> (n.sid), <VAR:HEX> (n.peerEPoch), <*> (my state)
+     5 Notification: <*> (n.leader), <*> (n.zxid), <*> (n.round), LOOKING (n.state), <*> (n.sid), <*> (n.peerEPoch), LOOKING (my state)
+     3 Notification: <*> (n.leader), <*> (n.zxid), <*> (n.round), LOOKING (n.state), <*> (n.sid), <*> (n.peerEPoch), LEADING (my state)
+     1 Notification: <*> (n.leader), <*> (n.zxid), <*> (n.round), FOLLOWING (n.state), <*> (n.sid), <*> (n.peerEPoch), FOLLOWING (my state)
+     1 Notification: <*> (n.leader), <*> (n.zxid), <*> (n.round), FOLLOWING (n.state), <*> (n.sid), <*> (n.peerEPoch), LEADING (my state)
+     1 Notification: <*> (n.leader), <*> (n.zxid), <*> (n.round), LEADING (n.state), <*> (n.sid), <*> (n.peerEPoch), LOOKING (my state)
+     1 Notification: <*> (n.leader), <*> (n.zxid), <*> (n.round), LOOKING (n.state), <*> (n.sid), <*> (n.peerEPoch), FOLLOWING (my state)

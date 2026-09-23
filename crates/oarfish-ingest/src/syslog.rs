@@ -102,6 +102,7 @@ fn resolve_year(received_at: OffsetDateTime, idate: syslog_loose::IncompleteDate
 /// crate exists to carry.
 pub fn frame_to_event(raw: &[u8], peer: &SocketAddr, received_at: OffsetDateTime) -> Event {
     let text = std::str::from_utf8(raw).ok();
+    let line_start = text;
     let parsed = text.and_then(|line| {
         parse_message_with_year_exact(
             line,
@@ -142,6 +143,14 @@ pub fn frame_to_event(raw: &[u8], peer: &SocketAddr, received_at: OffsetDateTime
                 .timestamp
                 .and_then(|ts| ts.timestamp_nanos_opt())
                 .and_then(|nanos| OffsetDateTime::from_unix_timestamp_nanos(nanos as i128).ok());
+            // Only a frame with a real syslog timestamp is split. Without one
+            // the parser is guessing, and on non-syslog text it guesses a
+            // "hostname" out of whatever leads the line (a BGL epoch, say):
+            // cutting there would drop words the template needs.
+            let body_offset = match (message.timestamp, line_start) {
+                (Some(_), Some(line)) => body_offset(line, message.appname, message.msg),
+                _ => 0,
+            };
             Event {
                 raw: Bytes::copy_from_slice(raw),
                 received_at,
@@ -149,6 +158,7 @@ pub fn frame_to_event(raw: &[u8], peer: &SocketAddr, received_at: OffsetDateTime
                 host: resolve(message.hostname, &peer_ip(peer)),
                 source: Source::Syslog,
                 attrs,
+                body_offset,
             }
         }
         None => Event {
@@ -158,7 +168,22 @@ pub fn frame_to_event(raw: &[u8], peer: &SocketAddr, received_at: OffsetDateTime
             host: peer_ip(peer),
             source: Source::Syslog,
             attrs: std::collections::BTreeMap::from([("parse".to_owned(), "failed".to_owned())]),
+            body_offset: 0,
         },
+    }
+}
+
+/// Where the clustered body starts in `line`: at the app name when the frame
+/// has one, else at the message. The parser hands back slices of `line`
+/// itself, so the offset is the distance between the two starts; a slice
+/// that is not inside `line` (never, today) falls back to the whole line.
+fn body_offset(line: &str, appname: Option<&str>, msg: &str) -> usize {
+    let start = appname.unwrap_or(msg);
+    let base = line.as_ptr() as usize;
+    let at = start.as_ptr() as usize;
+    match at.checked_sub(base) {
+        Some(offset) if offset + start.len() <= line.len() => offset,
+        _ => 0,
     }
 }
 
@@ -332,6 +357,42 @@ mod tests {
         "10.0.0.9:40000".parse().expect("test peer")
     }
 
+    /// The template drops the priority, timestamp and host, and keeps the
+    /// app: `kernel: X` and `sshd: X` are different events, one host's
+    /// `sshd: X` and another's are not. `raw` keeps every byte either way.
+    #[rstest::rstest]
+    #[case::rfc3164(
+        b"<13>Sep 22 10:00:01 pve pvedaemon[1234]: starting worker",
+        "pvedaemon[1234]: starting worker"
+    )]
+    #[case::rfc3164_without_host(
+        b"<13>Sep 22 10:00:01 pvedaemon[1234]: no host",
+        "pvedaemon[1234]: no host"
+    )]
+    #[case::rfc5424(
+        b"<34>1 2026-09-19T10:00:00Z web01 nginx 123 req1 - connection accepted",
+        "nginx 123 req1 - connection accepted"
+    )]
+    #[case::no_pri(
+        b"Jun 14 15:16:01 combo sshd(pam_unix)[19939]: check pass",
+        "sshd(pam_unix)[19939]: check pass"
+    )]
+    fn the_body_starts_at_the_app(#[case] raw: &[u8], #[case] body: &str) {
+        let event = frame_to_event(raw, &peer(), received_at());
+        assert_eq!(event.body_lossy(), body);
+        assert_eq!(&event.raw[..], raw);
+    }
+
+    /// No syslog timestamp, no split: the parser's "hostname" on non-syslog
+    /// text is a guess, and here it would be the leading epoch.
+    #[test]
+    fn a_line_without_a_syslog_timestamp_clusters_whole() {
+        let raw = b"- 1117838570 2005.06.03 R02-M1-N0-C:J12-U11 RAS KERNEL INFO instruction cache parity error corrected";
+        let event = frame_to_event(raw, &peer(), received_at());
+        assert_eq!(event.body_offset, 0);
+        assert_eq!(event.body_lossy(), event.raw_lossy());
+    }
+
     #[test]
     fn an_rfc5424_frame_becomes_an_event() {
         let raw = b"<34>1 2026-09-19T10:00:00Z web01 nginx 123 req1 - connection accepted";
@@ -350,7 +411,8 @@ mod tests {
             "procid": "123",
             "protocol": "rfc5424",
             "severity": "crit"
-          }
+          },
+          "body_offset": 33
         }
         "###);
     }
