@@ -186,6 +186,18 @@ pub(crate) fn insert(
     path
 }
 
+/// The ids in the leaf at `path`, or none when the path is gone.
+pub(crate) fn leaf_ids<'a>(root: &'a Node, path: &[String]) -> &'a [u64] {
+    let mut node = root;
+    for key in path {
+        match node.child(key) {
+            Some(child) => node = child,
+            None => return &[],
+        }
+    }
+    &node.cluster_ids
+}
+
 /// Take `cluster_id` out of the leaf at `path` and prune every node the
 /// removal leaves with no ids and no children, bottom up. The inverse of
 /// [`insert`]: after it, the tree holds exactly what it held before that

@@ -51,8 +51,11 @@ fn bench_train(c: &mut Criterion) {
         });
     }
     // Creation, every iteration: a unique line that never matches, so each
-    // pass pays tree insert plus table insert. This is the hostile-input
-    // path the cluster cap exists for.
+    // pass pays tree insert plus table insert. Every line shares one prefix,
+    // so after `max_leaf_clusters` of them each also pays a leaf eviction.
+    // Criterion re-runs this closure per sample, so the table here is always
+    // young: this is the per-insert cost, not a sustained hostile stream,
+    // which `benches/worst_case.rs` measures.
     group.bench_function(BenchmarkId::from_parameter("new"), |b| {
         let mut drain = trained();
         let mut n = 0u64;

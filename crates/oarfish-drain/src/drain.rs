@@ -82,6 +82,11 @@ pub enum DrainError {
 /// out of its tree leaf too and prunes nodes it leaves empty, so the tree holds
 /// exactly the live clusters and is bounded with the table. `max_clusters == 0`
 /// means unbounded, mirroring Loki.
+///
+/// Each leaf is bounded too, by `max_leaf_clusters`: a new cluster that
+/// would overfill its leaf evicts that leaf's least recently used cluster.
+/// Search scores every cluster in the line's leaf, so this is what bounds one
+/// line's work (`leaf_cost_bounded` in `lean/OarfishDrain/Theorems.lean`).
 pub struct Drain {
     config: Config,
     root: tree::Node,
@@ -177,6 +182,7 @@ impl Drain {
                 );
                 self.stamps.insert(tick, seq);
                 let path = tree::insert(&mut self.root, seq, &tokens, &self.config);
+                self.evict_from_leaf(&path, seq);
                 self.table.get_mut(&seq).expect("just inserted").path = path;
                 self.evict();
                 seq
@@ -221,18 +227,54 @@ impl Drain {
             self.config.max_clusters
         };
         while self.table.len() > cap {
-            let oldest = self.stamps.pop_first().expect("stamps track the table");
-            if let Some(entry) = self.table.remove(&oldest.1) {
-                tree::remove(&mut self.root, &entry.path, oldest.1);
-                let len = entry.cluster.tokens.len();
-                if let Some(bucket) = self.counts.get_mut(&len) {
-                    if let Some(pos) = bucket.iter().position(|seq| *seq == oldest.1) {
-                        bucket.swap_remove(pos);
-                    }
-                    if bucket.is_empty() {
-                        self.counts.remove(&len);
-                    }
-                }
+            let (_, oldest) = self
+                .stamps
+                .first_key_value()
+                .expect("stamps track the table");
+            self.forget(*oldest);
+        }
+    }
+
+    /// Forget the leaf's least-recently-used clusters while it is over
+    /// `max_leaf_clusters`. `newest` just went in and is never the victim:
+    /// its tick is the latest anyway, and a train always returns a live id.
+    fn evict_from_leaf(&mut self, path: &[String], newest: u64) {
+        let cap = self.config.max_leaf_clusters;
+        if cap == 0 {
+            return;
+        }
+        loop {
+            let ids = tree::leaf_ids(&self.root, path);
+            if ids.len() <= cap {
+                return;
+            }
+            let oldest = ids
+                .iter()
+                .filter(|id| **id != newest)
+                .filter_map(|id| self.table.get(id).map(|entry| (entry.tick, *id)))
+                .min();
+            match oldest {
+                Some((_, seq)) => self.forget(seq),
+                None => return,
+            }
+        }
+    }
+
+    /// Drop one cluster from everything that tracks it: the table, the
+    /// stamps, the count index and its tree leaf.
+    fn forget(&mut self, seq: u64) {
+        let Some(entry) = self.table.remove(&seq) else {
+            return;
+        };
+        self.stamps.remove(&entry.tick);
+        tree::remove(&mut self.root, &entry.path, seq);
+        let len = entry.cluster.tokens.len();
+        if let Some(bucket) = self.counts.get_mut(&len) {
+            if let Some(pos) = bucket.iter().position(|s| *s == seq) {
+                bucket.swap_remove(pos);
+            }
+            if bucket.is_empty() {
+                self.counts.remove(&len);
             }
         }
     }
@@ -563,18 +605,25 @@ mod tests {
     /// so leaves grew without bound under exactly the hostile input
     /// `max_clusters` exists to bound.
     fn assert_tree_matches_table(drain: &Drain) {
-        fn walk(node: &crate::tree::Node, ids: &mut Vec<u64>, depth: usize) {
+        /// Collect every leaf id, checking on the way that no node is left
+        /// empty and no leaf holds more than `cap` ids (0: uncapped).
+        fn walk(node: &crate::tree::Node, ids: &mut Vec<u64>, depth: usize, cap: usize) {
+            assert!(
+                cap == 0 || node.cluster_ids.len() <= cap,
+                "leaf at depth {depth} holds {} ids, over the cap of {cap}",
+                node.cluster_ids.len()
+            );
             ids.extend(&node.cluster_ids);
             for (key, child) in node.children() {
                 assert!(
                     !child.cluster_ids.is_empty() || child.children().next().is_some(),
                     "empty node {key:?} left at depth {depth}"
                 );
-                walk(child, ids, depth + 1);
+                walk(child, ids, depth + 1, cap);
             }
         }
         let mut ids = Vec::new();
-        walk(&drain.root, &mut ids, 0);
+        walk(&drain.root, &mut ids, 0, drain.config.max_leaf_clusters);
         ids.sort_unstable();
         let mut live: Vec<u64> = drain.table.keys().copied().collect();
         live.sort_unstable();
@@ -603,6 +652,31 @@ mod tests {
             drain.train(&format!("{word} event number {i} happened here now"));
             assert_tree_matches_table(&drain);
         }
+    }
+
+    /// A leaf never holds more than `max_leaf_clusters`, however many lines
+    /// share its path. Every line here takes one path (the same six leading
+    /// tokens) and none merge, which is how one hostile source makes every
+    /// search scan the whole table: `line_cost_bounded` in the Lean model is
+    /// `max_clusters × max_tokens` without this cap.
+    #[test]
+    fn a_full_leaf_evicts_its_own_least_recently_used() {
+        let mut drain = Drain::new(Config {
+            max_leaf_clusters: 4,
+            ..Config::default()
+        })
+        .expect("valid");
+        let line =
+            |i: usize| format!("alpha bravo charlie delta echo foxtrot v{i}a v{i}b v{i}c v{i}d");
+        for i in 0..50 {
+            drain.train(&line(i));
+            assert_tree_matches_table(&drain);
+        }
+        assert_eq!(drain.clusters().count(), 4, "one leaf, capped at four");
+        // The survivors are the four most recent.
+        let newest = drain.train(&line(49));
+        assert_eq!(newest.size, 2, "the newest line is still live");
+        assert_eq!(drain.train(&line(0)).size, 1, "the oldest was evicted");
     }
 
     /// `max_children: 0` has no room for even the parameter node; it used to
@@ -694,14 +768,20 @@ mod tests {
 
     proptest::proptest! {
         /// The tree, the stamps and the count index all track exactly the
-        /// live clusters, under any sequence of lines and any small cap.
+        /// live clusters, and no leaf passes its cap, under any sequence of
+        /// lines and any small caps.
         #[test]
         fn the_tree_and_indexes_track_the_live_table(
             lines in proptest::collection::vec("([a-e0-9]{1,3} ){0,5}[a-e0-9]{1,3}", 1..60),
             cap in 1usize..6,
+            leaf_cap in 0usize..4,
         ) {
-            let mut drain = Drain::new(Config { max_clusters: cap, ..Config::default() })
-                .expect("valid");
+            let mut drain = Drain::new(Config {
+                max_clusters: cap,
+                max_leaf_clusters: leaf_cap,
+                ..Config::default()
+            })
+            .expect("valid");
             for line in &lines {
                 drain.train(line);
                 assert_tree_matches_table(&drain);
