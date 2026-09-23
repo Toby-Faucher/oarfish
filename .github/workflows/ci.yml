@@ -45,3 +45,19 @@ jobs:
       - run: bun install --frozen-lockfile
       - run: bun run check
       - run: bun run build
+
+  # The Lean model of oarfish-drain (lean/). A proof that stops compiling, a
+  # `sorry` or `admit`, `native_decide`, or a home-rolled axiom all fail here:
+  # the axiom audit allows only Lean's standard three. Warnings are errors, so
+  # a `sorry` can't slip through as "declaration uses 'sorry'".
+  lean:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: leanprover/lean-action@v1
+        with:
+          lake-package-directory: lean
+          build-args: "--wfail"
+          leanchecker: "true"
+          leanchecker-args: "OarfishDrain"
+          axiom-audit: "true"
