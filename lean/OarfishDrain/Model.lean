@@ -14,8 +14,12 @@ Rust, the departure is stated.
 - **Exact threshold.** Rust compares `similar as f64 / n as f64 >= 0.90`.
   Here that is `10 * similar ≥ 9 * n` over `Nat`. That the two agree for every
   `n ≤ max_tokens = 128` is a separate, finite check, not yet done.
-- **No eviction.** `max_clusters` is taken to be unbounded. Theorem 3 of the
-  plan brings the LRU in.
+- **Eviction, and the tree as a multiset.** `train` takes the `max_clusters`
+  cap and evicts the least recently used cluster past it, as the Rust does.
+  The tree appears only as `tree`, the ids its leaves hold, which is all the
+  eviction bookkeeping touches. Which leaf an id sits in, and the pruning of
+  emptied nodes, are left to the Rust proptest
+  `the_tree_and_indexes_track_the_live_table`.
 - **Empty lines.** `similarEnough 0 0` holds, matching `tree::similarity`'s
   explicit 1.0 for two empty token lists (not `0.0 / 0.0`, which is NaN).
 -/
@@ -33,6 +37,8 @@ structure Cluster where
   seq : Nat
   tokens : List Token
   size : Nat
+  /-- `Entry::tick`: when this cluster last took a line. -/
+  tick : Nat
   deriving Repr, DecidableEq
 
 /-- The table. `clusters` is in creation order, which is also the order a
@@ -40,10 +46,14 @@ tree leaf's `cluster_ids` lists them in (`tree::insert` pushes). -/
 structure State where
   clusters : List Cluster
   nextSeq : Nat
+  /-- `Drain::tick`, one per `train`. -/
+  tick : Nat
+  /-- Every id held by any tree leaf, with multiplicity. -/
+  tree : List Nat
   deriving Repr
 
 /-- `Drain::new`: an empty table, sequence numbers from 1. -/
-def State.init : State := ⟨[], 1⟩
+def State.init : State := ⟨[], 1, 0, []⟩
 
 /-- `tree::similarity`: `(similar, params)`. Positions where the cluster holds
 `param` are skipped, not counted as similar. Lengths are equal by construction
@@ -85,21 +95,47 @@ def search (st : State) (toks : List Token) : Option Nat :=
   | some (seq, s, _) => if similarEnough s toks.length then some seq else none
   | none => none
 
-/-- `Drain::train`, returning the assigned sequence number. -/
-def train (st : State) (toks : List Token) : State × Nat :=
+/-- The least recently used cluster's seq: `stamps.pop_first()`. Ticks are
+unique, so the first minimum is the minimum. -/
+def oldest : List Cluster → Option Nat
+  | [] => none
+  | c :: cs =>
+    match oldest cs with
+    | none => some c.seq
+    | some s =>
+      match cs.find? (·.seq = s) with
+      | some o => if c.tick ≤ o.tick then some c.seq else some s
+      | none => some c.seq
+
+/-- `Drain::evict`: past the cap (0 means unbounded), forget the least
+recently used cluster, from the table **and from its tree leaf**. One insert
+per `train` means at most one eviction. -/
+def evict (cap : Nat) (st : State) : State :=
+  if cap ≠ 0 ∧ cap < st.clusters.length then
+    match oldest st.clusters with
+    | some v => { st with clusters := st.clusters.filter (·.seq ≠ v), tree := st.tree.erase v }
+    | none => st
+  else st
+
+/-- `Drain::train` under `max_clusters = cap`, returning the assigned seq. -/
+def train (cap : Nat) (st : State) (toks : List Token) : State × Nat :=
+  let tick := st.tick + 1
   match search st toks with
   | some seq =>
     let clusters := st.clusters.map fun c =>
-      if c.seq = seq then { c with tokens := generalize c.tokens toks, size := c.size + 1 }
+      if c.seq = seq then
+        { c with tokens := generalize c.tokens toks, size := c.size + 1, tick }
       else c
-    ({ st with clusters }, seq)
+    ({ st with clusters, tick }, seq)
   | none =>
-    ({ clusters := st.clusters ++ [⟨st.nextSeq, toks, 1⟩], nextSeq := st.nextSeq + 1 },
-      st.nextSeq)
+    let st' : State :=
+      { clusters := st.clusters ++ [⟨st.nextSeq, toks, 1, tick⟩],
+        nextSeq := st.nextSeq + 1, tick, tree := st.tree ++ [st.nextSeq] }
+    (evict cap st', st.nextSeq)
 
-/-- Train a sequence of lines, returning each line's sequence number. -/
-def trainAll (lines : List (List Token)) : State × List Nat :=
-  lines.foldl (fun (st, seqs) toks => let (st', s) := train st toks; (st', seqs ++ [s]))
+/-- Train a sequence of lines under `cap`, returning each line's seq. -/
+def trainAll (lines : List (List Token)) (cap : Nat := 0) : State × List Nat :=
+  lines.foldl (fun (st, seqs) toks => let (st', s) := train cap st toks; (st', seqs ++ [s]))
     (State.init, [])
 
 end OarfishDrain
