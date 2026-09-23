@@ -27,3 +27,6 @@ web/.astro/
 
 # SDD scratch: ledgers, briefs, review packages
 .superpowers/
+
+# Agent handoff notes, local only
+/handoff.md
