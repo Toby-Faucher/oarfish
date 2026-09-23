@@ -1937,12 +1937,14 @@ dependencies = [
  "csv",
  "insta",
  "oarfish-core",
+ "oarfish-ingest",
  "oarfish-mask",
  "proptest",
  "regex",
  "rstest",
  "serde",
  "thiserror",
+ "time",
 ]
 
 [[package]]

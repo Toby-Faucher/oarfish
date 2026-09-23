@@ -1,0 +1,31 @@
+---
+source: crates/oarfish-drain/tests/loghub2.rs
+assertion_line: 248
+---
+line mode: 6 port clusters mix ground-truth groups (20 lines)
+
+8 - <VAR:NUM> <VAR:NUM>.<VAR:NUM> aadmin1 <VAR:TS> src@aadmin1 dhcpd: <*> on <VAR:IP4> to <VAR:TS>:e3:ba:c3 via eth1
+     5 DHCPOFFER on <*> to <*> via eth1
+     3 DHCPACK on <*> to <*> via eth1
+
+4 - <VAR:NUM> <VAR:NUM>.<VAR:NUM> tbird-admin1 <VAR:TS> local@tbird-admin1 usbcore: registered new driver <*>
+     1 registered new driver hiddev
+     1 registered new driver hub
+     1 registered new driver usbfs
+     1 registered new driver usbhid
+
+2 - <VAR:NUM> <VAR:NUM>.<VAR:NUM> tbird-admin1 <VAR:TS> local@tbird-admin1 SELinux: <*> netfilter hooks
+     1 Registering netfilter hooks
+     1 Unregistering netfilter hooks
+
+2 - <VAR:NUM> <VAR:NUM>.<VAR:NUM> tbird-admin1 <VAR:TS> local@tbird-admin1 Type: <*> ANSI SCSI revision: <VAR:NUM>
+     1 Direct-Access ANSI SCSI revision: <*>
+     1 Processor ANSI SCSI revision: <*>
+
+2 - <VAR:NUM> <VAR:NUM>.<VAR:NUM> tbird-admin1 <VAR:TS> local@tbird-admin1 ntpd<VAR:PID>: kernel time sync <*> <VAR:NUM>
+     1 kernel time sync disabled <*>
+     1 kernel time sync enabled <*>
+
+2 - <VAR:NUM> <VAR:NUM>.<VAR:NUM> tbird-admin1 <VAR:TS> local@tbird-admin1 serio: i8042 <*> port at <VAR:HEX>,<VAR:HEX> irq <VAR:NUM>
+     1 <*> AUX port at <*>,<*> irq <*>
+     1 <*> KBD port at <*>,<*> irq <*>

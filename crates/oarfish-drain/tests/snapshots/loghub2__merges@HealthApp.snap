@@ -1,0 +1,18 @@
+---
+source: crates/oarfish-drain/tests/loghub2.rs
+assertion_line: 241
+---
+line mode: 1 port clusters mix ground-truth groups (255 lines)
+
+255 <*>
+   241 setTodayTotalDetailSteps=<*>
+     5 sendSyncFailedBroadcast
+     1 <*>|<*>|<*>|<*>
+     1 clear()
+     1 closeNotification...
+     1 deleteHealthNotification()
+     1 getStepCounterStatus
+     1 initEnviroument
+     1 reStartStepCounter
+     1 setDiffTotalSteps=<*>
+     1 setWriteDBLastDataMinute=<*>

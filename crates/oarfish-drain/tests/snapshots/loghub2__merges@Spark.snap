@@ -1,0 +1,9 @@
+---
+source: crates/oarfish-drain/tests/loghub2.rs
+assertion_line: 241
+---
+line mode: 1 port clusters mix ground-truth groups (2 lines)
+
+2 <VAR:NUM><VAR:PATH> <VAR:TS> INFO util.Utils: Successfully started service <*> on port <VAR:NUM>.
+     1 Successfully started service 'org.apache.spark.network.netty.NettyBlockTransferService' on port <*>.
+     1 Successfully started service 'sparkExecutorActorSystem' on port <*>.

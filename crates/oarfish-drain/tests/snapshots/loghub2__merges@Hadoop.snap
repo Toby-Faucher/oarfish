@@ -1,0 +1,17 @@
+---
+source: crates/oarfish-drain/tests/loghub2.rs
+assertion_line: 241
+---
+line mode: 3 port clusters mix ground-truth groups (22 lines)
+
+17 <VAR:TS>,<VAR:NUM> INFO [RMCommunicator Allocator] org.apache.hadoop.mapreduce.v2.app.rm.RMContainerAllocator: <*> Scheduling: PendingReds:<VAR:NUM> ScheduledMaps:<VAR:NUM> ScheduledReds:<VAR:NUM> AssignedMaps:<VAR:NUM> AssignedReds:<VAR:NUM> CompletedMaps:<VAR:NUM> CompletedReds:<VAR:NUM> ContAlloc:<VAR:NUM> ContRel:<VAR:NUM> HostLocal:<VAR:NUM> RackLocal:<VAR:NUM>
+    12 After Scheduling: PendingReds:<*> ScheduledMaps:<*> ScheduledReds:<*> AssignedMaps:<*> AssignedReds:<*> CompletedMaps:<*> CompletedReds:<*> ContAlloc:<*> ContRel:<*> HostLocal:<*> RackLocal:<*>
+     5 Before Scheduling: PendingReds:<*> ScheduledMaps:<*> ScheduledReds:<*> AssignedMaps:<*> AssignedReds:<*> CompletedMaps:<*> CompletedReds:<*> ContAlloc:<*> ContRel:<*> HostLocal:<*> RackLocal:<*>
+
+3 <VAR:TS>,<VAR:NUM> INFO [CommitterEvent Processor #<VAR:NUM>] org.apache.hadoop.mapreduce.v2.app.commit.CommitterEventHandler: Processing the event EventType: <*>
+     2 Processing the event EventType: TASK_ABORT
+     1 Processing the event EventType: JOB_SETUP
+
+2 <VAR:TS>,<VAR:NUM> INFO [main] org.apache.hadoop.http.HttpServer2: Added filter AM_PROXY_FILTER (class=org.apache.hadoop.yarn.server.webproxy.amfilter.AmIpFilter) to context <*>
+     1 Added filter AM_PROXY_FILTER (class=org.apache.hadoop.yarn.server.webproxy.amfilter.AmIpFilter) to context mapreduce
+     1 Added filter AM_PROXY_FILTER (class=org.apache.hadoop.yarn.server.webproxy.amfilter.AmIpFilter) to context static

@@ -1,0 +1,9 @@
+---
+source: crates/oarfish-drain/tests/loghub2.rs
+assertion_line: 261
+---
+line mode: 1 port clusters mix ground-truth groups (21 lines)
+
+21 sshd(pam_unix)<VAR:PID>: authentication failure; logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=NODEVssh ruser= rhost=<VAR:IP4> <*>
+    17 authentication failure; logname= uid=<*> euid=<*> tty=NODEVssh ruser= rhost=<*> user=guest
+     4 authentication failure; logname= uid=<*> euid=<*> tty=NODEVssh ruser= rhost=<*> user=test
