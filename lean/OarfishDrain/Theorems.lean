@@ -84,7 +84,7 @@ theorem search_sound (st : State) (toks : List Token) {seq : Nat}
 /-- What every reachable state satisfies: seqs are distinct, the tree holds
 exactly the live seqs, and every live seq was issued. -/
 def Inv (st : State) : Prop :=
-  (st.clusters.map (·.seq)).Nodup ∧ st.tree.Perm (st.clusters.map (·.seq)) ∧
+  (st.clusters.map (·.seq)).Nodup ∧ (st.tree.map (·.2)).Perm (st.clusters.map (·.seq)) ∧
     ∀ c ∈ st.clusters, c.seq < st.nextSeq
 
 theorem oldest_mem : ∀ (l : List Cluster) {v : Nat}, oldest l = some v → ∃ c ∈ l, c.seq = v
@@ -117,24 +117,33 @@ private theorem map_seq_filter (l : List Cluster) (v : Nat) :
     (l.filter (·.seq ≠ v)).map (·.seq) = (l.map (·.seq)).filter (· ≠ v) := by
   rw [List.filter_map]; rfl
 
-theorem evict_inv (cap : Nat) (st : State) (h : Inv st) : Inv (evict cap st) := by
+private theorem map_snd_filter (l : List (List Token × Nat)) (v : Nat) :
+    (l.filter (·.2 ≠ v)).map (·.2) = (l.map (·.2)).filter (· ≠ v) := by
+  rw [List.filter_map]; rfl
+
+theorem forget_inv (v : Nat) (st : State) (h : Inv st) : Inv (forget v st) := by
   obtain ⟨hnd, hperm, hlt⟩ := h
+  refine ⟨?_, ?_, ?_⟩
+  · simp only [forget]; rw [map_seq_filter]; exact hnd.filter _
+  · simp only [forget]; rw [map_seq_filter, map_snd_filter]; exact hperm.filter _
+  · intro c hc; exact hlt c (List.mem_filter.mp hc).1
+
+theorem evict_inv (cap : Nat) (st : State) (h : Inv st) : Inv (evict cap st) := by
   unfold evict
   split
   · split
-    · rename_i v _
-      refine ⟨?_, ?_, ?_⟩
-      · rw [map_seq_filter]; exact hnd.filter _
-      · have hf : (st.clusters.map (·.seq)).filter (fun x => decide (x ≠ v)) =
-            (st.clusters.map (·.seq)).erase v := by
-          rw [hnd.erase_eq_filter]
-          apply List.filter_congr
-          intro x _
-          by_cases hx : x = v <;> simp [hx]
-        rw [map_seq_filter, hf]; exact hperm.erase v
-      · intro c hc; exact hlt c (List.mem_filter.mp hc).1
-    · exact ⟨hnd, hperm, hlt⟩
-  · exact ⟨hnd, hperm, hlt⟩
+    · exact forget_inv _ _ h
+    · exact h
+  · exact h
+
+theorem evictFromLeaf_inv (leafCap : Nat) (path : List Token) (newest : Nat) (st : State)
+    (h : Inv st) : Inv (evictFromLeaf leafCap path newest st) := by
+  unfold evictFromLeaf
+  split
+  · split
+    · exact forget_inv _ _ h
+    · exact h
+  · exact h
 
 /-- A join rewrites a cluster in place: its seq, and so every seq, is unchanged. -/
 private theorem map_seq_join (l : List Cluster) (seq : Nat) (f : Cluster → Cluster)
@@ -144,15 +153,38 @@ private theorem map_seq_join (l : List Cluster) (seq : Nat) (f : Cluster → Clu
   | nil => rfl
   | cons c cs ih => by_cases h : c.seq = seq <;> simp [h, hf, ih]
 
-/-- **The tree holds exactly the live clusters**, after every `train`. The
-old `evict` forgot the tree, and `plausible` refuted this with two distinct
-lines under `max_clusters = 1`. -/
-theorem train_inv (cap : Nat) (st : State) (toks : List Token) (h : Inv st) :
-    Inv (train cap st toks).1 := by
+/-- The state a new cluster makes, before either eviction. -/
+private def inserted (st : State) (toks path : List Token) : State :=
+  { clusters := st.clusters ++ [⟨st.nextSeq, toks, 1, st.tick + 1⟩],
+    nextSeq := st.nextSeq + 1, tick := st.tick + 1, tree := st.tree ++ [(path, st.nextSeq)] }
+
+private theorem inserted_inv (st : State) (toks path : List Token) (h : Inv st) :
+    Inv (inserted st toks path) := by
   obtain ⟨hnd, hperm, hlt⟩ := h
+  refine ⟨?_, ?_, ?_⟩
+  · simp only [inserted, List.map_append, List.map_cons, List.map_nil]
+    refine List.nodup_append.mpr ⟨hnd, by simp, ?_⟩
+    intro a ha b hb
+    simp at hb; subst hb
+    obtain ⟨c, hc, rfl⟩ := List.mem_map.mp ha
+    exact Nat.ne_of_lt (hlt c hc)
+  · simp only [inserted, List.map_append, List.map_cons, List.map_nil]
+    exact hperm.append_right _
+  · intro c hc
+    rcases List.mem_append.mp hc with hc | hc
+    · exact Nat.lt_succ_of_lt (hlt c hc)
+    · simp at hc; subst hc; exact Nat.lt_succ_self _
+
+/-- **The tree holds exactly the live clusters**, after every `train`, for
+any routing. The old `evict` forgot the tree, and `plausible` refuted this
+with two distinct lines under `max_clusters = 1`. -/
+theorem train_inv (cap leafCap : Nat) (pathOf : State → List Token → List Token)
+    (st : State) (toks : List Token) (h : Inv st) :
+    Inv (train cap leafCap pathOf st toks).1 := by
   unfold train
   split
   · rename_i seq _
+    obtain ⟨hnd, hperm, hlt⟩ := h
     simp only
     have hmap := map_seq_join st.clusters seq
       (fun c => { c with tokens := generalize c.tokens toks, size := c.size + 1, tick := st.tick + 1 })
@@ -166,66 +198,247 @@ theorem train_inv (cap : Nat) (st : State) (toks : List Token) (h : Inv st) :
       by_cases hs : c'.seq = seq
       · simp [hs]; omega
       · simp [hs]; exact hc'lt
-  · apply evict_inv
-    refine ⟨?_, ?_, ?_⟩
-    · simp only [List.map_append, List.map_cons, List.map_nil]
-      refine List.nodup_append.mpr ⟨hnd, by simp, ?_⟩
-      intro a ha b hb
-      simp at hb; subst hb
-      obtain ⟨c, hc, rfl⟩ := List.mem_map.mp ha
-      exact Nat.ne_of_lt (hlt c hc)
-    · simp only [List.map_append, List.map_cons, List.map_nil]
-      exact hperm.append_right _
-    · intro c hc
-      rcases List.mem_append.mp hc with hc | hc
-      · exact Nat.lt_succ_of_lt (hlt c hc)
-      · simp at hc; subst hc; exact Nat.lt_succ_self _
+  · exact evict_inv _ _ (evictFromLeaf_inv _ _ _ _ (inserted_inv st toks _ h))
 
 theorem init_inv : Inv State.init := ⟨List.nodup_nil, List.Perm.refl _, by simp [State.init]⟩
 
 /-- Every state `trainAll` reaches satisfies `Inv`: from an empty table,
-after any lines, under any cap, the tree holds exactly the live clusters. -/
-theorem trainAll_inv (lines : List (List Token)) (cap : Nat) : Inv (trainAll lines cap).1 := by
+after any lines, under any caps and any routing, the tree holds exactly the
+live clusters. -/
+theorem trainAll_inv (lines : List (List Token)) (cap leafCap : Nat)
+    (pathOf : State → List Token → List Token) : Inv (trainAll lines cap leafCap pathOf).1 := by
   unfold trainAll
   suffices ∀ (acc : State × List Nat), Inv acc.1 →
       Inv (lines.foldl (fun (st, seqs) toks =>
-        let (st', s) := train cap st toks; (st', seqs ++ [s])) acc).1 from
+        let (st', s) := train cap leafCap pathOf st toks; (st', seqs ++ [s])) acc).1 from
     this _ init_inv
   induction lines with
   | nil => intro acc h; exact h
-  | cons l ls ih => intro acc h; exact ih _ (train_inv cap acc.1 l h)
+  | cons l ls ih => intro acc h; exact ih _ (train_inv cap leafCap pathOf acc.1 l h)
+
+/-! ## Bounds: the table, and every leaf -/
+
+private theorem forget_length_le (v : Nat) (st : State) :
+    (forget v st).clusters.length ≤ st.clusters.length :=
+  List.length_filter_le _ _
+
+private theorem evictFromLeaf_length_le (leafCap : Nat) (path : List Token) (n : Nat)
+    (st : State) : (evictFromLeaf leafCap path n st).clusters.length ≤ st.clusters.length := by
+  unfold evictFromLeaf
+  split
+  · split
+    · exact forget_length_le _ _
+    · exact Nat.le_refl _
+  · exact Nat.le_refl _
+
+/-- One eviction brings a table at most one over the cap back within it. -/
+private theorem evict_length_le (cap : Nat) (st : State) (hcap : cap ≠ 0)
+    (h : st.clusters.length ≤ cap + 1) : (evict cap st).clusters.length ≤ cap := by
+  unfold evict
+  split
+  · rename_i hover
+    split
+    · rename_i v hv
+      obtain ⟨c, hc, hseq⟩ := oldest_mem _ hv
+      have : (st.clusters.filter (·.seq ≠ v)).length < st.clusters.length :=
+        List.length_filter_lt_length_iff_exists.mpr ⟨c, hc, by simp [hseq]⟩
+      simp only [forget]; omega
+    · rename_i hv
+      have := oldest_isSome st.clusters (by intro he; simp [he] at hover)
+      rw [hv] at this; simp at this
+  · rename_i hnot; omega
 
 /-- **The table never exceeds `max_clusters`** (for a nonzero cap). -/
-theorem train_bound (cap : Nat) (st : State) (toks : List Token) (hcap : cap ≠ 0)
-    (h : st.clusters.length ≤ cap) : (train cap st toks).1.clusters.length ≤ cap := by
+theorem train_bound (cap leafCap : Nat) (pathOf : State → List Token → List Token)
+    (st : State) (toks : List Token) (hcap : cap ≠ 0) (h : st.clusters.length ≤ cap) :
+    (train cap leafCap pathOf st toks).1.clusters.length ≤ cap := by
   unfold train
   split
   · simpa using h
-  · simp only
-    unfold evict
+  · apply evict_length_le _ _ hcap
+    have := evictFromLeaf_length_le leafCap (pathOf st toks) st.nextSeq
+      (inserted st toks (pathOf st toks))
+    simp only [inserted, List.length_append, List.length_singleton] at this
+    exact Nat.le_trans this (by omega)
+
+/-- Every state `trainAll` reaches under a nonzero cap is within it. -/
+theorem trainAll_bound (lines : List (List Token)) (cap leafCap : Nat)
+    (pathOf : State → List Token → List Token) (hcap : cap ≠ 0) :
+    (trainAll lines cap leafCap pathOf).1.clusters.length ≤ cap := by
+  unfold trainAll
+  suffices ∀ (acc : State × List Nat), acc.1.clusters.length ≤ cap →
+      (lines.foldl (fun (st, seqs) toks =>
+        let (st', s) := train cap leafCap pathOf st toks; (st', seqs ++ [s])) acc).1.clusters.length
+        ≤ cap from
+    this _ (by simp [State.init])
+  induction lines with
+  | nil => intro acc h; exact h
+  | cons l ls ih => intro acc h; exact ih _ (train_bound cap leafCap pathOf acc.1 l hcap h)
+
+/-- Forgetting `v` drops `v` from every leaf and nothing else. -/
+private theorem idsAt_forget (v : Nat) (st : State) (q : List Token) :
+    idsAt (forget v st) q = (idsAt st q).filter (· ≠ v) := by
+  simp only [idsAt, forget]
+  generalize st.tree = t
+  induction t with
+  | nil => rfl
+  | cons e es ih =>
+    by_cases h1 : e.2 = v <;> by_cases h2 : e.1 = q <;> simp_all
+
+private theorem idsAt_forget_le (v : Nat) (st : State) (q : List Token) :
+    (idsAt (forget v st) q).length ≤ (idsAt st q).length := by
+  rw [idsAt_forget]; exact List.length_filter_le _ _
+
+private theorem idsAt_evict_le (cap : Nat) (st : State) (q : List Token) :
+    (idsAt (evict cap st) q).length ≤ (idsAt st q).length := by
+  unfold evict
+  split
+  · split
+    · exact idsAt_forget_le _ _ _
+    · exact Nat.le_refl _
+  · exact Nat.le_refl _
+
+private theorem idsAt_inserted (st : State) (toks path q : List Token) :
+    idsAt (inserted st toks path) q = idsAt st q ++ (if path = q then [st.nextSeq] else []) := by
+  simp only [idsAt, inserted, List.filter_append, List.map_append]
+  by_cases h : path = q <;> simp [h]
+
+/-- One insert then the leaf eviction leaves every leaf within the cap. -/
+private theorem leaf_step (leafCap : Nat) (st : State) (toks path : List Token)
+    (hleaf : leafCap ≠ 0) (hinv : Inv st) (h : ∀ q, (idsAt st q).length ≤ leafCap) :
+    ∀ q, (idsAt (evictFromLeaf leafCap path st.nextSeq (inserted st toks path)) q).length
+      ≤ leafCap := by
+  intro q
+  have hs' : ∀ r, idsAt (inserted st toks path) r =
+      idsAt st r ++ (if path = r then [st.nextSeq] else []) :=
+    fun r => idsAt_inserted st toks path r
+  unfold evictFromLeaf
+  split
+  · rename_i hover
     split
-    · rename_i hover
-      split
-      · rename_i v hv
-        simp only
-        obtain ⟨c, hc, hseq⟩ := oldest_mem _ hv
-        have hlt : ((st.clusters ++ [(⟨st.nextSeq, toks, 1, st.tick + 1⟩ : Cluster)]).filter
-            (·.seq ≠ v)).length <
-            (st.clusters ++ [(⟨st.nextSeq, toks, 1, st.tick + 1⟩ : Cluster)]).length :=
-          List.length_filter_lt_length_iff_exists.mpr ⟨c, hc, by simp [hseq]⟩
-        simp only [List.length_append, List.length_singleton] at hlt
+    · rename_i v hv
+      obtain ⟨c, hc, hseq⟩ := oldest_mem _ hv
+      have hmem : c.seq ∈ idsAt (inserted st toks path) path := by
+        have := (List.mem_filter.mp hc).2; simp at this; exact this.1
+      rw [idsAt_forget]
+      by_cases hq : path = q
+      · subst hq
+        have hlt : ((idsAt (inserted st toks path) path).filter (· ≠ v)).length <
+            (idsAt (inserted st toks path) path).length :=
+          List.length_filter_lt_length_iff_exists.mpr ⟨v, hseq ▸ hmem, by simp⟩
+        have hcap := h path
+        have ha : (idsAt (inserted st toks path) path).length = (idsAt st path).length + 1 := by
+          rw [hs' path]; simp
         omega
-      · rename_i hv
-        have := oldest_isSome (st.clusters ++ [(⟨st.nextSeq, toks, 1, st.tick + 1⟩ : Cluster)])
-          (by simp)
-        rw [hv] at this; simp at this
-    · rename_i hnot
-      simp only [List.length_append, List.length_singleton] at hnot ⊢
-      omega
+      · apply Nat.le_trans (List.length_filter_le _ _)
+        rw [hs' q]; simp [hq]; exact h q
+    · rename_i hv
+      exfalso
+      -- A leaf over its cap holds an id other than the newest, and it is live.
+      rw [hs' path] at hover
+      have hpos : 0 < (idsAt st path).length := by simp at hover; omega
+      obtain ⟨x, hx⟩ := List.exists_mem_of_length_pos hpos
+      have hxt : x ∈ st.tree.map (·.2) := by
+        simp only [idsAt, List.mem_map, List.mem_filter] at hx
+        obtain ⟨e, ⟨he, _⟩, rfl⟩ := hx
+        exact List.mem_map_of_mem he
+      obtain ⟨c, hc, hcx⟩ := List.mem_map.mp (hinv.2.1.mem_iff.mp hxt)
+      have hne : x ≠ st.nextSeq := hcx ▸ Nat.ne_of_lt (hinv.2.2 c hc)
+      have hin : c ∈ (inserted st toks path).clusters.filter
+          (fun c => c.seq ∈ idsAt (inserted st toks path) path ∧ c.seq ≠ st.nextSeq) := by
+        refine List.mem_filter.mpr ⟨List.mem_append_left _ hc, ?_⟩
+        rw [hs' path]; simp [hcx, hx, hne]
+      have := oldest_isSome _ (List.ne_nil_of_mem hin)
+      rw [hv] at this; simp at this
+  · rename_i hnot
+    by_cases hq : path = q
+    · subst hq; omega
+    · rw [hs' q]; simp [hq]; exact h q
+
+/-- **No leaf ever holds more than `max_leaf_clusters`**, after every
+`train`, for any routing. -/
+theorem train_leaf_bound (cap leafCap : Nat) (pathOf : State → List Token → List Token)
+    (st : State) (toks : List Token) (hleaf : leafCap ≠ 0) (hinv : Inv st)
+    (h : ∀ q, (idsAt st q).length ≤ leafCap) :
+    ∀ q, (idsAt (train cap leafCap pathOf st toks).1 q).length ≤ leafCap := by
+  intro q
+  unfold train
+  split
+  · exact h q
+  · exact Nat.le_trans (idsAt_evict_le _ _ _)
+      (leaf_step leafCap st toks (pathOf st toks) hleaf hinv h q)
+
+/-- Every state `trainAll` reaches keeps every leaf within `max_leaf_clusters`. -/
+theorem trainAll_leaf_bound (lines : List (List Token)) (cap leafCap : Nat)
+    (pathOf : State → List Token → List Token) (hleaf : leafCap ≠ 0) :
+    ∀ q, (idsAt (trainAll lines cap leafCap pathOf).1 q).length ≤ leafCap := by
+  unfold trainAll
+  suffices ∀ (acc : State × List Nat), Inv acc.1 → (∀ q, (idsAt acc.1 q).length ≤ leafCap) →
+      ∀ q, (idsAt (lines.foldl (fun (st, seqs) toks =>
+        let (st', s) := train cap leafCap pathOf st toks; (st', seqs ++ [s])) acc).1 q).length
+        ≤ leafCap from
+    this _ init_inv (by intro q; simp [idsAt, State.init])
+  induction lines with
+  | nil => intro acc _ h; exact h
+  | cons l ls ih =>
+    intro acc hinv h
+    exact ih _ (train_inv cap leafCap pathOf acc.1 l hinv)
+      (train_leaf_bound cap leafCap pathOf acc.1 l hleaf hinv h)
+
+/-! ## Per-line cost -/
+
+theorem simSteps_le : ∀ (a b : List Token), simSteps a b ≤ b.length
+  | _ :: cs, _ :: ts => by simp [simSteps]; exact simSteps_le cs ts
+  | [], _ => by simp [simSteps]
+  | _ :: _, [] => by simp [simSteps]
+
+private theorem sum_le_card_mul {α : Type} (l : List α) (f : α → Nat) (k : Nat)
+    (h : ∀ a ∈ l, f a ≤ k) : (l.map f).sum ≤ l.length * k := by
+  induction l with
+  | nil => simp
+  | cons a as ih =>
+    simp only [List.map_cons, List.sum_cons, List.length_cons]
+    have := h a (List.mem_cons_self ..)
+    have := ih (fun a' ha' => h a' (List.mem_cons_of_mem _ ha'))
+    rw [Nat.succ_mul]; omega
+
+/-- One table-wide search compares at most (live clusters) × (line length)
+tokens. -/
+theorem searchCost_le (st : State) (toks : List Token) :
+    searchCost st toks ≤ st.clusters.length * toks.length := by
+  unfold searchCost
+  calc _ ≤ (st.clusters.filter (·.tokens.length == toks.length)).length * toks.length :=
+        sum_le_card_mul _ _ _ (fun c _ => simSteps_le c.tokens toks)
+    _ ≤ st.clusters.length * toks.length :=
+        Nat.mul_le_mul_right _ (List.length_filter_le _ _)
+
+/-- The ceiling without a leaf cap: `max_clusters × max_tokens`. -/
+theorem line_cost_bounded (lines : List (List Token)) (toks : List Token)
+    (cap leafCap maxTokens : Nat) (pathOf : State → List Token → List Token) (hcap : cap ≠ 0)
+    (hlen : toks.length ≤ maxTokens) :
+    searchCost (trainAll lines cap leafCap pathOf).1 toks ≤ cap * maxTokens :=
+  calc _ ≤ (trainAll lines cap leafCap pathOf).1.clusters.length * toks.length :=
+        searchCost_le _ _
+    _ ≤ cap * maxTokens := Nat.mul_le_mul (trainAll_bound lines cap leafCap pathOf hcap) hlen
+
+/-- **The per-line ceiling with the leaf cap.** Whatever came before, and
+whatever leaf the tree sends the line to, scanning it makes at most
+`max_leaf_clusters × max_tokens` token comparisons. -/
+theorem leaf_cost_bounded (lines : List (List Token)) (toks q : List Token)
+    (cap leafCap maxTokens : Nat) (pathOf : State → List Token → List Token)
+    (hleaf : leafCap ≠ 0) (hlen : toks.length ≤ maxTokens) :
+    leafSearchCost (trainAll lines cap leafCap pathOf).1 q toks ≤ leafCap * maxTokens := by
+  unfold leafSearchCost
+  calc _ ≤ (idsAt (trainAll lines cap leafCap pathOf).1 q).length * toks.length :=
+        sum_le_card_mul _ _ _ (fun id _ => by split <;> simp [simSteps_le])
+    _ ≤ leafCap * maxTokens :=
+        Nat.mul_le_mul (trainAll_leaf_bound lines cap leafCap pathOf hleaf q) hlen
 
 end OarfishDrain
 
 #print axioms OarfishDrain.search_sound
-#print axioms OarfishDrain.train_inv
 #print axioms OarfishDrain.trainAll_inv
-#print axioms OarfishDrain.train_bound
+#print axioms OarfishDrain.trainAll_bound
+#print axioms OarfishDrain.line_cost_bounded
+#print axioms OarfishDrain.trainAll_leaf_bound
+#print axioms OarfishDrain.leaf_cost_bounded

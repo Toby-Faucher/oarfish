@@ -14,11 +14,14 @@ Rust, the departure is stated.
 - **Exact threshold.** Rust compares `similar as f64 / n as f64 >= 0.90`.
   Here that is `10 * similar ≥ 9 * n` over `Nat`. That the two agree for every
   `n ≤ max_tokens = 128` is a separate, finite check, not yet done.
-- **Eviction, and the tree as a multiset.** `train` takes the `max_clusters`
-  cap and evicts the least recently used cluster past it, as the Rust does.
-  The tree appears only as `tree`, the ids its leaves hold, which is all the
-  eviction bookkeeping touches. Which leaf an id sits in, and the pruning of
-  emptied nodes, are left to the Rust proptest
+- **Eviction, and the tree as (leaf path, id) entries.** `train` takes the
+  `max_clusters` and `max_leaf_clusters` caps and evicts as the Rust does.
+  The tree appears as `tree`, one entry per leaf id, tagged with its leaf's
+  path. **Which path a new cluster gets is a parameter, `pathOf`**, and every
+  theorem holds for all of them. So the proofs cover the Rust's routing,
+  whatever it is, given two facts the Rust has by construction: eviction
+  finds an id by the path recorded at insert (`Entry::path`), and a search
+  scans one leaf. The pruning of emptied nodes is left to the Rust proptest
   `the_tree_and_indexes_track_the_live_table`.
 - **Empty lines.** `similarEnough 0 0` holds, matching `tree::similarity`'s
   explicit 1.0 for two empty token lists (not `0.0 / 0.0`, which is NaN).
@@ -48,8 +51,8 @@ structure State where
   nextSeq : Nat
   /-- `Drain::tick`, one per `train`. -/
   tick : Nat
-  /-- Every id held by any tree leaf, with multiplicity. -/
-  tree : List Nat
+  /-- Every id any tree leaf holds, with its leaf's path. -/
+  tree : List (List Token × Nat)
   deriving Repr
 
 /-- `Drain::new`: an empty table, sequence numbers from 1. -/
@@ -107,18 +110,38 @@ def oldest : List Cluster → Option Nat
       | some o => if c.tick ≤ o.tick then some c.seq else some s
       | none => some c.seq
 
+/-- `Drain::forget`: drop cluster `v` from the table and from its leaf. -/
+def forget (v : Nat) (st : State) : State :=
+  { st with clusters := st.clusters.filter (·.seq ≠ v), tree := st.tree.filter (·.2 ≠ v) }
+
+/-- The ids in the leaf at `path`: `tree::leaf_ids`. -/
+def idsAt (st : State) (path : List Token) : List Nat :=
+  (st.tree.filter (·.1 = path)).map (·.2)
+
 /-- `Drain::evict`: past the cap (0 means unbounded), forget the least
-recently used cluster, from the table **and from its tree leaf**. One insert
-per `train` means at most one eviction. -/
+recently used cluster. One insert per `train` means at most one eviction. -/
 def evict (cap : Nat) (st : State) : State :=
   if cap ≠ 0 ∧ cap < st.clusters.length then
     match oldest st.clusters with
-    | some v => { st with clusters := st.clusters.filter (·.seq ≠ v), tree := st.tree.erase v }
+    | some v => forget v st
     | none => st
   else st
 
-/-- `Drain::train` under `max_clusters = cap`, returning the assigned seq. -/
-def train (cap : Nat) (st : State) (toks : List Token) : State × Nat :=
+/-- `Drain::evict_from_leaf`: past `leafCap` (0 means unbounded), forget the
+least recently used cluster in the leaf at `path`, never `newest`. One insert
+per `train` means at most one. -/
+def evictFromLeaf (leafCap : Nat) (path : List Token) (newest : Nat) (st : State) : State :=
+  if leafCap ≠ 0 ∧ leafCap < (idsAt st path).length then
+    match oldest (st.clusters.filter fun c => c.seq ∈ idsAt st path ∧ c.seq ≠ newest) with
+    | some v => forget v st
+    | none => st
+  else st
+
+/-- `Drain::train` under `max_clusters = cap` and `max_leaf_clusters =
+leafCap`, returning the assigned seq. `pathOf` is where the tree files a new
+cluster; it is left open, so theorems hold for any routing. -/
+def train (cap leafCap : Nat) (pathOf : State → List Token → List Token)
+    (st : State) (toks : List Token) : State × Nat :=
   let tick := st.tick + 1
   match search st toks with
   | some seq =>
@@ -128,14 +151,48 @@ def train (cap : Nat) (st : State) (toks : List Token) : State × Nat :=
       else c
     ({ st with clusters, tick }, seq)
   | none =>
+    let path := pathOf st toks
     let st' : State :=
       { clusters := st.clusters ++ [⟨st.nextSeq, toks, 1, tick⟩],
-        nextSeq := st.nextSeq + 1, tick, tree := st.tree ++ [st.nextSeq] }
-    (evict cap st', st.nextSeq)
+        nextSeq := st.nextSeq + 1, tick, tree := st.tree ++ [(path, st.nextSeq)] }
+    (evict cap (evictFromLeaf leafCap path st.nextSeq st'), st.nextSeq)
 
-/-- Train a sequence of lines under `cap`, returning each line's seq. -/
-def trainAll (lines : List (List Token)) (cap : Nat := 0) : State × List Nat :=
-  lines.foldl (fun (st, seqs) toks => let (st', s) := train cap st toks; (st', seqs ++ [s]))
+/-! ## Cost
+
+Work is counted in token comparisons: the inner loop of `tree::similarity`,
+one step per position of the zipped token lists. `search` runs it once per
+candidate. The Rust scans a tree leaf, whose ids are live clusters of the
+line's length (`trainAll_inv`), so it compares against a subset of the
+candidates counted here: this cost is an upper bound on the Rust's.
+-/
+
+/-- Steps `simCounts` takes: one per zipped position. -/
+def simSteps : List Token → List Token → Nat
+  | _ :: cs, _ :: ts => simSteps cs ts + 1
+  | _, _ => 0
+
+/-- Token comparisons one `search` makes. -/
+def searchCost (st : State) (toks : List Token) : Nat :=
+  ((st.clusters.filter (·.tokens.length == toks.length)).map
+    (fun c => simSteps c.tokens toks)).sum
+
+/-- Token comparisons scanning the leaf at `path`: each id's cluster
+against the line. -/
+def leafSearchCost (st : State) (path : List Token) (toks : List Token) : Nat :=
+  ((idsAt st path).map fun id =>
+    match st.clusters.find? (·.seq = id) with
+    | some c => simSteps c.tokens toks
+    | none => 0).sum
+
+/-- A stand-in for the tree's routing, for `#eval`: the first six tokens.
+Theorems never assume it. -/
+def prefixPath (_ : State) (toks : List Token) : List Token := toks.take 6
+
+/-- Train a sequence of lines, returning each line's seq. -/
+def trainAll (lines : List (List Token)) (cap : Nat := 0) (leafCap : Nat := 0)
+    (pathOf : State → List Token → List Token := prefixPath) : State × List Nat :=
+  lines.foldl
+    (fun (st, seqs) toks => let (st', s) := train cap leafCap pathOf st toks; (st', seqs ++ [s]))
     (State.init, [])
 
 end OarfishDrain

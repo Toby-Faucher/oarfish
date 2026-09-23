@@ -31,6 +31,13 @@ pub struct Config {
     /// There is no ceiling: a high Jaccard does not mean Drain merged the
     /// pair, since Drain never compares across token counts or tree paths.
     pub referral_floor: f64,
+    /// Most clusters one tree leaf may hold; past it, the leaf's least
+    /// recently used cluster is evicted. 0 means uncapped. Search scores
+    /// every cluster in the line's leaf, so this bounds one line's work at
+    /// `max_leaf_clusters × max_tokens` token comparisons. Without it the
+    /// bound is `max_clusters × max_tokens` (`line_cost_bounded` in the Lean
+    /// model), and one source sharing a prefix can reach it.
+    pub max_leaf_clusters: usize,
 }
 
 impl Default for Config {
@@ -43,6 +50,7 @@ impl Default for Config {
             param: "<*>".to_owned(),
             max_tokens: 128,
             referral_floor: 0.65,
+            max_leaf_clusters: 128,
         }
     }
 }
@@ -64,6 +72,7 @@ mod tests {
         assert_eq!(config.param, "<*>");
         assert_eq!(config.max_tokens, 128);
         assert_eq!(config.referral_floor, 0.65);
+        assert_eq!(config.max_leaf_clusters, 128);
     }
 
     #[test]

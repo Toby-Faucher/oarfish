@@ -26,3 +26,7 @@ regex.workspace        = true
 [[bench]]
 name    = "drain"
 harness = false
+
+[[bench]]
+name    = "worst_case"
+harness = false
