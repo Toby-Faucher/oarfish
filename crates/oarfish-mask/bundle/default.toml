@@ -18,8 +18,8 @@ version = 1
 
 [[slot]]
 name    = "TS"
-pattern = '\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})?|\d{4}/\d{2}/\d{2}[T ]\d{2}:\d{2}:\d{2}|\d{2}/[A-Za-z]{3}/\d{4}:\d{2}:\d{2}:\d{2}(?:\s[+-]\d{4})?|\b\d{2}:\d{2}:\d{2}\b'
-why     = "ISO-8601, nginx error-log slash dates, nginx common-log, and a bare wall clock. First, because a timestamp is made of numbers and everything numeric below would shred it."
+pattern = '\b(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun) (?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) {1,2}\d{1,2} \d{2}:\d{2}:\d{2}(?:\.\d+)?(?: \d{4})?\b|\b(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) {1,2}\d{1,2} \d{2}:\d{2}:\d{2}\b|\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})?|\d{4}/\d{2}/\d{2}[T ]\d{2}:\d{2}:\d{2}|\d{2}/[A-Za-z]{3}/\d{4}:\d{2}:\d{2}:\d{2}(?:\s[+-]\d{4})?|\b\d{2}:\d{2}:\d{2}\b'
+why     = "ctime (`Sun Dec 04 04:47:44 2005`, Apache's error log), the RFC 3164 syslog header (`Jun 14 15:16:01`), ISO-8601, nginx error-log slash dates, nginx common-log, and a bare wall clock. The named forms take the month and weekday with them: left literal, `Jun` and `Jul` split every template in a log that crosses a month end. First, because a timestamp is made of numbers and everything numeric below would shred it."
 
 [[slot]]
 name    = "UUID"
@@ -33,8 +33,8 @@ why     = "before HEX and before the bare clock branch of TS, both of which matc
 
 [[slot]]
 name    = "IP6"
-pattern = '\b(?:[0-9a-fA-F]{0,4}:){2,7}[0-9a-fA-F]{0,4}(?:%[A-Za-z0-9]+)?\b'
-why     = "before IP4, since a v4-mapped v6 address contains a dotted quad"
+pattern = '(?:\b[0-9a-fA-F]{1,4}(?::[0-9a-fA-F]{1,4}){0,6})?::(?:[0-9a-fA-F]{1,4}:){0,5}(?:\d{1,3}\.){3}\d{1,3}\b|\b(?:[0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}\b(?:%[A-Za-z0-9]+)?|\b[0-9a-fA-F]{1,4}(?::[0-9a-fA-F]{1,4}){0,6}::(?:[0-9a-fA-F]{1,4}(?::[0-9a-fA-F]{1,4}){0,6}\b)?(?:%[A-Za-z0-9]+)?|::[0-9a-fA-F]{1,4}(?::[0-9a-fA-F]{1,4}){0,6}\b(?:%[A-Za-z0-9]+)?'
+why     = "before IP4, since a v4-mapped v6 address contains a dotted quad. Only real shapes: eight full groups, or a `::` compression. Anything looser eats colon-joined timestamps (`22:15:29:606`) and `name:id:name` tokens, and one event lands in two templates depending on whether its millisecond field happened to look like hex."
 
 [[slot]]
 name    = "IP4"
@@ -63,8 +63,8 @@ why     = "two segments minimum, so a bare / or an isolated /tmp stays literal t
 
 [[slot]]
 name    = "HEX"
-pattern = '\b0x[0-9a-fA-F]+\b|\b[0-9a-fA-F]{8,}\b'
-why     = "kernel addresses and container ids. Eight characters minimum so ordinary short words are not swallowed."
+pattern = '\b0x[0-9a-fA-F]+\b|\b(?:[a-fA-F][0-9a-fA-F]{7,}|\d{1}[a-fA-F][0-9a-fA-F]{6,}|\d{2}[a-fA-F][0-9a-fA-F]{5,}|\d{3}[a-fA-F][0-9a-fA-F]{4,}|\d{4}[a-fA-F][0-9a-fA-F]{3,}|\d{5}[a-fA-F][0-9a-fA-F]{2,}|\d{6}[a-fA-F][0-9a-fA-F]{1,}|\d{7,}[a-fA-F][0-9a-fA-F]*|\d{21,})\b'
+why     = "kernel addresses and container ids. Eight characters minimum so ordinary short words are not swallowed, and at least one letter a-f: an all-digit run is a number, and letting length decide sent one counter to HEX at 12345678 and NUM at 1234567, two templates for one event. Past 20 digits, the u64 ceiling, no counter reaches, so a longer all-digit run is hex that happened to draw no letter (Postgres WAL names: `000000010000000000000042`). The branches spell out where the first letter sits, because the regex crate has no lookahead."
 
 [[slot]]
 name    = "SIZE"

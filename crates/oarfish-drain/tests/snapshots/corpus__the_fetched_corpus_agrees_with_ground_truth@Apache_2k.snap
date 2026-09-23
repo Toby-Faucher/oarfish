@@ -1,29 +1,17 @@
 ---
 source: crates/oarfish-drain/tests/corpus.rs
-assertion_line: 259
+assertion_line: 350
 ---
-lines: 2000 clusters: 12
-442 [Sun Dec <VAR:NUM> <VAR:TS> <VAR:NUM>] [notice] jk2_init() Found child <VAR:NUM> in scoreboard slot <VAR:NUM>
+lines: 2000 clusters: 6
+836 [<VAR:TS>] [notice] jk2_init() Found child <VAR:NUM> in scoreboard slot <VAR:NUM>
   eg: [Sun Dec 04 04:51:08 2005] [notice] jk2_init() Found child 6725 in scoreboard slot 10
-394 [Mon Dec <VAR:NUM> <VAR:TS> <VAR:NUM>] [notice] jk2_init() Found child <VAR:NUM> in scoreboard slot <VAR:NUM>
-  eg: [Mon Dec 05 03:21:00 2005] [notice] jk2_init() Found child 2760 in scoreboard slot 6
-298 [Sun Dec <VAR:NUM> <VAR:TS> <VAR:NUM>] [notice] workerEnv.init() ok <VAR:PATH>
+569 [<VAR:TS>] [notice] workerEnv.init() ok <VAR:PATH>
   eg: [Sun Dec 04 04:47:44 2005] [notice] workerEnv.init() ok /etc/httpd/conf/workers2.properties
-281 [Sun Dec <VAR:NUM> <VAR:TS> <VAR:NUM>] [error] mod_jk child workerEnv in error state <VAR:NUM>
+539 [<VAR:TS>] [error] mod_jk child workerEnv in error state <VAR:NUM>
   eg: [Sun Dec 04 04:47:44 2005] [error] mod_jk child workerEnv in error state 6
-271 [Mon Dec <VAR:NUM> <VAR:TS> <VAR:NUM>] [notice] workerEnv.init() ok <VAR:PATH>
-  eg: [Mon Dec 05 03:21:02 2005] [notice] workerEnv.init() ok /etc/httpd/conf/workers2.properties
-258 [Mon Dec <VAR:NUM> <VAR:TS> <VAR:NUM>] [error] mod_jk child workerEnv in error state <VAR:NUM>
-  eg: [Mon Dec 05 03:21:02 2005] [error] mod_jk child workerEnv in error state 6
-18 [Sun Dec <VAR:NUM> <VAR:TS> <VAR:NUM>] [error] [client <VAR:IP4>] Directory index forbidden by rule: <VAR:PATH>
+32 [<VAR:TS>] [error] [client <VAR:IP4>] Directory index forbidden by rule: <VAR:PATH>
   eg: [Sun Dec 04 05:15:09 2005] [error] [client 222.166.160.184] Directory index forbidden by rule: /var/www/html/
-14 [Mon Dec <VAR:NUM> <VAR:TS> <VAR:NUM>] [error] [client <VAR:IP4>] Directory index forbidden by rule: <VAR:PATH>
-  eg: [Mon Dec 05 01:04:31 2005] [error] [client 218.62.18.218] Directory index forbidden by rule: /var/www/html/
-6 [Mon Dec <VAR:NUM> <VAR:TS> <VAR:NUM>] [error] jk2_init() Can't find child <VAR:NUM> in scoreboard
-  eg: [Mon Dec 05 07:57:02 2005] [error] jk2_init() Can't find child 5053 in scoreboard
-6 [Mon Dec <VAR:NUM> <VAR:TS> <VAR:NUM>] [error] mod_jk child init <VAR:NUM> -<VAR:NUM>
-  eg: [Mon Dec 05 07:57:02 2005] [error] mod_jk child init 1 -2
-6 [Sun Dec <VAR:NUM> <VAR:TS> <VAR:NUM>] [error] jk2_init() Can't find child <VAR:NUM> in scoreboard
+12 [<VAR:TS>] [error] jk2_init() Can't find child <VAR:NUM> in scoreboard
   eg: [Sun Dec 04 17:43:08 2005] [error] jk2_init() Can't find child 1566 in scoreboard
-6 [Sun Dec <VAR:NUM> <VAR:TS> <VAR:NUM>] [error] mod_jk child init <VAR:NUM> -<VAR:NUM>
+12 [<VAR:TS>] [error] mod_jk child init <VAR:NUM> -<VAR:NUM>
   eg: [Sun Dec 04 17:43:12 2005] [error] mod_jk child init 1 -2

@@ -1,64 +1,274 @@
 ---
 source: crates/oarfish-drain/tests/corpus.rs
-assertion_line: 337
+assertion_line: 350
 ---
-truth_templates: 27 port_clusters: 26
+truth_templates: 27 port_clusters: 130
 unambiguous: 2000 unmatched: 0 ambiguous: 0
 impure_clusters: 2
-  seq 12 mixes ["E5", "E4"]: Dec <VAR:NUM> <VAR:TS> LabSZ sshd<VAR:PID>: Disconnecting: Too many authentication failures for <*> [preauth]
-  seq 20 mixes ["E16", "E15"]: Dec <VAR:NUM> <VAR:TS> LabSZ sshd<VAR:PID>: PAM <VAR:NUM> more authentication <*> logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=ssh ruser= rhost=<VAR:IP4>
-split_events: 1
+  seq 16 mixes ["E5", "E4"]: <VAR:TS> LabSZ sshd<VAR:PID>: Disconnecting: Too many authentication failures for <*> [preauth]
+  seq 38 mixes ["E16", "E15"]: <VAR:TS> LabSZ sshd<VAR:PID>: PAM <VAR:NUM> more authentication <*> logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=ssh ruser= rhost=<VAR:IP4>
+split_events: 3
+  E12 in 53 clusters
+  E13 in 53 clusters
   E19 in 3 clusters
-lines: 2000 clusters: 26
-413 Dec <VAR:NUM> <VAR:TS> LabSZ sshd<VAR:PID>: Received disconnect from <VAR:IP4>: <VAR:NUM>: Bye Bye [preauth]
+lines: 2000 clusters: 130
+413 <VAR:TS> LabSZ sshd<VAR:PID>: Received disconnect from <VAR:IP4>: <VAR:NUM>: Bye Bye [preauth]
   eg: Dec 10 07:07:45 LabSZ sshd[24206]: Received disconnect from 52.80.34.196: 11: Bye Bye [preauth]
-383 Dec <VAR:NUM> <VAR:TS> LabSZ sshd<VAR:PID>: Failed password for <*> from <VAR:IP4> port <VAR:NUM> ssh2
+383 <VAR:TS> LabSZ sshd<VAR:PID>: Failed password for <*> from <VAR:IP4> port <VAR:NUM> ssh2
   eg: Dec 10 07:13:43 LabSZ sshd[24227]: Failed password for root from 5.36.59.76 port 42393 ssh2
-369 Dec <VAR:NUM> <VAR:TS> LabSZ sshd<VAR:PID>: pam_unix(sshd:auth): authentication failure; logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=ssh ruser= <*> user=root
+369 <VAR:TS> LabSZ sshd<VAR:PID>: pam_unix(sshd:auth): authentication failure; logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=ssh ruser= <*> user=root
   eg: Dec 10 07:13:31 LabSZ sshd[24227]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=5.36.59.76.dynamic-dsl-ip.omantel.net.om  user=root
-135 Dec <VAR:NUM> <VAR:TS> LabSZ sshd<VAR:PID>: Failed password for invalid user <*> from <VAR:IP4> port <VAR:NUM> ssh2
+135 <VAR:TS> LabSZ sshd<VAR:PID>: Failed password for invalid user <*> from <VAR:IP4> port <VAR:NUM> ssh2
   eg: Dec 10 06:55:48 LabSZ sshd[24200]: Failed password for invalid user webmaster from 173.234.31.186 port 38926 ssh2
-135 Dec <VAR:NUM> <VAR:TS> LabSZ sshd<VAR:PID>: pam_unix(sshd:auth): check pass; user unknown
+135 <VAR:TS> LabSZ sshd<VAR:PID>: pam_unix(sshd:auth): check pass; user unknown
   eg: Dec 10 06:55:46 LabSZ sshd[24200]: pam_unix(sshd:auth): check pass; user unknown
-113 Dec <VAR:NUM> <VAR:TS> LabSZ sshd<VAR:PID>: Invalid user <*> from <VAR:IP4>
-  eg: Dec 10 06:55:46 LabSZ sshd[24200]: Invalid user webmaster from 173.234.31.186
-113 Dec <VAR:NUM> <VAR:TS> LabSZ sshd<VAR:PID>: input_userauth_request: invalid user <*> [preauth]
-  eg: Dec 10 06:55:46 LabSZ sshd[24200]: input_userauth_request: invalid user webmaster [preauth]
-110 Dec <VAR:NUM> <VAR:TS> LabSZ sshd<VAR:PID>: pam_unix(sshd:auth): authentication failure; logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=ssh ruser= <*>
+110 <VAR:TS> LabSZ sshd<VAR:PID>: pam_unix(sshd:auth): authentication failure; logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=ssh ruser= <*>
   eg: Dec 10 06:55:46 LabSZ sshd[24200]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=173.234.31.186 
-85 Dec <VAR:NUM> <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for <*> [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
+85 <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for <*> [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
   eg: Dec 10 06:55:46 LabSZ sshd[24200]: reverse mapping checking getaddrinfo for ns.marryaldkfaczcz.com [173.234.31.186] failed - POSSIBLE BREAK-IN ATTEMPT!
-45 Dec <VAR:NUM> <VAR:TS> LabSZ sshd<VAR:PID>: error: Received disconnect from <VAR:IP4>: <VAR:NUM>: No more user authentication methods available. [preauth]
+45 <VAR:TS> LabSZ sshd<VAR:PID>: error: Received disconnect from <VAR:IP4>: <VAR:NUM>: No more user authentication methods available. [preauth]
   eg: Dec 10 09:11:22 LabSZ sshd[24439]: error: Received disconnect from 103.99.0.122: 14: No more user authentication methods available. [preauth]
-34 Dec <VAR:NUM> <VAR:TS> LabSZ sshd<VAR:PID>: Connection closed by <VAR:IP4> [preauth]
+34 <VAR:TS> LabSZ sshd<VAR:PID>: Connection closed by <VAR:IP4> [preauth]
   eg: Dec 10 06:55:48 LabSZ sshd[24200]: Connection closed by 173.234.31.186 [preauth]
-15 Dec <VAR:NUM> <VAR:TS> LabSZ sshd<VAR:PID>: pam_unix(sshd:auth): authentication failure; logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=ssh ruser= rhost=<VAR:IP4> <*>
+21 <VAR:TS> LabSZ sshd<VAR:PID>: Invalid user admin from <VAR:IP4>
+  eg: Dec 10 08:24:58 LabSZ sshd[24367]: Invalid user admin from 5.188.10.180
+21 <VAR:TS> LabSZ sshd<VAR:PID>: input_userauth_request: invalid user admin [preauth]
+  eg: Dec 10 08:24:58 LabSZ sshd[24367]: input_userauth_request: invalid user admin [preauth]
+15 <VAR:TS> LabSZ sshd<VAR:PID>: pam_unix(sshd:auth): authentication failure; logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=ssh ruser= rhost=<VAR:IP4> <*>
   eg: Dec 10 07:51:18 LabSZ sshd[24326]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=195.154.37.122  user=uucp
-10 Dec <VAR:NUM> <VAR:TS> LabSZ sshd<VAR:PID>: Did not receive identification string from <VAR:IP4>
+10 <VAR:TS> LabSZ sshd<VAR:PID>: Did not receive identification string from <VAR:IP4>
   eg: Dec 10 07:34:33 LabSZ sshd[24301]: Did not receive identification string from 123.235.32.19
-8 Dec <VAR:NUM> <VAR:TS> LabSZ sshd<VAR:PID>: PAM <VAR:NUM> more authentication <*> logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=ssh ruser= rhost=<VAR:IP4>
+10 <VAR:TS> LabSZ sshd<VAR:PID>: Invalid user <VAR:NUM> from <VAR:IP4>
+  eg: Dec 10 08:24:32 LabSZ sshd[24361]: Invalid user  0101 from 5.188.10.180
+10 <VAR:TS> LabSZ sshd<VAR:PID>: input_userauth_request: invalid user <VAR:NUM> [preauth]
+  eg: Dec 10 08:24:32 LabSZ sshd[24361]: input_userauth_request: invalid user  0101 [preauth]
+8 <VAR:TS> LabSZ sshd<VAR:PID>: PAM <VAR:NUM> more authentication <*> logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=ssh ruser= rhost=<VAR:IP4>
   eg: Dec 10 08:25:22 LabSZ sshd[24369]: PAM 4 more authentication failures; logname= uid=0 euid=0 tty=ssh ruser= rhost=5.188.10.180 
-7 Dec <VAR:NUM> <VAR:TS> LabSZ sshd<VAR:PID>: PAM service(sshd) ignoring max retries; <VAR:NUM> > <VAR:NUM>
+7 <VAR:TS> LabSZ sshd<VAR:PID>: PAM service(sshd) ignoring max retries; <VAR:NUM> > <VAR:NUM>
   eg: Dec 10 07:13:56 LabSZ sshd[24227]: PAM service(sshd) ignoring max retries; 6 > 3
-7 Dec <VAR:NUM> <VAR:TS> LabSZ sshd<VAR:PID>: Received disconnect from <VAR:IP4>: <VAR:NUM>: Closed due to user request. [preauth]
+7 <VAR:TS> LabSZ sshd<VAR:PID>: Received disconnect from <VAR:IP4>: <VAR:NUM>: Closed due to user request. [preauth]
   eg: Dec 10 07:56:15 LabSZ sshd[24334]: Received disconnect from 103.207.39.165: 11: Closed due to user request. [preauth]
-4 Dec <VAR:NUM> <VAR:TS> LabSZ sshd<VAR:PID>: Failed none for invalid user <*> from <VAR:IP4> port <VAR:NUM> ssh2
+6 <VAR:TS> LabSZ sshd<VAR:PID>: Invalid user oracle from <VAR:IP4>
+  eg: Dec 10 09:17:11 LabSZ sshd[24606]: Invalid user oracle from 187.141.143.180
+6 <VAR:TS> LabSZ sshd<VAR:PID>: Invalid user support from <VAR:IP4>
+  eg: Dec 10 07:51:12 LabSZ sshd[24324]: Invalid user support from 195.154.37.122
+6 <VAR:TS> LabSZ sshd<VAR:PID>: input_userauth_request: invalid user oracle [preauth]
+  eg: Dec 10 09:17:11 LabSZ sshd[24606]: input_userauth_request: invalid user oracle [preauth]
+6 <VAR:TS> LabSZ sshd<VAR:PID>: input_userauth_request: invalid user support [preauth]
+  eg: Dec 10 07:51:12 LabSZ sshd[24324]: input_userauth_request: invalid user support [preauth]
+5 <VAR:TS> LabSZ sshd<VAR:PID>: Invalid user test from <VAR:IP4>
+  eg: Dec 10 07:55:55 LabSZ sshd[24331]: Invalid user test from 52.80.34.196
+5 <VAR:TS> LabSZ sshd<VAR:PID>: input_userauth_request: invalid user test [preauth]
+  eg: Dec 10 07:55:55 LabSZ sshd[24331]: input_userauth_request: invalid user test [preauth]
+4 <VAR:TS> LabSZ sshd<VAR:PID>: Failed none for invalid user <*> from <VAR:IP4> port <VAR:NUM> ssh2
   eg: Dec 10 08:24:40 LabSZ sshd[24363]: Failed none for invalid user 0 from 5.188.10.180 port 49811 ssh2
-3 Dec <VAR:NUM> <VAR:TS> LabSZ sshd<VAR:PID>: Disconnecting: Too many authentication failures for <*> [preauth]
+4 <VAR:TS> LabSZ sshd<VAR:PID>: Invalid user user from <VAR:IP4>
+  eg: Dec 10 09:11:26 LabSZ sshd[24443]: Invalid user user from 103.99.0.122
+4 <VAR:TS> LabSZ sshd<VAR:PID>: input_userauth_request: invalid user user [preauth]
+  eg: Dec 10 09:11:26 LabSZ sshd[24443]: input_userauth_request: invalid user user [preauth]
+3 <VAR:TS> LabSZ sshd<VAR:PID>: Disconnecting: Too many authentication failures for <*> [preauth]
   eg: Dec 10 07:13:56 LabSZ sshd[24227]: Disconnecting: Too many authentication failures for root [preauth]
-2 Dec <VAR:NUM> <VAR:TS> LabSZ sshd<VAR:PID>: PAM <VAR:NUM> more authentication failures; logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=ssh ruser= <*> user=root
+3 <VAR:TS> LabSZ sshd<VAR:PID>: Invalid user guest from <VAR:IP4>
+  eg: Dec 10 08:26:22 LabSZ sshd[24379]: Invalid user guest from 5.188.10.180
+3 <VAR:TS> LabSZ sshd<VAR:PID>: Invalid user inspur from <VAR:IP4>
+  eg: Dec 10 07:42:49 LabSZ sshd[24318]: Invalid user inspur from 183.136.162.51
+3 <VAR:TS> LabSZ sshd<VAR:PID>: Invalid user matlab from <VAR:IP4>
+  eg: Dec 10 08:44:20 LabSZ sshd[24410]: Invalid user matlab from 52.80.34.196
+3 <VAR:TS> LabSZ sshd<VAR:PID>: input_userauth_request: invalid user guest [preauth]
+  eg: Dec 10 08:26:22 LabSZ sshd[24379]: input_userauth_request: invalid user guest [preauth]
+3 <VAR:TS> LabSZ sshd<VAR:PID>: input_userauth_request: invalid user inspur [preauth]
+  eg: Dec 10 07:42:49 LabSZ sshd[24318]: input_userauth_request: invalid user inspur [preauth]
+3 <VAR:TS> LabSZ sshd<VAR:PID>: input_userauth_request: invalid user matlab [preauth]
+  eg: Dec 10 08:44:20 LabSZ sshd[24410]: input_userauth_request: invalid user matlab [preauth]
+2 <VAR:TS> LabSZ sshd<VAR:PID>: Invalid user anonymous from <VAR:IP4>
+  eg: Dec 10 09:11:39 LabSZ sshd[24451]: Invalid user anonymous from 103.99.0.122
+2 <VAR:TS> LabSZ sshd<VAR:PID>: Invalid user cisco from <VAR:IP4>
+  eg: Dec 10 09:11:56 LabSZ sshd[24464]: Invalid user cisco from 103.99.0.122
+2 <VAR:TS> LabSZ sshd<VAR:PID>: Invalid user deploy from <VAR:IP4>
+  eg: Dec 10 09:18:28 LabSZ sshd[24634]: Invalid user deploy from 187.141.143.180
+2 <VAR:TS> LabSZ sshd<VAR:PID>: Invalid user ftpuser from <VAR:IP4>
+  eg: Dec 10 09:12:30 LabSZ sshd[24490]: Invalid user ftpuser from 103.99.0.122
+2 <VAR:TS> LabSZ sshd<VAR:PID>: Invalid user magnos from <VAR:IP4>
+  eg: Dec 10 09:19:37 LabSZ sshd[24665]: Invalid user magnos from 187.141.143.180
+2 <VAR:TS> LabSZ sshd<VAR:PID>: Invalid user ubnt from <VAR:IP4>
+  eg: Dec 10 09:11:45 LabSZ sshd[24456]: Invalid user ubnt from 103.99.0.122
+2 <VAR:TS> LabSZ sshd<VAR:PID>: Invalid user ubuntu from <VAR:IP4>
+  eg: Dec 10 09:18:11 LabSZ sshd[24628]: Invalid user ubuntu from 187.141.143.180
+2 <VAR:TS> LabSZ sshd<VAR:PID>: Invalid user webmaster from <VAR:IP4>
+  eg: Dec 10 06:55:46 LabSZ sshd[24200]: Invalid user webmaster from 173.234.31.186
+2 <VAR:TS> LabSZ sshd<VAR:PID>: PAM <VAR:NUM> more authentication failures; logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=ssh ruser= <*> user=root
   eg: Dec 10 07:13:56 LabSZ sshd[24227]: PAM 5 more authentication failures; logname= uid=0 euid=0 tty=ssh ruser= rhost=5.36.59.76.dynamic-dsl-ip.omantel.net.om  user=root
-2 Dec <VAR:NUM> <VAR:TS> LabSZ sshd<VAR:PID>: error: Received disconnect from <VAR:IP4>: <VAR:NUM>: com.jcraft.jsch.JSchException: Auth fail [preauth]
+2 <VAR:TS> LabSZ sshd<VAR:PID>: error: Received disconnect from <VAR:IP4>: <VAR:NUM>: com.jcraft.jsch.JSchException: Auth fail [preauth]
   eg: Dec 10 07:51:15 LabSZ sshd[24324]: error: Received disconnect from 195.154.37.122: 3: com.jcraft.jsch.JSchException: Auth fail [preauth]
-2 Dec <VAR:NUM> <VAR:TS> LabSZ sshd<VAR:PID>: message repeated <VAR:NUM> times: [ Failed password for root from <VAR:IP4> port <VAR:NUM> ssh2]
+2 <VAR:TS> LabSZ sshd<VAR:PID>: input_userauth_request: invalid user anonymous [preauth]
+  eg: Dec 10 09:11:39 LabSZ sshd[24451]: input_userauth_request: invalid user anonymous [preauth]
+2 <VAR:TS> LabSZ sshd<VAR:PID>: input_userauth_request: invalid user cisco [preauth]
+  eg: Dec 10 09:11:56 LabSZ sshd[24464]: input_userauth_request: invalid user cisco [preauth]
+2 <VAR:TS> LabSZ sshd<VAR:PID>: input_userauth_request: invalid user deploy [preauth]
+  eg: Dec 10 09:18:28 LabSZ sshd[24634]: input_userauth_request: invalid user deploy [preauth]
+2 <VAR:TS> LabSZ sshd<VAR:PID>: input_userauth_request: invalid user ftpuser [preauth]
+  eg: Dec 10 09:12:30 LabSZ sshd[24490]: input_userauth_request: invalid user ftpuser [preauth]
+2 <VAR:TS> LabSZ sshd<VAR:PID>: input_userauth_request: invalid user magnos [preauth]
+  eg: Dec 10 09:19:37 LabSZ sshd[24665]: input_userauth_request: invalid user magnos [preauth]
+2 <VAR:TS> LabSZ sshd<VAR:PID>: input_userauth_request: invalid user ubnt [preauth]
+  eg: Dec 10 09:11:45 LabSZ sshd[24456]: input_userauth_request: invalid user ubnt [preauth]
+2 <VAR:TS> LabSZ sshd<VAR:PID>: input_userauth_request: invalid user ubuntu [preauth]
+  eg: Dec 10 09:18:11 LabSZ sshd[24628]: input_userauth_request: invalid user ubuntu [preauth]
+2 <VAR:TS> LabSZ sshd<VAR:PID>: input_userauth_request: invalid user webmaster [preauth]
+  eg: Dec 10 06:55:46 LabSZ sshd[24200]: input_userauth_request: invalid user webmaster [preauth]
+2 <VAR:TS> LabSZ sshd<VAR:PID>: message repeated <VAR:NUM> times: [ Failed password for root from <VAR:IP4> port <VAR:NUM> ssh2]
   eg: Dec 10 07:13:56 LabSZ sshd[24227]: message repeated 5 times: [ Failed password for root from 5.36.59.76 port 42393 ssh2]
-1 Dec <VAR:NUM> <VAR:TS> LabSZ sshd<VAR:PID>: Accepted password for fztu from <VAR:IP4> port <VAR:NUM> ssh2
+1 <VAR:TS> LabSZ sshd<VAR:PID>: Accepted password for fztu from <VAR:IP4> port <VAR:NUM> ssh2
   eg: Dec 10 09:32:20 LabSZ sshd[24680]: Accepted password for fztu from 119.137.62.142 port 49116 ssh2
-1 Dec <VAR:NUM> <VAR:TS> LabSZ sshd<VAR:PID>: Received disconnect from <VAR:IP4>: <VAR:NUM>: disconnected by user
+1 <VAR:TS> LabSZ sshd<VAR:PID>: Invalid user FILTER from <VAR:IP4>
+  eg: Dec 10 09:31:22 LabSZ sshd[24676]: Invalid user FILTER from 104.192.3.34
+1 <VAR:TS> LabSZ sshd<VAR:PID>: Invalid user Management from <VAR:IP4>
+  eg: Dec 10 09:12:38 LabSZ sshd[24497]: Invalid user Management from 103.99.0.122
+1 <VAR:TS> LabSZ sshd<VAR:PID>: Invalid user PlcmSpIp from <VAR:IP4>
+  eg: Dec 10 09:12:35 LabSZ sshd[24494]: Invalid user PlcmSpIp from 103.99.0.122
+1 <VAR:TS> LabSZ sshd<VAR:PID>: Invalid user abc from <VAR:IP4>
+  eg: Dec 10 09:17:41 LabSZ sshd[24618]: Invalid user abc from 187.141.143.180
+1 <VAR:TS> LabSZ sshd<VAR:PID>: Invalid user api from <VAR:IP4>
+  eg: Dec 10 09:12:57 LabSZ sshd[24487]: Invalid user api from 185.190.58.151
+1 <VAR:TS> LabSZ sshd<VAR:PID>: Invalid user boot from <VAR:IP4>
+  eg: Dec 10 10:55:49 LabSZ sshd[24959]: Invalid user boot from 183.62.140.253
+1 <VAR:TS> LabSZ sshd<VAR:PID>: Invalid user bssh from <VAR:IP4>
+  eg: Dec 10 09:19:15 LabSZ sshd[24657]: Invalid user bssh from 187.141.143.180
+1 <VAR:TS> LabSZ sshd<VAR:PID>: Invalid user butter from <VAR:IP4>
+  eg: Dec 10 09:16:59 LabSZ sshd[24599]: Invalid user butter from 187.141.143.180
+1 <VAR:TS> LabSZ sshd<VAR:PID>: Invalid user chen from <VAR:IP4>
+  eg: Dec 10 07:11:42 LabSZ sshd[24224]: Invalid user chen from 202.100.179.208
+1 <VAR:TS> LabSZ sshd<VAR:PID>: Invalid user cheng from <VAR:IP4>
+  eg: Dec 10 10:55:07 LabSZ sshd[24914]: Invalid user cheng from 202.100.179.208
+1 <VAR:TS> LabSZ sshd<VAR:PID>: Invalid user cyrus from <VAR:IP4>
+  eg: Dec 10 09:20:00 LabSZ sshd[24673]: Invalid user cyrus from 187.141.143.180
+1 <VAR:TS> LabSZ sshd<VAR:PID>: Invalid user default from <VAR:IP4>
+  eg: Dec 10 08:25:58 LabSZ sshd[24375]: Invalid user default from 5.188.10.180
+1 <VAR:TS> LabSZ sshd<VAR:PID>: Invalid user dff from <VAR:IP4>
+  eg: Dec 10 10:54:29 LabSZ sshd[24870]: Invalid user dff from 183.62.140.253
+1 <VAR:TS> LabSZ sshd<VAR:PID>: Invalid user eoor from <VAR:IP4>
+  eg: Dec 10 09:16:48 LabSZ sshd[24595]: Invalid user eoor from 187.141.143.180
+1 <VAR:TS> LabSZ sshd<VAR:PID>: Invalid user ghost from <VAR:IP4>
+  eg: Dec 10 09:18:05 LabSZ sshd[24626]: Invalid user ghost from 187.141.143.180
+1 <VAR:TS> LabSZ sshd<VAR:PID>: Invalid user ingrid from <VAR:IP4>
+  eg: Dec 10 09:19:49 LabSZ sshd[24669]: Invalid user ingrid from 187.141.143.180
+1 <VAR:TS> LabSZ sshd<VAR:PID>: Invalid user jay from <VAR:IP4>
+  eg: Dec 10 09:19:54 LabSZ sshd[24671]: Invalid user jay from 187.141.143.180
+1 <VAR:TS> LabSZ sshd<VAR:PID>: Invalid user monitor from <VAR:IP4>
+  eg: Dec 10 09:12:28 LabSZ sshd[24488]: Invalid user monitor from 103.99.0.122
+1 <VAR:TS> LabSZ sshd<VAR:PID>: Invalid user nagios from <VAR:IP4>
+  eg: Dec 10 09:17:31 LabSZ sshd[24614]: Invalid user nagios from 187.141.143.180
+1 <VAR:TS> LabSZ sshd<VAR:PID>: Invalid user nagios1 from <VAR:IP4>
+  eg: Dec 10 09:18:52 LabSZ sshd[24649]: Invalid user nagios1 from 187.141.143.180
+1 <VAR:TS> LabSZ sshd<VAR:PID>: Invalid user operator from <VAR:IP4>
+  eg: Dec 10 09:12:06 LabSZ sshd[24473]: Invalid user operator from 103.99.0.122
+1 <VAR:TS> LabSZ sshd<VAR:PID>: Invalid user oralce from <VAR:IP4>
+  eg: Dec 10 09:18:40 LabSZ sshd[24645]: Invalid user oralce from 187.141.143.180
+1 <VAR:TS> LabSZ sshd<VAR:PID>: Invalid user pgadmin from <VAR:IP4>
+  eg: Dec 10 07:28:03 LabSZ sshd[24245]: Invalid user pgadmin from 112.95.230.3
+1 <VAR:TS> LabSZ sshd<VAR:PID>: Invalid user pi from <VAR:IP4>
+  eg: Dec 10 09:12:33 LabSZ sshd[24492]: Invalid user pi from 103.99.0.122
+1 <VAR:TS> LabSZ sshd<VAR:PID>: Invalid user postgres from <VAR:IP4>
+  eg: Dec 10 09:17:26 LabSZ sshd[24612]: Invalid user postgres from 187.141.143.180
+1 <VAR:TS> LabSZ sshd<VAR:PID>: Invalid user postgres1 from <VAR:IP4>
+  eg: Dec 10 09:18:58 LabSZ sshd[24651]: Invalid user postgres1 from 187.141.143.180
+1 <VAR:TS> LabSZ sshd<VAR:PID>: Invalid user redhat from <VAR:IP4>
+  eg: Dec 10 09:17:05 LabSZ sshd[24604]: Invalid user redhat from 187.141.143.180
+1 <VAR:TS> LabSZ sshd<VAR:PID>: Invalid user sandeep from <VAR:IP4>
+  eg: Dec 10 11:00:57 LabSZ sshd[25283]: Invalid user sandeep from 88.147.143.242
+1 <VAR:TS> LabSZ sshd<VAR:PID>: Invalid user ted from <VAR:IP4>
+  eg: Dec 10 09:17:46 LabSZ sshd[24620]: Invalid user ted from 187.141.143.180
+1 <VAR:TS> LabSZ sshd<VAR:PID>: Invalid user test1 from <VAR:IP4>
+  eg: Dec 10 09:19:04 LabSZ sshd[24653]: Invalid user test1 from 187.141.143.180
+1 <VAR:TS> LabSZ sshd<VAR:PID>: Invalid user test2 from <VAR:IP4>
+  eg: Dec 10 09:19:09 LabSZ sshd[24655]: Invalid user test2 from 187.141.143.180
+1 <VAR:TS> LabSZ sshd<VAR:PID>: Invalid user test9 from <VAR:IP4>
+  eg: Dec 10 07:07:38 LabSZ sshd[24206]: Invalid user test9 from 52.80.34.196
+1 <VAR:TS> LabSZ sshd<VAR:PID>: Invalid user utsims from <VAR:IP4>
+  eg: Dec 10 07:28:25 LabSZ sshd[24265]: Invalid user utsims from 112.95.230.3
+1 <VAR:TS> LabSZ sshd<VAR:PID>: Invalid user vnc from <VAR:IP4>
+  eg: Dec 10 09:17:52 LabSZ sshd[24622]: Invalid user vnc from 187.141.143.180
+1 <VAR:TS> LabSZ sshd<VAR:PID>: Invalid user www from <VAR:IP4>
+  eg: Dec 10 09:17:36 LabSZ sshd[24616]: Invalid user www from 187.141.143.180
+1 <VAR:TS> LabSZ sshd<VAR:PID>: Invalid user zhangyan from <VAR:IP4>
+  eg: Dec 10 10:54:27 LabSZ sshd[24868]: Invalid user zhangyan from 183.62.140.253
+1 <VAR:TS> LabSZ sshd<VAR:PID>: Received disconnect from <VAR:IP4>: <VAR:NUM>: disconnected by user
   eg: Dec 10 09:45:06 LabSZ sshd[24761]: Received disconnect from 119.137.62.142: 11: disconnected by user
-1 Dec <VAR:NUM> <VAR:TS> LabSZ sshd<VAR:PID>: fatal: Write failed: Connection reset by peer [preauth]
+1 <VAR:TS> LabSZ sshd<VAR:PID>: fatal: Write failed: Connection reset by peer [preauth]
   eg: Dec 10 11:03:53 LabSZ sshd[25457]: fatal: Write failed: Connection reset by peer [preauth]
-1 Dec <VAR:NUM> <VAR:TS> LabSZ sshd<VAR:PID>: pam_unix(sshd:session): session closed for user fztu
+1 <VAR:TS> LabSZ sshd<VAR:PID>: input_userauth_request: invalid user FILTER [preauth]
+  eg: Dec 10 09:31:22 LabSZ sshd[24676]: input_userauth_request: invalid user FILTER [preauth]
+1 <VAR:TS> LabSZ sshd<VAR:PID>: input_userauth_request: invalid user Management [preauth]
+  eg: Dec 10 09:12:38 LabSZ sshd[24497]: input_userauth_request: invalid user Management [preauth]
+1 <VAR:TS> LabSZ sshd<VAR:PID>: input_userauth_request: invalid user PlcmSpIp [preauth]
+  eg: Dec 10 09:12:35 LabSZ sshd[24494]: input_userauth_request: invalid user PlcmSpIp [preauth]
+1 <VAR:TS> LabSZ sshd<VAR:PID>: input_userauth_request: invalid user abc [preauth]
+  eg: Dec 10 09:17:41 LabSZ sshd[24618]: input_userauth_request: invalid user abc [preauth]
+1 <VAR:TS> LabSZ sshd<VAR:PID>: input_userauth_request: invalid user api [preauth]
+  eg: Dec 10 09:12:57 LabSZ sshd[24487]: input_userauth_request: invalid user api [preauth]
+1 <VAR:TS> LabSZ sshd<VAR:PID>: input_userauth_request: invalid user boot [preauth]
+  eg: Dec 10 10:55:49 LabSZ sshd[24959]: input_userauth_request: invalid user boot [preauth]
+1 <VAR:TS> LabSZ sshd<VAR:PID>: input_userauth_request: invalid user bssh [preauth]
+  eg: Dec 10 09:19:15 LabSZ sshd[24657]: input_userauth_request: invalid user bssh [preauth]
+1 <VAR:TS> LabSZ sshd<VAR:PID>: input_userauth_request: invalid user butter [preauth]
+  eg: Dec 10 09:16:59 LabSZ sshd[24599]: input_userauth_request: invalid user butter [preauth]
+1 <VAR:TS> LabSZ sshd<VAR:PID>: input_userauth_request: invalid user chen [preauth]
+  eg: Dec 10 07:11:42 LabSZ sshd[24224]: input_userauth_request: invalid user chen [preauth]
+1 <VAR:TS> LabSZ sshd<VAR:PID>: input_userauth_request: invalid user cheng [preauth]
+  eg: Dec 10 10:55:07 LabSZ sshd[24914]: input_userauth_request: invalid user cheng [preauth]
+1 <VAR:TS> LabSZ sshd<VAR:PID>: input_userauth_request: invalid user cyrus [preauth]
+  eg: Dec 10 09:20:00 LabSZ sshd[24673]: input_userauth_request: invalid user cyrus [preauth]
+1 <VAR:TS> LabSZ sshd<VAR:PID>: input_userauth_request: invalid user default [preauth]
+  eg: Dec 10 08:25:58 LabSZ sshd[24375]: input_userauth_request: invalid user default [preauth]
+1 <VAR:TS> LabSZ sshd<VAR:PID>: input_userauth_request: invalid user dff [preauth]
+  eg: Dec 10 10:54:29 LabSZ sshd[24870]: input_userauth_request: invalid user dff [preauth]
+1 <VAR:TS> LabSZ sshd<VAR:PID>: input_userauth_request: invalid user eoor [preauth]
+  eg: Dec 10 09:16:48 LabSZ sshd[24595]: input_userauth_request: invalid user eoor [preauth]
+1 <VAR:TS> LabSZ sshd<VAR:PID>: input_userauth_request: invalid user ghost [preauth]
+  eg: Dec 10 09:18:05 LabSZ sshd[24626]: input_userauth_request: invalid user ghost [preauth]
+1 <VAR:TS> LabSZ sshd<VAR:PID>: input_userauth_request: invalid user ingrid [preauth]
+  eg: Dec 10 09:19:49 LabSZ sshd[24669]: input_userauth_request: invalid user ingrid [preauth]
+1 <VAR:TS> LabSZ sshd<VAR:PID>: input_userauth_request: invalid user jay [preauth]
+  eg: Dec 10 09:19:54 LabSZ sshd[24671]: input_userauth_request: invalid user jay [preauth]
+1 <VAR:TS> LabSZ sshd<VAR:PID>: input_userauth_request: invalid user monitor [preauth]
+  eg: Dec 10 09:12:28 LabSZ sshd[24488]: input_userauth_request: invalid user monitor [preauth]
+1 <VAR:TS> LabSZ sshd<VAR:PID>: input_userauth_request: invalid user nagios [preauth]
+  eg: Dec 10 09:17:31 LabSZ sshd[24614]: input_userauth_request: invalid user nagios [preauth]
+1 <VAR:TS> LabSZ sshd<VAR:PID>: input_userauth_request: invalid user nagios1 [preauth]
+  eg: Dec 10 09:18:52 LabSZ sshd[24649]: input_userauth_request: invalid user nagios1 [preauth]
+1 <VAR:TS> LabSZ sshd<VAR:PID>: input_userauth_request: invalid user operator [preauth]
+  eg: Dec 10 09:12:06 LabSZ sshd[24473]: input_userauth_request: invalid user operator [preauth]
+1 <VAR:TS> LabSZ sshd<VAR:PID>: input_userauth_request: invalid user oralce [preauth]
+  eg: Dec 10 09:18:40 LabSZ sshd[24645]: input_userauth_request: invalid user oralce [preauth]
+1 <VAR:TS> LabSZ sshd<VAR:PID>: input_userauth_request: invalid user pgadmin [preauth]
+  eg: Dec 10 07:28:03 LabSZ sshd[24245]: input_userauth_request: invalid user pgadmin [preauth]
+1 <VAR:TS> LabSZ sshd<VAR:PID>: input_userauth_request: invalid user pi [preauth]
+  eg: Dec 10 09:12:33 LabSZ sshd[24492]: input_userauth_request: invalid user pi [preauth]
+1 <VAR:TS> LabSZ sshd<VAR:PID>: input_userauth_request: invalid user postgres [preauth]
+  eg: Dec 10 09:17:26 LabSZ sshd[24612]: input_userauth_request: invalid user postgres [preauth]
+1 <VAR:TS> LabSZ sshd<VAR:PID>: input_userauth_request: invalid user postgres1 [preauth]
+  eg: Dec 10 09:18:58 LabSZ sshd[24651]: input_userauth_request: invalid user postgres1 [preauth]
+1 <VAR:TS> LabSZ sshd<VAR:PID>: input_userauth_request: invalid user redhat [preauth]
+  eg: Dec 10 09:17:05 LabSZ sshd[24604]: input_userauth_request: invalid user redhat [preauth]
+1 <VAR:TS> LabSZ sshd<VAR:PID>: input_userauth_request: invalid user sandeep [preauth]
+  eg: Dec 10 11:00:57 LabSZ sshd[25283]: input_userauth_request: invalid user sandeep [preauth]
+1 <VAR:TS> LabSZ sshd<VAR:PID>: input_userauth_request: invalid user ted [preauth]
+  eg: Dec 10 09:17:46 LabSZ sshd[24620]: input_userauth_request: invalid user ted [preauth]
+1 <VAR:TS> LabSZ sshd<VAR:PID>: input_userauth_request: invalid user test1 [preauth]
+  eg: Dec 10 09:19:04 LabSZ sshd[24653]: input_userauth_request: invalid user test1 [preauth]
+1 <VAR:TS> LabSZ sshd<VAR:PID>: input_userauth_request: invalid user test2 [preauth]
+  eg: Dec 10 09:19:09 LabSZ sshd[24655]: input_userauth_request: invalid user test2 [preauth]
+1 <VAR:TS> LabSZ sshd<VAR:PID>: input_userauth_request: invalid user test9 [preauth]
+  eg: Dec 10 07:07:38 LabSZ sshd[24206]: input_userauth_request: invalid user test9 [preauth]
+1 <VAR:TS> LabSZ sshd<VAR:PID>: input_userauth_request: invalid user utsims [preauth]
+  eg: Dec 10 07:28:25 LabSZ sshd[24265]: input_userauth_request: invalid user utsims [preauth]
+1 <VAR:TS> LabSZ sshd<VAR:PID>: input_userauth_request: invalid user vnc [preauth]
+  eg: Dec 10 09:17:52 LabSZ sshd[24622]: input_userauth_request: invalid user vnc [preauth]
+1 <VAR:TS> LabSZ sshd<VAR:PID>: input_userauth_request: invalid user www [preauth]
+  eg: Dec 10 09:17:36 LabSZ sshd[24616]: input_userauth_request: invalid user www [preauth]
+1 <VAR:TS> LabSZ sshd<VAR:PID>: input_userauth_request: invalid user zhangyan [preauth]
+  eg: Dec 10 10:54:27 LabSZ sshd[24868]: input_userauth_request: invalid user zhangyan [preauth]
+1 <VAR:TS> LabSZ sshd<VAR:PID>: pam_unix(sshd:session): session closed for user fztu
   eg: Dec 10 09:45:06 LabSZ sshd[24680]: pam_unix(sshd:session): session closed for user fztu
-1 Dec <VAR:NUM> <VAR:TS> LabSZ sshd<VAR:PID>: pam_unix(sshd:session): session opened for user fztu by (uid=<VAR:NUM>)
+1 <VAR:TS> LabSZ sshd<VAR:PID>: pam_unix(sshd:session): session opened for user fztu by (uid=<VAR:NUM>)
   eg: Dec 10 09:32:20 LabSZ sshd[24680]: pam_unix(sshd:session): session opened for user fztu by (uid=0)
