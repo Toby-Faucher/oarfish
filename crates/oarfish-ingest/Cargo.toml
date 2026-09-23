@@ -36,6 +36,7 @@ journald = ["dep:systemd"]
 [dev-dependencies]
 insta.workspace      = true
 proptest.workspace   = true
+rstest.workspace     = true
 serde_json.workspace = true
 wiremock.workspace   = true
 oarfish-jev.workspace = true

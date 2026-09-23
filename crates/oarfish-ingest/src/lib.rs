@@ -16,7 +16,10 @@
 //! Drain table and drains it.
 //!
 //! The raw line is always preserved verbatim. At 3am you want the bytes that
-//! actually arrived, not our interpretation of them.
+//! actually arrived, not our interpretation of them. What gets clustered is
+//! narrower: a syslog frame with a real timestamp clusters from its app name
+//! on (`Event::body_offset`), so neither the clock nor the host lands in the
+//! template. Every other line clusters whole.
 //!
 //! Depends on `oarfish-core` for `Event`, on `oarfish-mask` and
 //! `oarfish-drain` for the pipeline, and on nothing else in the workspace.

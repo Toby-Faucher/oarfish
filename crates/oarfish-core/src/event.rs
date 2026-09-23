@@ -53,6 +53,13 @@ pub struct Event {
     /// Everything source-specific: syslog severity and facility, the journal's
     /// fields, OTLP attributes. `BTreeMap` for deterministic snapshots.
     pub attrs: BTreeMap<String, String>,
+    /// Where the part worth clustering starts in `raw`: past a syslog frame's
+    /// priority, timestamp and hostname, at the app name. Zero, the whole
+    /// line, for every source that sends the message alone and for any frame
+    /// the listener could not split with confidence. The host is already
+    /// `host` and alarms key on it, so leaving it in the template would only
+    /// give one event a template per machine.
+    pub body_offset: usize,
 }
 
 impl Event {
@@ -66,6 +73,7 @@ impl Event {
             host: host.into(),
             source,
             attrs: BTreeMap::new(),
+            body_offset: 0,
         }
     }
 
@@ -74,6 +82,17 @@ impl Event {
     /// this is the one place the conversion is unavoidable.
     pub fn raw_lossy(&self) -> Cow<'_, str> {
         String::from_utf8_lossy(&self.raw)
+    }
+
+    /// The clustered part of the line, from `body_offset` on, converted like
+    /// [`Event::raw_lossy`]. What the mask and Drain see; `raw` is still what
+    /// the operator sees. An offset past the end reads as the whole line
+    /// rather than panicking on the every-line path.
+    pub fn body_lossy(&self) -> Cow<'_, str> {
+        match self.raw.get(self.body_offset..) {
+            Some(body) => String::from_utf8_lossy(body),
+            None => self.raw_lossy(),
+        }
     }
 }
 
@@ -116,7 +135,20 @@ mod tests {
             host: "web01".to_owned(),
             source: Source::Syslog,
             attrs: BTreeMap::from([("severity".to_owned(), "err".to_owned())]),
+            body_offset: 0,
         }
+    }
+
+    #[test]
+    fn the_body_starts_at_the_offset_and_raw_is_untouched() {
+        let mut event = an_event();
+        event.raw = Bytes::from_static(b"<13>Sep 22 10:00:01 pve sshd[1]: ok");
+        event.body_offset = 24;
+        assert_eq!(event.body_lossy(), "sshd[1]: ok");
+        assert_eq!(event.raw_lossy(), "<13>Sep 22 10:00:01 pve sshd[1]: ok");
+
+        event.body_offset = 999;
+        assert_eq!(event.body_lossy(), event.raw_lossy());
     }
 
     #[test]
