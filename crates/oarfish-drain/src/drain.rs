@@ -226,15 +226,13 @@ impl Drain {
 
     /// Best candidate at or above threshold among the leaf's live clusters.
     /// Compares the stored token vectors in place: no re-parsing.
+    ///
+    /// Every length faces the threshold, one-token lines included. Loki
+    /// returns a short line's first cluster unchecked, which is safe there
+    /// only because Loki drops lines under four tokens; oarfish clusters
+    /// every line, so the shortcut merged `succeeded` into `failed`.
     fn search(&self, tokens: &[&str]) -> Option<u64> {
         let leaf = tree::search(&self.root, tokens, &self.config)?;
-        if tokens.len() < 2 {
-            return leaf
-                .cluster_ids
-                .iter()
-                .find(|id| self.table.contains_key(id))
-                .copied();
-        }
         let (mut best_seq, mut best_sim, mut best_params) = (0, -1.0, 0);
         let mut found = false;
         for id in &leaf.cluster_ids {
@@ -395,6 +393,22 @@ mod tests {
                 .template,
             TemplateId::of(&template)
         );
+    }
+
+    /// A one-token line faces the threshold like any other. `succeeded` then
+    /// `failed` used to share a cluster templated `<*>`: invariant 4's own
+    /// example, merged. Found by `plausible` against the Lean model
+    /// (`lean/OarfishDrain`), which proves join soundness at every length.
+    #[test]
+    fn one_token_lines_join_only_when_equal() {
+        let mut drain = drain();
+        let ok = drain.train("succeeded");
+        let failed = drain.train("failed");
+        assert_ne!(ok.seq, failed.seq, "succeeded and failed must stay apart");
+        assert_eq!(drain.get(ok.seq).expect("live").template, "succeeded");
+        assert_eq!(drain.get(failed.seq).expect("live").template, "failed");
+        // An equal line still joins.
+        assert_eq!(drain.train("succeeded").seq, ok.seq);
     }
 
     #[test]

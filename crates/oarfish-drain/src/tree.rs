@@ -59,8 +59,15 @@ pub(crate) fn search<'a>(root: &'a Node, tokens: &[&str], config: &Config) -> Op
 /// Equal tokens over total, parameter positions in the cluster skipped rather
 /// than counted. Returns the similarity and the parameter count (for
 /// tie-breaking); lengths are equal by construction.
+///
+/// Two empty token lists are identical: 1.0, not `0.0 / 0.0`. NaN fails
+/// every comparison, so an empty line would never rejoin the empty cluster
+/// and each `""` would open a new one.
 pub(crate) fn similarity(cluster_tokens: &[String], tokens: &[&str], param: &str) -> (f64, usize) {
     debug_assert_eq!(cluster_tokens.len(), tokens.len());
+    if cluster_tokens.is_empty() {
+        return (1.0, 0);
+    }
     let mut similar = 0;
     let mut params = 0;
     for (ct, t) in cluster_tokens.iter().zip(tokens) {
@@ -225,6 +232,23 @@ mod tests {
         let a = drain2.train(base);
         let c = drain2.train(eight);
         assert_ne!(a.seq, c.seq, "8/10 must not reach the 0.90 threshold");
+    }
+
+    /// The Lean model (`lean/OarfishDrain/Model.lean`) states the threshold
+    /// exactly, as `10 * similar >= 9 * n`, and its proofs rest on that. This
+    /// pins the `f64` comparison the Rust actually runs to the same answer at
+    /// every length a line can have, so the proofs carry over.
+    #[test]
+    fn the_float_threshold_agrees_with_the_exact_one() {
+        let config = crate::Config::default();
+        assert_eq!(config.similarity, 0.90, "the exact form below assumes 0.90");
+        for n in 1..=config.max_tokens {
+            for similar in 0..=n {
+                let float = similar as f64 / n as f64 >= config.similarity;
+                let exact = 10 * similar >= 9 * n;
+                assert_eq!(float, exact, "disagree at {similar}/{n}");
+            }
+        }
     }
 
     #[test]
