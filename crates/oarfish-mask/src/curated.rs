@@ -29,7 +29,7 @@ mod tests {
     fn the_curated_bundle_loads() {
         let bundle = curated();
         assert_eq!(bundle.version(), 1);
-        assert_eq!(bundle.slots().len(), 14);
+        assert_eq!(bundle.slots().len(), 15);
     }
 
     #[test]
@@ -64,6 +64,69 @@ mod tests {
     #[case("sshd[12345]: start", "sshd<VAR:PID>: start")]
     #[case("retry 7 of 9", "retry <VAR:NUM> of <VAR:NUM>")]
     fn each_slot_masks_what_it_claims(#[case] line: &str, #[case] expected: &str) {
+        assert_eq!(curated().mask(line).template(), expected);
+    }
+
+    /// Named months and weekdays belong to the timestamp. Left literal, a log
+    /// crossing a month end splits every template it has.
+    #[rstest::rstest]
+    #[case(
+        "Jun 14 15:16:01 combo sshd[19939]: ok",
+        "<VAR:TS> combo sshd<VAR:PID>: ok"
+    )]
+    #[case("Sep  2 03:00:00 pve kernel: ok", "<VAR:TS> pve kernel: ok")]
+    #[case("[Sun Dec 04 04:47:44 2005] [notice] ok", "[<VAR:TS>] [notice] ok")]
+    #[case("the June report", "the June report")]
+    fn named_dates_are_timestamps(#[case] line: &str, #[case] expected: &str) {
+        assert_eq!(curated().mask(line).template(), expected);
+    }
+
+    /// IP6 takes real address shapes only: colon-joined clocks and
+    /// `name:id:name` tokens are not addresses.
+    #[rstest::rstest]
+    #[case("peer ::1 closed", "peer <VAR:IP6> closed")]
+    #[case("peer ::ffff:10.0.0.1 closed", "peer <VAR:IP6> closed")]
+    #[case("peer 2001:db8:0:0:0:0:2:1 closed", "peer <VAR:IP6> closed")]
+    #[case("at 22:15:29:606 ok", "at <VAR:TS>:<VAR:NUM> ok")]
+    #[case("[SendWorker:188978561024:Quorum]", "[SendWorker:<VAR:NUM>:Quorum]")]
+    fn ip6_takes_real_addresses_only(#[case] line: &str, #[case] expected: &str) {
+        assert_eq!(curated().mask(line).template(), expected);
+    }
+
+    /// An all-digit run is a number at any length; HEX needs a letter.
+    #[rstest::rstest]
+    #[case("seq 1234567 ok", "seq <VAR:NUM> ok")]
+    #[case("seq 12345678 ok", "seq <VAR:NUM> ok")]
+    #[case("id 1234567a ok", "id <VAR:HEX> ok")]
+    #[case("id deadbeef ok", "id <VAR:HEX> ok")]
+    #[case("the word acceded", "the word acceded")]
+    #[case("wal 000000010000000000000042 ok", "wal <VAR:HEX> ok")]
+    #[case("max 18446744073709551615 ok", "max <VAR:NUM> ok")]
+    fn hex_needs_a_letter(#[case] line: &str, #[case] expected: &str) {
+        assert_eq!(curated().mask(line).template(), expected);
+    }
+
+    /// DNS names are variables; dotted code names are the logger's identity.
+    #[rstest::rstest]
+    #[case(
+        "reverse mapping for ns.example.com failed",
+        "reverse mapping for <VAR:HOST> failed"
+    )]
+    #[case("rhost=massive.merukuru.org", "rhost=<VAR:HOST>")]
+    #[case("proxy.cse.cuhk.edu.hk:5070 open", "<VAR:HOST>:<VAR:NUM> open")]
+    #[case("lookup nas.lan ok", "lookup <VAR:HOST> ok")]
+    #[case(
+        "org.apache.hadoop.mapred.MapTask: done",
+        "org.apache.hadoop.mapred.MapTask: done"
+    )]
+    #[case("nova.compute.manager started", "nova.compute.manager started")]
+    #[case("see README.md", "see README.md")]
+    #[case(
+        "mapreduce.v2.app.rm.RMContainerAllocator: ok",
+        "mapreduce.v2.app.rm.RMContainerAllocator: ok"
+    )]
+    #[case("mail to ops@example.com bounced", "mail to <VAR:EMAIL> bounced")]
+    fn host_takes_dns_names_only(#[case] line: &str, #[case] expected: &str) {
         assert_eq!(curated().mask(line).template(), expected);
     }
 

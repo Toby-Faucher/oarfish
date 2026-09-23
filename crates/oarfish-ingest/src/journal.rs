@@ -59,6 +59,7 @@ pub fn record_to_event(record: &BTreeMap<String, String>, received_at: OffsetDat
         host: resolve(record.get("_HOSTNAME"), "localhost"),
         source: Source::Journal,
         attrs,
+        body_offset: 0,
     }
 }
 
@@ -198,7 +199,8 @@ mod tests {
             "_HOSTNAME": "web01",
             "_SOURCE_REALTIME_TIMESTAMP": "1789812000000000",
             "_SYSTEMD_UNIT": "sshd.service"
-          }
+          },
+          "body_offset": 0
         }
         "###);
     }

@@ -157,6 +157,7 @@ pub fn log_record_to_event(
         host: resolve(resource_attrs.get("host.name"), peer),
         source: Source::Otlp,
         attrs,
+        body_offset: 0,
     }
 }
 
@@ -313,7 +314,8 @@ mod tests {
             "resource.host.name": "web01",
             "scope": "app",
             "severity_text": "ERROR"
-          }
+          },
+          "body_offset": 0
         }
         "###);
     }

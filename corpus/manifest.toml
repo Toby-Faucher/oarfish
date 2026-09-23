@@ -1,6 +1,7 @@
 # Third-party log corpora, fetched on demand and never committed.
 #
-# Source: loghub - https://github.com/logpai/loghub
+# Sources: loghub    - https://github.com/logpai/loghub
+#          loghub-2.0 - https://github.com/logpai/loghub-2.0 (same licence)
 #
 # The loghub datasets are made "freely available for research or academic work",
 # and the project asks that any use or distribution cite the repository URL
@@ -11,6 +12,11 @@
 #
 # The `_templates.csv` files carry loghub's ground-truth templates. M1 does not
 # use them; M2 compares the Drain port against them.
+#
+# The loghub-2.0 entries are the corrected 2k samples: all 14 systems, each a
+# raw `.log` plus a `_structured_corrected.csv` carrying the ground-truth
+# template of every line (row N is line N). oarfish-drain's `loghub2` test
+# scores the port against them with loghub-2.0's own GA and FGA.
 
 [[file]]
 url    = "https://raw.githubusercontent.com/logpai/loghub/dd61d0952749ee7963bde24220d1be5ede023033/Linux/Linux_2k.log"
@@ -41,3 +47,143 @@ sha256 = "60ed088e0aa899a467c66863c30e2ae460d7bc1def1a65bff70ec47a668df0f7"
 url    = "https://raw.githubusercontent.com/logpai/loghub/dd61d0952749ee7963bde24220d1be5ede023033/OpenSSH/OpenSSH_2k.log_templates.csv"
 path   = "loghub/OpenSSH_2k.log_templates.csv"
 sha256 = "c23fb1bb925abd0ca2b110e661f5f0a1e0f66e4783e61a502ef3486a2d84b2c7"
+
+[[file]]
+url    = "https://raw.githubusercontent.com/logpai/loghub-2.0/ac4aad2ea86f561e5a0acbc6587fa28b487259f9/2k_dataset/Apache/Apache_2k.log"
+path   = "loghub-2.0/Apache_2k.log"
+sha256 = "0e51c532c9b82b49234f5691ed96d7b584eaeef9f35839b9c365769a80294705"
+
+[[file]]
+url    = "https://raw.githubusercontent.com/logpai/loghub-2.0/ac4aad2ea86f561e5a0acbc6587fa28b487259f9/2k_dataset/Apache/Apache_2k.log_structured_corrected.csv"
+path   = "loghub-2.0/Apache_2k.log_structured_corrected.csv"
+sha256 = "cf14ee33db62dd6c9ef2a8c53746a9805ab94fdafb12728067d18d1e706142a5"
+
+[[file]]
+url    = "https://raw.githubusercontent.com/logpai/loghub-2.0/ac4aad2ea86f561e5a0acbc6587fa28b487259f9/2k_dataset/BGL/BGL_2k.log"
+path   = "loghub-2.0/BGL_2k.log"
+sha256 = "5adca4dadb7cf162bf220e4f0605faa2fdcfd8645c7547d2cf312dac3d42fee7"
+
+[[file]]
+url    = "https://raw.githubusercontent.com/logpai/loghub-2.0/ac4aad2ea86f561e5a0acbc6587fa28b487259f9/2k_dataset/BGL/BGL_2k.log_structured_corrected.csv"
+path   = "loghub-2.0/BGL_2k.log_structured_corrected.csv"
+sha256 = "4fc16cd4c0be63e94126e62656d5f4d653dc893ad1d774534cee8d30c419712c"
+
+[[file]]
+url    = "https://raw.githubusercontent.com/logpai/loghub-2.0/ac4aad2ea86f561e5a0acbc6587fa28b487259f9/2k_dataset/Hadoop/Hadoop_2k.log"
+path   = "loghub-2.0/Hadoop_2k.log"
+sha256 = "dc0e343fc230bce6fd8be4c0cbb05cfaecdaf5fdcf88e029b584f0346fb60312"
+
+[[file]]
+url    = "https://raw.githubusercontent.com/logpai/loghub-2.0/ac4aad2ea86f561e5a0acbc6587fa28b487259f9/2k_dataset/Hadoop/Hadoop_2k.log_structured_corrected.csv"
+path   = "loghub-2.0/Hadoop_2k.log_structured_corrected.csv"
+sha256 = "e0ed6dd6ca732d65f479b7a5184f7f3545a3fadb0e516db5ecdf8c770c7f059b"
+
+[[file]]
+url    = "https://raw.githubusercontent.com/logpai/loghub-2.0/ac4aad2ea86f561e5a0acbc6587fa28b487259f9/2k_dataset/HDFS/HDFS_2k.log"
+path   = "loghub-2.0/HDFS_2k.log"
+sha256 = "6fe25449e79d75e35bb223ead9729fa02c00b7abb23e4e8ec0f3bb2addec6e3a"
+
+[[file]]
+url    = "https://raw.githubusercontent.com/logpai/loghub-2.0/ac4aad2ea86f561e5a0acbc6587fa28b487259f9/2k_dataset/HDFS/HDFS_2k.log_structured_corrected.csv"
+path   = "loghub-2.0/HDFS_2k.log_structured_corrected.csv"
+sha256 = "509f684dd67df0c6088d4ab6ee853b4692635149bb92805c73779b6bcf9cab7f"
+
+[[file]]
+url    = "https://raw.githubusercontent.com/logpai/loghub-2.0/ac4aad2ea86f561e5a0acbc6587fa28b487259f9/2k_dataset/HealthApp/HealthApp_2k.log"
+path   = "loghub-2.0/HealthApp_2k.log"
+sha256 = "205728b6583de25cf9d9a9fd15366591a6b79b634679cd04ec8e6531127e6d06"
+
+[[file]]
+url    = "https://raw.githubusercontent.com/logpai/loghub-2.0/ac4aad2ea86f561e5a0acbc6587fa28b487259f9/2k_dataset/HealthApp/HealthApp_2k.log_structured_corrected.csv"
+path   = "loghub-2.0/HealthApp_2k.log_structured_corrected.csv"
+sha256 = "7286b39d78df76a78fbeb0e7a34a90960fec13adaa52cb3287227dbd8b0b8581"
+
+[[file]]
+url    = "https://raw.githubusercontent.com/logpai/loghub-2.0/ac4aad2ea86f561e5a0acbc6587fa28b487259f9/2k_dataset/HPC/HPC_2k.log"
+path   = "loghub-2.0/HPC_2k.log"
+sha256 = "531ff6f67fc9c1228f1f004e3a1b529f395cca8bae5d3b36a2cb5beb226d2386"
+
+[[file]]
+url    = "https://raw.githubusercontent.com/logpai/loghub-2.0/ac4aad2ea86f561e5a0acbc6587fa28b487259f9/2k_dataset/HPC/HPC_2k.log_structured_corrected.csv"
+path   = "loghub-2.0/HPC_2k.log_structured_corrected.csv"
+sha256 = "9ec54444c96ec050b4da64ca9b57db87c5d023262500451d5f54730e955486cf"
+
+[[file]]
+url    = "https://raw.githubusercontent.com/logpai/loghub-2.0/ac4aad2ea86f561e5a0acbc6587fa28b487259f9/2k_dataset/Linux/Linux_2k.log"
+path   = "loghub-2.0/Linux_2k.log"
+sha256 = "6d50cefa82380651f910df35fda0995a237a3c788b7b2e3d2d37e51fb9debca9"
+
+[[file]]
+url    = "https://raw.githubusercontent.com/logpai/loghub-2.0/ac4aad2ea86f561e5a0acbc6587fa28b487259f9/2k_dataset/Linux/Linux_2k.log_structured_corrected.csv"
+path   = "loghub-2.0/Linux_2k.log_structured_corrected.csv"
+sha256 = "fcfbc63a1f280a45199448642211ee81adab65e7901521fdbb185ebed1ba692c"
+
+[[file]]
+url    = "https://raw.githubusercontent.com/logpai/loghub-2.0/ac4aad2ea86f561e5a0acbc6587fa28b487259f9/2k_dataset/Mac/Mac_2k.log"
+path   = "loghub-2.0/Mac_2k.log"
+sha256 = "46944eb852979f1c6311742cd53e8a0abd19f7583e35c9f5eabe37470ca58fc1"
+
+[[file]]
+url    = "https://raw.githubusercontent.com/logpai/loghub-2.0/ac4aad2ea86f561e5a0acbc6587fa28b487259f9/2k_dataset/Mac/Mac_2k.log_structured_corrected.csv"
+path   = "loghub-2.0/Mac_2k.log_structured_corrected.csv"
+sha256 = "79d304a41ec046056b2e715853ece182441111a835ce7c345323492d90587487"
+
+[[file]]
+url    = "https://raw.githubusercontent.com/logpai/loghub-2.0/ac4aad2ea86f561e5a0acbc6587fa28b487259f9/2k_dataset/OpenSSH/OpenSSH_2k.log"
+path   = "loghub-2.0/OpenSSH_2k.log"
+sha256 = "16da02f37eb00cec9ec65c4d71175897be45b266aa7d6e01b26186678e2288b8"
+
+[[file]]
+url    = "https://raw.githubusercontent.com/logpai/loghub-2.0/ac4aad2ea86f561e5a0acbc6587fa28b487259f9/2k_dataset/OpenSSH/OpenSSH_2k.log_structured_corrected.csv"
+path   = "loghub-2.0/OpenSSH_2k.log_structured_corrected.csv"
+sha256 = "c2d0f5f538125fed320486fed4f7256ce84ecf0d1174f93cbc2cdb1e5a4c183d"
+
+[[file]]
+url    = "https://raw.githubusercontent.com/logpai/loghub-2.0/ac4aad2ea86f561e5a0acbc6587fa28b487259f9/2k_dataset/OpenStack/OpenStack_2k.log"
+path   = "loghub-2.0/OpenStack_2k.log"
+sha256 = "6ea7e03648d7bd6231cae427cb509073a9fbc71f49ded5301673495902edab17"
+
+[[file]]
+url    = "https://raw.githubusercontent.com/logpai/loghub-2.0/ac4aad2ea86f561e5a0acbc6587fa28b487259f9/2k_dataset/OpenStack/OpenStack_2k.log_structured_corrected.csv"
+path   = "loghub-2.0/OpenStack_2k.log_structured_corrected.csv"
+sha256 = "121c9211cff977f6f35c496c23b485cdeae34a9bf391173eaafa0b9acbf2f4b4"
+
+[[file]]
+url    = "https://raw.githubusercontent.com/logpai/loghub-2.0/ac4aad2ea86f561e5a0acbc6587fa28b487259f9/2k_dataset/Proxifier/Proxifier_2k.log"
+path   = "loghub-2.0/Proxifier_2k.log"
+sha256 = "94b6a9d98d76e7ad7841ed10caa463cd4e638a229b92a220a2bf1707552adbb9"
+
+[[file]]
+url    = "https://raw.githubusercontent.com/logpai/loghub-2.0/ac4aad2ea86f561e5a0acbc6587fa28b487259f9/2k_dataset/Proxifier/Proxifier_2k.log_structured_corrected.csv"
+path   = "loghub-2.0/Proxifier_2k.log_structured_corrected.csv"
+sha256 = "1c7fe4e59ec97dcbf468ce1f1db38dc52739e9627f79b096089fc2505b9f6e5c"
+
+[[file]]
+url    = "https://raw.githubusercontent.com/logpai/loghub-2.0/ac4aad2ea86f561e5a0acbc6587fa28b487259f9/2k_dataset/Spark/Spark_2k.log"
+path   = "loghub-2.0/Spark_2k.log"
+sha256 = "87e9715f97f193135d807226b0949c129035df0842cc141f48332fa712eaf81b"
+
+[[file]]
+url    = "https://raw.githubusercontent.com/logpai/loghub-2.0/ac4aad2ea86f561e5a0acbc6587fa28b487259f9/2k_dataset/Spark/Spark_2k.log_structured_corrected.csv"
+path   = "loghub-2.0/Spark_2k.log_structured_corrected.csv"
+sha256 = "793cb5a1c23b1fab03e3d7b09d0d2f61995d736c63b92ae194599f20f426fb5f"
+
+[[file]]
+url    = "https://raw.githubusercontent.com/logpai/loghub-2.0/ac4aad2ea86f561e5a0acbc6587fa28b487259f9/2k_dataset/Thunderbird/Thunderbird_2k.log"
+path   = "loghub-2.0/Thunderbird_2k.log"
+sha256 = "e92e8a6af2a545067ea34b5cd97c05eb27c8274053f7fc22e34c15dc80309bb0"
+
+[[file]]
+url    = "https://raw.githubusercontent.com/logpai/loghub-2.0/ac4aad2ea86f561e5a0acbc6587fa28b487259f9/2k_dataset/Thunderbird/Thunderbird_2k.log_structured_corrected.csv"
+path   = "loghub-2.0/Thunderbird_2k.log_structured_corrected.csv"
+sha256 = "3458f9d5b04d7e0f1f1e4677a71291008dd7e92c5c9e78c90b733dfdb1c97231"
+
+[[file]]
+url    = "https://raw.githubusercontent.com/logpai/loghub-2.0/ac4aad2ea86f561e5a0acbc6587fa28b487259f9/2k_dataset/Zookeeper/Zookeeper_2k.log"
+path   = "loghub-2.0/Zookeeper_2k.log"
+sha256 = "ca38c8b373c693760a86dea60ad73ea69cee2c260576f8bb329a1b1e068c2949"
+
+[[file]]
+url    = "https://raw.githubusercontent.com/logpai/loghub-2.0/ac4aad2ea86f561e5a0acbc6587fa28b487259f9/2k_dataset/Zookeeper/Zookeeper_2k.log_structured_corrected.csv"
+path   = "loghub-2.0/Zookeeper_2k.log_structured_corrected.csv"
+sha256 = "099a7a6d941846f958fe5287ff14968d9fa874f09c7d133a0aae29200dc34d61"

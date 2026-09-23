@@ -57,10 +57,11 @@ impl Pipeline {
     }
 
     /// Mask one event and train the table on it. The mask boundary converts
-    /// through [`Event::raw_lossy`]: the one place invalid UTF-8 unavoidably
-    /// becomes the replacement character.
+    /// through [`Event::body_lossy`]: the one place invalid UTF-8 unavoidably
+    /// becomes the replacement character, and the syslog header (timestamp,
+    /// host) stays out of the template.
     pub fn train_one(&mut self, event: &Event) -> Assignment {
-        let lossy = event.raw_lossy();
+        let lossy = event.body_lossy();
         let masked = self.bundle.mask(&lossy);
         self.drain.train(masked.template())
     }
@@ -73,7 +74,7 @@ impl Pipeline {
     /// structurally close pairs for merge review. Candidate scanning runs
     /// only here, perhaps a dozen times a day, never per line.
     pub fn assign(&mut self, event: &Event) -> (Assignment, EngineInput) {
-        let lossy = event.raw_lossy();
+        let lossy = event.body_lossy();
         let masked = self.bundle.mask(&lossy);
         let (assignment, cluster) = self.drain.train_get(masked.template());
         let input = EngineInput {
@@ -219,6 +220,29 @@ mod tests {
             input.template_id,
             oarfish_core::TemplateId::of(&input.template)
         );
+    }
+
+    /// One message from two hosts is one template: the host is `Event.host`,
+    /// which alarms already key on, so it has no business in the template.
+    /// The event keeps its raw frame, header and all.
+    #[test]
+    fn the_same_message_from_two_hosts_is_one_template() {
+        let mut pipeline = Pipeline::new(
+            oarfish_mask::curated().clone(),
+            Drain::new(oarfish_drain::Config::default()).expect("default config is valid"),
+        );
+        let peer = "10.0.0.9:40000".parse().expect("test peer");
+        let now = time::OffsetDateTime::UNIX_EPOCH;
+        let from = |frame: &'static [u8]| crate::syslog::frame_to_event(frame, &peer, now);
+
+        let pve1 = from(b"<13>Sep 22 10:00:01 pve1 pvedaemon[1234]: starting worker UPID");
+        let pve2 = from(b"<13>Oct  3 23:59:59 pve2 pvedaemon[99]: starting worker UPID");
+        let (first, input) = pipeline.assign(&pve1);
+        let (second, _) = pipeline.assign(&pve2);
+
+        assert_eq!(first.template, second.template);
+        assert!(!input.template.contains("pve1"), "{}", input.template);
+        assert_eq!(input.event.raw, pve1.raw);
     }
 
     #[tokio::test]

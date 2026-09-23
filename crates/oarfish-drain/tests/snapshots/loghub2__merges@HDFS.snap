@@ -1,0 +1,5 @@
+---
+source: crates/oarfish-drain/tests/loghub2.rs
+assertion_line: 241
+---
+line mode: 0 port clusters mix ground-truth groups (0 lines)

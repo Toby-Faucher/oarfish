@@ -18,6 +18,8 @@ rstest.workspace       = true
 proptest.workspace     = true
 criterion.workspace    = true
 oarfish-mask.workspace = true
+oarfish-ingest.workspace = true
+time.workspace         = true
 csv.workspace          = true
 regex.workspace        = true
 

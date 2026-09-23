@@ -102,7 +102,16 @@ host: string, source: Source,
  * Everything source-specific: syslog severity and facility, the journal's
  * fields, OTLP attributes. `BTreeMap` for deterministic snapshots.
  */
-attrs: { [key in string]: string }, };
+attrs: { [key in string]: string }, 
+/**
+ * Where the part worth clustering starts in `raw`: past a syslog frame's
+ * priority, timestamp and hostname, at the app name. Zero, the whole
+ * line, for every source that sends the message alone and for any frame
+ * the listener could not split with confidence. The host is already
+ * `host` and alarms key on it, so leaving it in the template would only
+ * give one event a template per machine.
+ */
+body_offset: number, };
 
 /**
  * Where an alarm would surface. Thresholds scale with the stakes: waking
