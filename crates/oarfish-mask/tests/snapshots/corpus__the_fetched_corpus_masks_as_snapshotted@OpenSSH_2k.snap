@@ -3,7 +3,7 @@ source: crates/oarfish-mask/tests/corpus.rs
 assertion_line: 89
 ---
 raw:    Dec 10 06:55:46 LabSZ sshd[24200]: reverse mapping checking getaddrinfo for ns.marryaldkfaczcz.com [173.234.31.186] failed - POSSIBLE BREAK-IN ATTEMPT!
-masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for ns.marryaldkfaczcz.com [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
+masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for <VAR:HOST> [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
 
 raw:    Dec 10 06:55:46 LabSZ sshd[24200]: Invalid user webmaster from 173.234.31.186
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Invalid user webmaster from <VAR:IP4>
@@ -36,7 +36,7 @@ raw:    Dec 10 07:07:38 LabSZ sshd[24206]: pam_unix(sshd:auth): check pass; user
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: pam_unix(sshd:auth): check pass; user unknown
 
 raw:    Dec 10 07:07:38 LabSZ sshd[24206]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=ec2-52-80-34-196.cn-north-1.compute.amazonaws.com.cn 
-masked: <VAR:TS> LabSZ sshd<VAR:PID>: pam_unix(sshd:auth): authentication failure; logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=ssh ruser= rhost=ec2-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>.cn-north-<VAR:NUM>.compute.amazonaws.com.cn 
+masked: <VAR:TS> LabSZ sshd<VAR:PID>: pam_unix(sshd:auth): authentication failure; logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=ssh ruser= rhost=<VAR:HOST> 
 
 raw:    Dec 10 07:07:45 LabSZ sshd[24206]: Failed password for invalid user test9 from 52.80.34.196 port 36060 ssh2
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Failed password for invalid user test9 from <VAR:IP4> port <VAR:NUM> ssh2
@@ -45,7 +45,7 @@ raw:    Dec 10 07:07:45 LabSZ sshd[24206]: Received disconnect from 52.80.34.196
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Received disconnect from <VAR:IP4>: <VAR:NUM>: Bye Bye [preauth]
 
 raw:    Dec 10 07:08:28 LabSZ sshd[24208]: reverse mapping checking getaddrinfo for ns.marryaldkfaczcz.com [173.234.31.186] failed - POSSIBLE BREAK-IN ATTEMPT!
-masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for ns.marryaldkfaczcz.com [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
+masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for <VAR:HOST> [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
 
 raw:    Dec 10 07:08:28 LabSZ sshd[24208]: Invalid user webmaster from 173.234.31.186
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Invalid user webmaster from <VAR:IP4>
@@ -84,7 +84,7 @@ raw:    Dec 10 07:11:44 LabSZ sshd[24224]: Received disconnect from 202.100.179.
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Received disconnect from <VAR:IP4>: <VAR:NUM>: Bye Bye [preauth]
 
 raw:    Dec 10 07:13:31 LabSZ sshd[24227]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=5.36.59.76.dynamic-dsl-ip.omantel.net.om  user=root
-masked: <VAR:TS> LabSZ sshd<VAR:PID>: pam_unix(sshd:auth): authentication failure; logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=ssh ruser= rhost=<VAR:IP4>.dynamic-dsl-ip.omantel.net.om  user=root
+masked: <VAR:TS> LabSZ sshd<VAR:PID>: pam_unix(sshd:auth): authentication failure; logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=ssh ruser= rhost=<VAR:IP4>.<VAR:HOST>.om  user=root
 
 raw:    Dec 10 07:13:43 LabSZ sshd[24227]: Failed password for root from 5.36.59.76 port 42393 ssh2
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Failed password for root from <VAR:IP4> port <VAR:NUM> ssh2
@@ -96,7 +96,7 @@ raw:    Dec 10 07:13:56 LabSZ sshd[24227]: Disconnecting: Too many authenticatio
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Disconnecting: Too many authentication failures for root [preauth]
 
 raw:    Dec 10 07:13:56 LabSZ sshd[24227]: PAM 5 more authentication failures; logname= uid=0 euid=0 tty=ssh ruser= rhost=5.36.59.76.dynamic-dsl-ip.omantel.net.om  user=root
-masked: <VAR:TS> LabSZ sshd<VAR:PID>: PAM <VAR:NUM> more authentication failures; logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=ssh ruser= rhost=<VAR:IP4>.dynamic-dsl-ip.omantel.net.om  user=root
+masked: <VAR:TS> LabSZ sshd<VAR:PID>: PAM <VAR:NUM> more authentication failures; logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=ssh ruser= rhost=<VAR:IP4>.<VAR:HOST>.om  user=root
 
 raw:    Dec 10 07:13:56 LabSZ sshd[24227]: PAM service(sshd) ignoring max retries; 6 > 3
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: PAM service(sshd) ignoring max retries; <VAR:NUM> > <VAR:NUM>
@@ -441,7 +441,7 @@ raw:    Dec 10 07:42:51 LabSZ sshd[24318]: Received disconnect from 183.136.162.
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Received disconnect from <VAR:IP4>: <VAR:NUM>: Bye Bye [preauth]
 
 raw:    Dec 10 07:48:00 LabSZ sshd[24321]: reverse mapping checking getaddrinfo for 191-210-223-172.user.vivozap.com.br [191.210.223.172] failed - POSSIBLE BREAK-IN ATTEMPT!
-masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for <VAR:NUM>-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>.user.vivozap.com.br [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
+masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for <VAR:HOST>.br [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
 
 raw:    Dec 10 07:48:00 LabSZ sshd[24321]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=191.210.223.172  user=root
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: pam_unix(sshd:auth): authentication failure; logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=ssh ruser= rhost=<VAR:IP4>  user=root
@@ -456,7 +456,7 @@ raw:    Dec 10 07:51:09 LabSZ sshd[24323]: Did not receive identification string
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Did not receive identification string from <VAR:IP4>
 
 raw:    Dec 10 07:51:12 LabSZ sshd[24324]: reverse mapping checking getaddrinfo for 195-154-37-122.rev.poneytelecom.eu [195.154.37.122] failed - POSSIBLE BREAK-IN ATTEMPT!
-masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for <VAR:NUM>-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>.rev.poneytelecom.eu [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
+masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for <VAR:HOST> [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
 
 raw:    Dec 10 07:51:12 LabSZ sshd[24324]: Invalid user support from 195.154.37.122
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Invalid user support from <VAR:IP4>
@@ -477,7 +477,7 @@ raw:    Dec 10 07:51:15 LabSZ sshd[24324]: error: Received disconnect from 195.1
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: error: Received disconnect from <VAR:IP4>: <VAR:NUM>: com.jcraft.jsch.JSchException: Auth fail [preauth]
 
 raw:    Dec 10 07:51:17 LabSZ sshd[24326]: reverse mapping checking getaddrinfo for 195-154-37-122.rev.poneytelecom.eu [195.154.37.122] failed - POSSIBLE BREAK-IN ATTEMPT!
-masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for <VAR:NUM>-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>.rev.poneytelecom.eu [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
+masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for <VAR:HOST> [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
 
 raw:    Dec 10 07:51:18 LabSZ sshd[24326]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=195.154.37.122  user=uucp
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: pam_unix(sshd:auth): authentication failure; logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=ssh ruser= rhost=<VAR:IP4>  user=uucp
@@ -501,7 +501,7 @@ raw:    Dec 10 07:55:55 LabSZ sshd[24331]: pam_unix(sshd:auth): check pass; user
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: pam_unix(sshd:auth): check pass; user unknown
 
 raw:    Dec 10 07:55:55 LabSZ sshd[24331]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=ec2-52-80-34-196.cn-north-1.compute.amazonaws.com.cn 
-masked: <VAR:TS> LabSZ sshd<VAR:PID>: pam_unix(sshd:auth): authentication failure; logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=ssh ruser= rhost=ec2-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>.cn-north-<VAR:NUM>.compute.amazonaws.com.cn 
+masked: <VAR:TS> LabSZ sshd<VAR:PID>: pam_unix(sshd:auth): authentication failure; logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=ssh ruser= rhost=<VAR:HOST> 
 
 raw:    Dec 10 07:56:02 LabSZ sshd[24331]: Failed password for invalid user test from 52.80.34.196 port 36060 ssh2
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Failed password for invalid user test from <VAR:IP4> port <VAR:NUM> ssh2
@@ -876,7 +876,7 @@ raw:    Dec 10 08:44:20 LabSZ sshd[24410]: pam_unix(sshd:auth): check pass; user
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: pam_unix(sshd:auth): check pass; user unknown
 
 raw:    Dec 10 08:44:20 LabSZ sshd[24410]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=ec2-52-80-34-196.cn-north-1.compute.amazonaws.com.cn 
-masked: <VAR:TS> LabSZ sshd<VAR:PID>: pam_unix(sshd:auth): authentication failure; logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=ssh ruser= rhost=ec2-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>.cn-north-<VAR:NUM>.compute.amazonaws.com.cn 
+masked: <VAR:TS> LabSZ sshd<VAR:PID>: pam_unix(sshd:auth): authentication failure; logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=ssh ruser= rhost=<VAR:HOST> 
 
 raw:    Dec 10 08:44:27 LabSZ sshd[24410]: Failed password for invalid user matlab from 52.80.34.196 port 46199 ssh2
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Failed password for invalid user matlab from <VAR:IP4> port <VAR:NUM> ssh2
@@ -1551,7 +1551,7 @@ raw:    Dec 10 09:12:44 LabSZ sshd[24501]: error: Received disconnect from 103.9
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: error: Received disconnect from <VAR:IP4>: <VAR:NUM>: No more user authentication methods available. [preauth]
 
 raw:    Dec 10 09:12:46 LabSZ sshd[24503]: reverse mapping checking getaddrinfo for customer-187-141-143-180-sta.uninet-ide.com.mx [187.141.143.180] failed - POSSIBLE BREAK-IN ATTEMPT!
-masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for customer-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-sta.uninet-ide.com.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
+masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for <VAR:HOST>.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
 
 raw:    Dec 10 09:12:46 LabSZ sshd[24503]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=187.141.143.180  user=root
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: pam_unix(sshd:auth): authentication failure; logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=ssh ruser= rhost=<VAR:IP4>  user=root
@@ -1563,7 +1563,7 @@ raw:    Dec 10 09:12:48 LabSZ sshd[24503]: Received disconnect from 187.141.143.
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Received disconnect from <VAR:IP4>: <VAR:NUM>: Bye Bye [preauth]
 
 raw:    Dec 10 09:12:51 LabSZ sshd[24505]: reverse mapping checking getaddrinfo for customer-187-141-143-180-sta.uninet-ide.com.mx [187.141.143.180] failed - POSSIBLE BREAK-IN ATTEMPT!
-masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for customer-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-sta.uninet-ide.com.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
+masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for <VAR:HOST>.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
 
 raw:    Dec 10 09:12:51 LabSZ sshd[24505]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=187.141.143.180  user=root
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: pam_unix(sshd:auth): authentication failure; logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=ssh ruser= rhost=<VAR:IP4>  user=root
@@ -1587,7 +1587,7 @@ raw:    Dec 10 09:12:57 LabSZ sshd[24487]: pam_unix(sshd:auth): authentication f
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: pam_unix(sshd:auth): authentication failure; logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=ssh ruser= rhost=<VAR:IP4> 
 
 raw:    Dec 10 09:12:57 LabSZ sshd[24507]: reverse mapping checking getaddrinfo for customer-187-141-143-180-sta.uninet-ide.com.mx [187.141.143.180] failed - POSSIBLE BREAK-IN ATTEMPT!
-masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for customer-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-sta.uninet-ide.com.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
+masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for <VAR:HOST>.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
 
 raw:    Dec 10 09:12:57 LabSZ sshd[24507]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=187.141.143.180  user=root
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: pam_unix(sshd:auth): authentication failure; logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=ssh ruser= rhost=<VAR:IP4>  user=root
@@ -1602,7 +1602,7 @@ raw:    Dec 10 09:12:59 LabSZ sshd[24507]: Received disconnect from 187.141.143.
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Received disconnect from <VAR:IP4>: <VAR:NUM>: Bye Bye [preauth]
 
 raw:    Dec 10 09:13:03 LabSZ sshd[24509]: reverse mapping checking getaddrinfo for customer-187-141-143-180-sta.uninet-ide.com.mx [187.141.143.180] failed - POSSIBLE BREAK-IN ATTEMPT!
-masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for customer-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-sta.uninet-ide.com.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
+masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for <VAR:HOST>.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
 
 raw:    Dec 10 09:13:03 LabSZ sshd[24509]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=187.141.143.180  user=root
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: pam_unix(sshd:auth): authentication failure; logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=ssh ruser= rhost=<VAR:IP4>  user=root
@@ -1617,7 +1617,7 @@ raw:    Dec 10 09:13:05 LabSZ sshd[24509]: Received disconnect from 187.141.143.
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Received disconnect from <VAR:IP4>: <VAR:NUM>: Bye Bye [preauth]
 
 raw:    Dec 10 09:13:08 LabSZ sshd[24512]: reverse mapping checking getaddrinfo for customer-187-141-143-180-sta.uninet-ide.com.mx [187.141.143.180] failed - POSSIBLE BREAK-IN ATTEMPT!
-masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for customer-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-sta.uninet-ide.com.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
+masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for <VAR:HOST>.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
 
 raw:    Dec 10 09:13:08 LabSZ sshd[24512]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=187.141.143.180  user=root
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: pam_unix(sshd:auth): authentication failure; logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=ssh ruser= rhost=<VAR:IP4>  user=root
@@ -1629,7 +1629,7 @@ raw:    Dec 10 09:13:10 LabSZ sshd[24512]: Received disconnect from 187.141.143.
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Received disconnect from <VAR:IP4>: <VAR:NUM>: Bye Bye [preauth]
 
 raw:    Dec 10 09:13:13 LabSZ sshd[24514]: reverse mapping checking getaddrinfo for customer-187-141-143-180-sta.uninet-ide.com.mx [187.141.143.180] failed - POSSIBLE BREAK-IN ATTEMPT!
-masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for customer-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-sta.uninet-ide.com.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
+masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for <VAR:HOST>.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
 
 raw:    Dec 10 09:13:13 LabSZ sshd[24514]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=187.141.143.180  user=root
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: pam_unix(sshd:auth): authentication failure; logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=ssh ruser= rhost=<VAR:IP4>  user=root
@@ -1641,7 +1641,7 @@ raw:    Dec 10 09:13:15 LabSZ sshd[24514]: Received disconnect from 187.141.143.
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Received disconnect from <VAR:IP4>: <VAR:NUM>: Bye Bye [preauth]
 
 raw:    Dec 10 09:13:19 LabSZ sshd[24516]: reverse mapping checking getaddrinfo for customer-187-141-143-180-sta.uninet-ide.com.mx [187.141.143.180] failed - POSSIBLE BREAK-IN ATTEMPT!
-masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for customer-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-sta.uninet-ide.com.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
+masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for <VAR:HOST>.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
 
 raw:    Dec 10 09:13:19 LabSZ sshd[24516]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=187.141.143.180  user=root
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: pam_unix(sshd:auth): authentication failure; logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=ssh ruser= rhost=<VAR:IP4>  user=root
@@ -1656,7 +1656,7 @@ raw:    Dec 10 09:13:22 LabSZ sshd[24511]: Did not receive identification string
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Did not receive identification string from <VAR:IP4>
 
 raw:    Dec 10 09:13:25 LabSZ sshd[24518]: reverse mapping checking getaddrinfo for customer-187-141-143-180-sta.uninet-ide.com.mx [187.141.143.180] failed - POSSIBLE BREAK-IN ATTEMPT!
-masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for customer-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-sta.uninet-ide.com.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
+masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for <VAR:HOST>.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
 
 raw:    Dec 10 09:13:25 LabSZ sshd[24518]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=187.141.143.180  user=root
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: pam_unix(sshd:auth): authentication failure; logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=ssh ruser= rhost=<VAR:IP4>  user=root
@@ -1668,7 +1668,7 @@ raw:    Dec 10 09:13:27 LabSZ sshd[24518]: Received disconnect from 187.141.143.
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Received disconnect from <VAR:IP4>: <VAR:NUM>: Bye Bye [preauth]
 
 raw:    Dec 10 09:13:30 LabSZ sshd[24520]: reverse mapping checking getaddrinfo for customer-187-141-143-180-sta.uninet-ide.com.mx [187.141.143.180] failed - POSSIBLE BREAK-IN ATTEMPT!
-masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for customer-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-sta.uninet-ide.com.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
+masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for <VAR:HOST>.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
 
 raw:    Dec 10 09:13:30 LabSZ sshd[24520]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=187.141.143.180  user=root
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: pam_unix(sshd:auth): authentication failure; logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=ssh ruser= rhost=<VAR:IP4>  user=root
@@ -1680,7 +1680,7 @@ raw:    Dec 10 09:13:33 LabSZ sshd[24520]: Received disconnect from 187.141.143.
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Received disconnect from <VAR:IP4>: <VAR:NUM>: Bye Bye [preauth]
 
 raw:    Dec 10 09:13:36 LabSZ sshd[24522]: reverse mapping checking getaddrinfo for customer-187-141-143-180-sta.uninet-ide.com.mx [187.141.143.180] failed - POSSIBLE BREAK-IN ATTEMPT!
-masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for customer-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-sta.uninet-ide.com.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
+masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for <VAR:HOST>.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
 
 raw:    Dec 10 09:13:36 LabSZ sshd[24522]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=187.141.143.180  user=root
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: pam_unix(sshd:auth): authentication failure; logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=ssh ruser= rhost=<VAR:IP4>  user=root
@@ -1692,7 +1692,7 @@ raw:    Dec 10 09:13:39 LabSZ sshd[24522]: Received disconnect from 187.141.143.
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Received disconnect from <VAR:IP4>: <VAR:NUM>: Bye Bye [preauth]
 
 raw:    Dec 10 09:13:42 LabSZ sshd[24525]: reverse mapping checking getaddrinfo for customer-187-141-143-180-sta.uninet-ide.com.mx [187.141.143.180] failed - POSSIBLE BREAK-IN ATTEMPT!
-masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for customer-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-sta.uninet-ide.com.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
+masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for <VAR:HOST>.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
 
 raw:    Dec 10 09:13:42 LabSZ sshd[24525]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=187.141.143.180  user=root
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: pam_unix(sshd:auth): authentication failure; logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=ssh ruser= rhost=<VAR:IP4>  user=root
@@ -1704,7 +1704,7 @@ raw:    Dec 10 09:13:45 LabSZ sshd[24525]: Received disconnect from 187.141.143.
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Received disconnect from <VAR:IP4>: <VAR:NUM>: Bye Bye [preauth]
 
 raw:    Dec 10 09:13:48 LabSZ sshd[24527]: reverse mapping checking getaddrinfo for customer-187-141-143-180-sta.uninet-ide.com.mx [187.141.143.180] failed - POSSIBLE BREAK-IN ATTEMPT!
-masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for customer-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-sta.uninet-ide.com.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
+masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for <VAR:HOST>.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
 
 raw:    Dec 10 09:13:48 LabSZ sshd[24527]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=187.141.143.180  user=root
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: pam_unix(sshd:auth): authentication failure; logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=ssh ruser= rhost=<VAR:IP4>  user=root
@@ -1716,7 +1716,7 @@ raw:    Dec 10 09:13:50 LabSZ sshd[24527]: Received disconnect from 187.141.143.
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Received disconnect from <VAR:IP4>: <VAR:NUM>: Bye Bye [preauth]
 
 raw:    Dec 10 09:13:53 LabSZ sshd[24529]: reverse mapping checking getaddrinfo for customer-187-141-143-180-sta.uninet-ide.com.mx [187.141.143.180] failed - POSSIBLE BREAK-IN ATTEMPT!
-masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for customer-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-sta.uninet-ide.com.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
+masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for <VAR:HOST>.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
 
 raw:    Dec 10 09:13:53 LabSZ sshd[24529]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=187.141.143.180  user=root
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: pam_unix(sshd:auth): authentication failure; logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=ssh ruser= rhost=<VAR:IP4>  user=root
@@ -1728,7 +1728,7 @@ raw:    Dec 10 09:13:56 LabSZ sshd[24529]: Received disconnect from 187.141.143.
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Received disconnect from <VAR:IP4>: <VAR:NUM>: Bye Bye [preauth]
 
 raw:    Dec 10 09:13:59 LabSZ sshd[24531]: reverse mapping checking getaddrinfo for customer-187-141-143-180-sta.uninet-ide.com.mx [187.141.143.180] failed - POSSIBLE BREAK-IN ATTEMPT!
-masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for customer-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-sta.uninet-ide.com.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
+masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for <VAR:HOST>.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
 
 raw:    Dec 10 09:13:59 LabSZ sshd[24531]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=187.141.143.180  user=root
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: pam_unix(sshd:auth): authentication failure; logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=ssh ruser= rhost=<VAR:IP4>  user=root
@@ -1740,7 +1740,7 @@ raw:    Dec 10 09:14:01 LabSZ sshd[24531]: Received disconnect from 187.141.143.
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Received disconnect from <VAR:IP4>: <VAR:NUM>: Bye Bye [preauth]
 
 raw:    Dec 10 09:14:04 LabSZ sshd[24533]: reverse mapping checking getaddrinfo for customer-187-141-143-180-sta.uninet-ide.com.mx [187.141.143.180] failed - POSSIBLE BREAK-IN ATTEMPT!
-masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for customer-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-sta.uninet-ide.com.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
+masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for <VAR:HOST>.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
 
 raw:    Dec 10 09:14:04 LabSZ sshd[24533]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=187.141.143.180  user=root
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: pam_unix(sshd:auth): authentication failure; logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=ssh ruser= rhost=<VAR:IP4>  user=root
@@ -1752,7 +1752,7 @@ raw:    Dec 10 09:14:07 LabSZ sshd[24533]: Received disconnect from 187.141.143.
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Received disconnect from <VAR:IP4>: <VAR:NUM>: Bye Bye [preauth]
 
 raw:    Dec 10 09:14:09 LabSZ sshd[24535]: reverse mapping checking getaddrinfo for customer-187-141-143-180-sta.uninet-ide.com.mx [187.141.143.180] failed - POSSIBLE BREAK-IN ATTEMPT!
-masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for customer-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-sta.uninet-ide.com.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
+masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for <VAR:HOST>.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
 
 raw:    Dec 10 09:14:09 LabSZ sshd[24535]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=187.141.143.180  user=root
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: pam_unix(sshd:auth): authentication failure; logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=ssh ruser= rhost=<VAR:IP4>  user=root
@@ -1764,7 +1764,7 @@ raw:    Dec 10 09:14:12 LabSZ sshd[24535]: Received disconnect from 187.141.143.
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Received disconnect from <VAR:IP4>: <VAR:NUM>: Bye Bye [preauth]
 
 raw:    Dec 10 09:14:14 LabSZ sshd[24537]: reverse mapping checking getaddrinfo for customer-187-141-143-180-sta.uninet-ide.com.mx [187.141.143.180] failed - POSSIBLE BREAK-IN ATTEMPT!
-masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for customer-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-sta.uninet-ide.com.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
+masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for <VAR:HOST>.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
 
 raw:    Dec 10 09:14:14 LabSZ sshd[24537]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=187.141.143.180  user=root
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: pam_unix(sshd:auth): authentication failure; logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=ssh ruser= rhost=<VAR:IP4>  user=root
@@ -1776,7 +1776,7 @@ raw:    Dec 10 09:14:16 LabSZ sshd[24537]: Received disconnect from 187.141.143.
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Received disconnect from <VAR:IP4>: <VAR:NUM>: Bye Bye [preauth]
 
 raw:    Dec 10 09:14:19 LabSZ sshd[24539]: reverse mapping checking getaddrinfo for customer-187-141-143-180-sta.uninet-ide.com.mx [187.141.143.180] failed - POSSIBLE BREAK-IN ATTEMPT!
-masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for customer-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-sta.uninet-ide.com.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
+masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for <VAR:HOST>.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
 
 raw:    Dec 10 09:14:19 LabSZ sshd[24539]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=187.141.143.180  user=root
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: pam_unix(sshd:auth): authentication failure; logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=ssh ruser= rhost=<VAR:IP4>  user=root
@@ -1788,7 +1788,7 @@ raw:    Dec 10 09:14:22 LabSZ sshd[24539]: Received disconnect from 187.141.143.
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Received disconnect from <VAR:IP4>: <VAR:NUM>: Bye Bye [preauth]
 
 raw:    Dec 10 09:14:25 LabSZ sshd[24541]: reverse mapping checking getaddrinfo for customer-187-141-143-180-sta.uninet-ide.com.mx [187.141.143.180] failed - POSSIBLE BREAK-IN ATTEMPT!
-masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for customer-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-sta.uninet-ide.com.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
+masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for <VAR:HOST>.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
 
 raw:    Dec 10 09:14:25 LabSZ sshd[24541]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=187.141.143.180  user=root
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: pam_unix(sshd:auth): authentication failure; logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=ssh ruser= rhost=<VAR:IP4>  user=root
@@ -1800,7 +1800,7 @@ raw:    Dec 10 09:14:27 LabSZ sshd[24541]: Received disconnect from 187.141.143.
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Received disconnect from <VAR:IP4>: <VAR:NUM>: Bye Bye [preauth]
 
 raw:    Dec 10 09:14:30 LabSZ sshd[24543]: reverse mapping checking getaddrinfo for customer-187-141-143-180-sta.uninet-ide.com.mx [187.141.143.180] failed - POSSIBLE BREAK-IN ATTEMPT!
-masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for customer-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-sta.uninet-ide.com.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
+masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for <VAR:HOST>.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
 
 raw:    Dec 10 09:14:30 LabSZ sshd[24543]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=187.141.143.180  user=root
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: pam_unix(sshd:auth): authentication failure; logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=ssh ruser= rhost=<VAR:IP4>  user=root
@@ -1812,7 +1812,7 @@ raw:    Dec 10 09:14:32 LabSZ sshd[24543]: Received disconnect from 187.141.143.
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Received disconnect from <VAR:IP4>: <VAR:NUM>: Bye Bye [preauth]
 
 raw:    Dec 10 09:14:35 LabSZ sshd[24545]: reverse mapping checking getaddrinfo for customer-187-141-143-180-sta.uninet-ide.com.mx [187.141.143.180] failed - POSSIBLE BREAK-IN ATTEMPT!
-masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for customer-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-sta.uninet-ide.com.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
+masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for <VAR:HOST>.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
 
 raw:    Dec 10 09:14:35 LabSZ sshd[24545]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=187.141.143.180  user=root
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: pam_unix(sshd:auth): authentication failure; logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=ssh ruser= rhost=<VAR:IP4>  user=root
@@ -1824,7 +1824,7 @@ raw:    Dec 10 09:14:38 LabSZ sshd[24545]: Received disconnect from 187.141.143.
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Received disconnect from <VAR:IP4>: <VAR:NUM>: Bye Bye [preauth]
 
 raw:    Dec 10 09:14:41 LabSZ sshd[24547]: reverse mapping checking getaddrinfo for customer-187-141-143-180-sta.uninet-ide.com.mx [187.141.143.180] failed - POSSIBLE BREAK-IN ATTEMPT!
-masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for customer-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-sta.uninet-ide.com.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
+masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for <VAR:HOST>.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
 
 raw:    Dec 10 09:14:41 LabSZ sshd[24547]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=187.141.143.180  user=root
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: pam_unix(sshd:auth): authentication failure; logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=ssh ruser= rhost=<VAR:IP4>  user=root
@@ -1836,7 +1836,7 @@ raw:    Dec 10 09:14:43 LabSZ sshd[24547]: Received disconnect from 187.141.143.
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Received disconnect from <VAR:IP4>: <VAR:NUM>: Bye Bye [preauth]
 
 raw:    Dec 10 09:14:46 LabSZ sshd[24549]: reverse mapping checking getaddrinfo for customer-187-141-143-180-sta.uninet-ide.com.mx [187.141.143.180] failed - POSSIBLE BREAK-IN ATTEMPT!
-masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for customer-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-sta.uninet-ide.com.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
+masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for <VAR:HOST>.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
 
 raw:    Dec 10 09:14:46 LabSZ sshd[24549]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=187.141.143.180  user=root
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: pam_unix(sshd:auth): authentication failure; logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=ssh ruser= rhost=<VAR:IP4>  user=root
@@ -1848,7 +1848,7 @@ raw:    Dec 10 09:14:49 LabSZ sshd[24549]: Received disconnect from 187.141.143.
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Received disconnect from <VAR:IP4>: <VAR:NUM>: Bye Bye [preauth]
 
 raw:    Dec 10 09:14:52 LabSZ sshd[24551]: reverse mapping checking getaddrinfo for customer-187-141-143-180-sta.uninet-ide.com.mx [187.141.143.180] failed - POSSIBLE BREAK-IN ATTEMPT!
-masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for customer-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-sta.uninet-ide.com.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
+masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for <VAR:HOST>.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
 
 raw:    Dec 10 09:14:52 LabSZ sshd[24551]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=187.141.143.180  user=root
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: pam_unix(sshd:auth): authentication failure; logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=ssh ruser= rhost=<VAR:IP4>  user=root
@@ -1860,7 +1860,7 @@ raw:    Dec 10 09:14:54 LabSZ sshd[24551]: Received disconnect from 187.141.143.
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Received disconnect from <VAR:IP4>: <VAR:NUM>: Bye Bye [preauth]
 
 raw:    Dec 10 09:14:57 LabSZ sshd[24553]: reverse mapping checking getaddrinfo for customer-187-141-143-180-sta.uninet-ide.com.mx [187.141.143.180] failed - POSSIBLE BREAK-IN ATTEMPT!
-masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for customer-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-sta.uninet-ide.com.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
+masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for <VAR:HOST>.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
 
 raw:    Dec 10 09:14:57 LabSZ sshd[24553]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=187.141.143.180  user=root
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: pam_unix(sshd:auth): authentication failure; logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=ssh ruser= rhost=<VAR:IP4>  user=root
@@ -1872,7 +1872,7 @@ raw:    Dec 10 09:14:59 LabSZ sshd[24553]: Received disconnect from 187.141.143.
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Received disconnect from <VAR:IP4>: <VAR:NUM>: Bye Bye [preauth]
 
 raw:    Dec 10 09:15:02 LabSZ sshd[24555]: reverse mapping checking getaddrinfo for customer-187-141-143-180-sta.uninet-ide.com.mx [187.141.143.180] failed - POSSIBLE BREAK-IN ATTEMPT!
-masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for customer-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-sta.uninet-ide.com.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
+masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for <VAR:HOST>.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
 
 raw:    Dec 10 09:15:02 LabSZ sshd[24555]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=187.141.143.180  user=root
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: pam_unix(sshd:auth): authentication failure; logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=ssh ruser= rhost=<VAR:IP4>  user=root
@@ -1884,7 +1884,7 @@ raw:    Dec 10 09:15:04 LabSZ sshd[24555]: Received disconnect from 187.141.143.
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Received disconnect from <VAR:IP4>: <VAR:NUM>: Bye Bye [preauth]
 
 raw:    Dec 10 09:15:07 LabSZ sshd[24557]: reverse mapping checking getaddrinfo for customer-187-141-143-180-sta.uninet-ide.com.mx [187.141.143.180] failed - POSSIBLE BREAK-IN ATTEMPT!
-masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for customer-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-sta.uninet-ide.com.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
+masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for <VAR:HOST>.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
 
 raw:    Dec 10 09:15:07 LabSZ sshd[24557]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=187.141.143.180  user=root
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: pam_unix(sshd:auth): authentication failure; logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=ssh ruser= rhost=<VAR:IP4>  user=root
@@ -1896,7 +1896,7 @@ raw:    Dec 10 09:15:09 LabSZ sshd[24557]: Received disconnect from 187.141.143.
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Received disconnect from <VAR:IP4>: <VAR:NUM>: Bye Bye [preauth]
 
 raw:    Dec 10 09:15:12 LabSZ sshd[24559]: reverse mapping checking getaddrinfo for customer-187-141-143-180-sta.uninet-ide.com.mx [187.141.143.180] failed - POSSIBLE BREAK-IN ATTEMPT!
-masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for customer-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-sta.uninet-ide.com.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
+masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for <VAR:HOST>.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
 
 raw:    Dec 10 09:15:12 LabSZ sshd[24559]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=187.141.143.180  user=root
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: pam_unix(sshd:auth): authentication failure; logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=ssh ruser= rhost=<VAR:IP4>  user=root
@@ -1908,7 +1908,7 @@ raw:    Dec 10 09:15:15 LabSZ sshd[24559]: Received disconnect from 187.141.143.
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Received disconnect from <VAR:IP4>: <VAR:NUM>: Bye Bye [preauth]
 
 raw:    Dec 10 09:15:18 LabSZ sshd[24561]: reverse mapping checking getaddrinfo for customer-187-141-143-180-sta.uninet-ide.com.mx [187.141.143.180] failed - POSSIBLE BREAK-IN ATTEMPT!
-masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for customer-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-sta.uninet-ide.com.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
+masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for <VAR:HOST>.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
 
 raw:    Dec 10 09:15:18 LabSZ sshd[24561]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=187.141.143.180  user=root
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: pam_unix(sshd:auth): authentication failure; logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=ssh ruser= rhost=<VAR:IP4>  user=root
@@ -1920,7 +1920,7 @@ raw:    Dec 10 09:15:20 LabSZ sshd[24561]: Received disconnect from 187.141.143.
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Received disconnect from <VAR:IP4>: <VAR:NUM>: Bye Bye [preauth]
 
 raw:    Dec 10 09:15:23 LabSZ sshd[24563]: reverse mapping checking getaddrinfo for customer-187-141-143-180-sta.uninet-ide.com.mx [187.141.143.180] failed - POSSIBLE BREAK-IN ATTEMPT!
-masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for customer-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-sta.uninet-ide.com.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
+masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for <VAR:HOST>.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
 
 raw:    Dec 10 09:15:23 LabSZ sshd[24563]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=187.141.143.180  user=root
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: pam_unix(sshd:auth): authentication failure; logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=ssh ruser= rhost=<VAR:IP4>  user=root
@@ -1932,7 +1932,7 @@ raw:    Dec 10 09:15:26 LabSZ sshd[24563]: Received disconnect from 187.141.143.
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Received disconnect from <VAR:IP4>: <VAR:NUM>: Bye Bye [preauth]
 
 raw:    Dec 10 09:15:29 LabSZ sshd[24565]: reverse mapping checking getaddrinfo for customer-187-141-143-180-sta.uninet-ide.com.mx [187.141.143.180] failed - POSSIBLE BREAK-IN ATTEMPT!
-masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for customer-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-sta.uninet-ide.com.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
+masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for <VAR:HOST>.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
 
 raw:    Dec 10 09:15:29 LabSZ sshd[24565]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=187.141.143.180  user=root
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: pam_unix(sshd:auth): authentication failure; logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=ssh ruser= rhost=<VAR:IP4>  user=root
@@ -1944,7 +1944,7 @@ raw:    Dec 10 09:15:31 LabSZ sshd[24565]: Received disconnect from 187.141.143.
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Received disconnect from <VAR:IP4>: <VAR:NUM>: Bye Bye [preauth]
 
 raw:    Dec 10 09:15:34 LabSZ sshd[24567]: reverse mapping checking getaddrinfo for customer-187-141-143-180-sta.uninet-ide.com.mx [187.141.143.180] failed - POSSIBLE BREAK-IN ATTEMPT!
-masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for customer-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-sta.uninet-ide.com.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
+masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for <VAR:HOST>.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
 
 raw:    Dec 10 09:15:34 LabSZ sshd[24567]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=187.141.143.180  user=root
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: pam_unix(sshd:auth): authentication failure; logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=ssh ruser= rhost=<VAR:IP4>  user=root
@@ -1956,7 +1956,7 @@ raw:    Dec 10 09:15:37 LabSZ sshd[24567]: Received disconnect from 187.141.143.
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Received disconnect from <VAR:IP4>: <VAR:NUM>: Bye Bye [preauth]
 
 raw:    Dec 10 09:15:39 LabSZ sshd[24569]: reverse mapping checking getaddrinfo for customer-187-141-143-180-sta.uninet-ide.com.mx [187.141.143.180] failed - POSSIBLE BREAK-IN ATTEMPT!
-masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for customer-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-sta.uninet-ide.com.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
+masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for <VAR:HOST>.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
 
 raw:    Dec 10 09:15:39 LabSZ sshd[24569]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=187.141.143.180  user=root
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: pam_unix(sshd:auth): authentication failure; logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=ssh ruser= rhost=<VAR:IP4>  user=root
@@ -1968,7 +1968,7 @@ raw:    Dec 10 09:15:41 LabSZ sshd[24569]: Received disconnect from 187.141.143.
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Received disconnect from <VAR:IP4>: <VAR:NUM>: Bye Bye [preauth]
 
 raw:    Dec 10 09:15:44 LabSZ sshd[24571]: reverse mapping checking getaddrinfo for customer-187-141-143-180-sta.uninet-ide.com.mx [187.141.143.180] failed - POSSIBLE BREAK-IN ATTEMPT!
-masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for customer-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-sta.uninet-ide.com.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
+masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for <VAR:HOST>.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
 
 raw:    Dec 10 09:15:44 LabSZ sshd[24571]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=187.141.143.180  user=root
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: pam_unix(sshd:auth): authentication failure; logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=ssh ruser= rhost=<VAR:IP4>  user=root
@@ -1980,7 +1980,7 @@ raw:    Dec 10 09:15:47 LabSZ sshd[24571]: Received disconnect from 187.141.143.
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Received disconnect from <VAR:IP4>: <VAR:NUM>: Bye Bye [preauth]
 
 raw:    Dec 10 09:15:50 LabSZ sshd[24573]: reverse mapping checking getaddrinfo for customer-187-141-143-180-sta.uninet-ide.com.mx [187.141.143.180] failed - POSSIBLE BREAK-IN ATTEMPT!
-masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for customer-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-sta.uninet-ide.com.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
+masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for <VAR:HOST>.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
 
 raw:    Dec 10 09:15:50 LabSZ sshd[24573]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=187.141.143.180  user=root
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: pam_unix(sshd:auth): authentication failure; logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=ssh ruser= rhost=<VAR:IP4>  user=root
@@ -1992,7 +1992,7 @@ raw:    Dec 10 09:15:52 LabSZ sshd[24573]: Received disconnect from 187.141.143.
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Received disconnect from <VAR:IP4>: <VAR:NUM>: Bye Bye [preauth]
 
 raw:    Dec 10 09:15:55 LabSZ sshd[24575]: reverse mapping checking getaddrinfo for customer-187-141-143-180-sta.uninet-ide.com.mx [187.141.143.180] failed - POSSIBLE BREAK-IN ATTEMPT!
-masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for customer-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-sta.uninet-ide.com.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
+masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for <VAR:HOST>.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
 
 raw:    Dec 10 09:15:55 LabSZ sshd[24575]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=187.141.143.180  user=root
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: pam_unix(sshd:auth): authentication failure; logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=ssh ruser= rhost=<VAR:IP4>  user=root
@@ -2004,7 +2004,7 @@ raw:    Dec 10 09:15:57 LabSZ sshd[24575]: Received disconnect from 187.141.143.
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Received disconnect from <VAR:IP4>: <VAR:NUM>: Bye Bye [preauth]
 
 raw:    Dec 10 09:16:00 LabSZ sshd[24577]: reverse mapping checking getaddrinfo for customer-187-141-143-180-sta.uninet-ide.com.mx [187.141.143.180] failed - POSSIBLE BREAK-IN ATTEMPT!
-masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for customer-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-sta.uninet-ide.com.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
+masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for <VAR:HOST>.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
 
 raw:    Dec 10 09:16:00 LabSZ sshd[24577]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=187.141.143.180  user=root
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: pam_unix(sshd:auth): authentication failure; logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=ssh ruser= rhost=<VAR:IP4>  user=root
@@ -2016,7 +2016,7 @@ raw:    Dec 10 09:16:03 LabSZ sshd[24577]: Received disconnect from 187.141.143.
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Received disconnect from <VAR:IP4>: <VAR:NUM>: Bye Bye [preauth]
 
 raw:    Dec 10 09:16:06 LabSZ sshd[24579]: reverse mapping checking getaddrinfo for customer-187-141-143-180-sta.uninet-ide.com.mx [187.141.143.180] failed - POSSIBLE BREAK-IN ATTEMPT!
-masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for customer-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-sta.uninet-ide.com.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
+masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for <VAR:HOST>.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
 
 raw:    Dec 10 09:16:06 LabSZ sshd[24579]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=187.141.143.180  user=root
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: pam_unix(sshd:auth): authentication failure; logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=ssh ruser= rhost=<VAR:IP4>  user=root
@@ -2028,7 +2028,7 @@ raw:    Dec 10 09:16:08 LabSZ sshd[24579]: Received disconnect from 187.141.143.
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Received disconnect from <VAR:IP4>: <VAR:NUM>: Bye Bye [preauth]
 
 raw:    Dec 10 09:16:11 LabSZ sshd[24581]: reverse mapping checking getaddrinfo for customer-187-141-143-180-sta.uninet-ide.com.mx [187.141.143.180] failed - POSSIBLE BREAK-IN ATTEMPT!
-masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for customer-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-sta.uninet-ide.com.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
+masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for <VAR:HOST>.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
 
 raw:    Dec 10 09:16:11 LabSZ sshd[24581]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=187.141.143.180  user=root
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: pam_unix(sshd:auth): authentication failure; logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=ssh ruser= rhost=<VAR:IP4>  user=root
@@ -2040,7 +2040,7 @@ raw:    Dec 10 09:16:14 LabSZ sshd[24581]: Received disconnect from 187.141.143.
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Received disconnect from <VAR:IP4>: <VAR:NUM>: Bye Bye [preauth]
 
 raw:    Dec 10 09:16:17 LabSZ sshd[24583]: reverse mapping checking getaddrinfo for customer-187-141-143-180-sta.uninet-ide.com.mx [187.141.143.180] failed - POSSIBLE BREAK-IN ATTEMPT!
-masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for customer-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-sta.uninet-ide.com.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
+masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for <VAR:HOST>.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
 
 raw:    Dec 10 09:16:17 LabSZ sshd[24583]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=187.141.143.180  user=root
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: pam_unix(sshd:auth): authentication failure; logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=ssh ruser= rhost=<VAR:IP4>  user=root
@@ -2052,7 +2052,7 @@ raw:    Dec 10 09:16:19 LabSZ sshd[24583]: Received disconnect from 187.141.143.
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Received disconnect from <VAR:IP4>: <VAR:NUM>: Bye Bye [preauth]
 
 raw:    Dec 10 09:16:22 LabSZ sshd[24585]: reverse mapping checking getaddrinfo for customer-187-141-143-180-sta.uninet-ide.com.mx [187.141.143.180] failed - POSSIBLE BREAK-IN ATTEMPT!
-masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for customer-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-sta.uninet-ide.com.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
+masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for <VAR:HOST>.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
 
 raw:    Dec 10 09:16:22 LabSZ sshd[24585]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=187.141.143.180  user=root
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: pam_unix(sshd:auth): authentication failure; logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=ssh ruser= rhost=<VAR:IP4>  user=root
@@ -2064,7 +2064,7 @@ raw:    Dec 10 09:16:24 LabSZ sshd[24585]: Received disconnect from 187.141.143.
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Received disconnect from <VAR:IP4>: <VAR:NUM>: Bye Bye [preauth]
 
 raw:    Dec 10 09:16:27 LabSZ sshd[24587]: reverse mapping checking getaddrinfo for customer-187-141-143-180-sta.uninet-ide.com.mx [187.141.143.180] failed - POSSIBLE BREAK-IN ATTEMPT!
-masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for customer-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-sta.uninet-ide.com.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
+masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for <VAR:HOST>.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
 
 raw:    Dec 10 09:16:27 LabSZ sshd[24587]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=187.141.143.180  user=root
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: pam_unix(sshd:auth): authentication failure; logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=ssh ruser= rhost=<VAR:IP4>  user=root
@@ -2076,7 +2076,7 @@ raw:    Dec 10 09:16:30 LabSZ sshd[24587]: Received disconnect from 187.141.143.
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Received disconnect from <VAR:IP4>: <VAR:NUM>: Bye Bye [preauth]
 
 raw:    Dec 10 09:16:33 LabSZ sshd[24589]: reverse mapping checking getaddrinfo for customer-187-141-143-180-sta.uninet-ide.com.mx [187.141.143.180] failed - POSSIBLE BREAK-IN ATTEMPT!
-masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for customer-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-sta.uninet-ide.com.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
+masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for <VAR:HOST>.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
 
 raw:    Dec 10 09:16:33 LabSZ sshd[24589]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=187.141.143.180  user=root
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: pam_unix(sshd:auth): authentication failure; logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=ssh ruser= rhost=<VAR:IP4>  user=root
@@ -2088,7 +2088,7 @@ raw:    Dec 10 09:16:35 LabSZ sshd[24589]: Received disconnect from 187.141.143.
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Received disconnect from <VAR:IP4>: <VAR:NUM>: Bye Bye [preauth]
 
 raw:    Dec 10 09:16:38 LabSZ sshd[24591]: reverse mapping checking getaddrinfo for customer-187-141-143-180-sta.uninet-ide.com.mx [187.141.143.180] failed - POSSIBLE BREAK-IN ATTEMPT!
-masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for customer-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-sta.uninet-ide.com.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
+masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for <VAR:HOST>.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
 
 raw:    Dec 10 09:16:38 LabSZ sshd[24591]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=187.141.143.180  user=root
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: pam_unix(sshd:auth): authentication failure; logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=ssh ruser= rhost=<VAR:IP4>  user=root
@@ -2100,7 +2100,7 @@ raw:    Dec 10 09:16:40 LabSZ sshd[24591]: Received disconnect from 187.141.143.
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Received disconnect from <VAR:IP4>: <VAR:NUM>: Bye Bye [preauth]
 
 raw:    Dec 10 09:16:43 LabSZ sshd[24593]: reverse mapping checking getaddrinfo for customer-187-141-143-180-sta.uninet-ide.com.mx [187.141.143.180] failed - POSSIBLE BREAK-IN ATTEMPT!
-masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for customer-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-sta.uninet-ide.com.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
+masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for <VAR:HOST>.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
 
 raw:    Dec 10 09:16:43 LabSZ sshd[24593]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=187.141.143.180  user=root
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: pam_unix(sshd:auth): authentication failure; logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=ssh ruser= rhost=<VAR:IP4>  user=root
@@ -2112,7 +2112,7 @@ raw:    Dec 10 09:16:45 LabSZ sshd[24593]: Received disconnect from 187.141.143.
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Received disconnect from <VAR:IP4>: <VAR:NUM>: Bye Bye [preauth]
 
 raw:    Dec 10 09:16:48 LabSZ sshd[24595]: reverse mapping checking getaddrinfo for customer-187-141-143-180-sta.uninet-ide.com.mx [187.141.143.180] failed - POSSIBLE BREAK-IN ATTEMPT!
-masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for customer-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-sta.uninet-ide.com.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
+masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for <VAR:HOST>.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
 
 raw:    Dec 10 09:16:48 LabSZ sshd[24595]: Invalid user eoor from 187.141.143.180
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Invalid user eoor from <VAR:IP4>
@@ -2133,7 +2133,7 @@ raw:    Dec 10 09:16:50 LabSZ sshd[24595]: Received disconnect from 187.141.143.
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Received disconnect from <VAR:IP4>: <VAR:NUM>: Bye Bye [preauth]
 
 raw:    Dec 10 09:16:53 LabSZ sshd[24597]: reverse mapping checking getaddrinfo for customer-187-141-143-180-sta.uninet-ide.com.mx [187.141.143.180] failed - POSSIBLE BREAK-IN ATTEMPT!
-masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for customer-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-sta.uninet-ide.com.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
+masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for <VAR:HOST>.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
 
 raw:    Dec 10 09:16:53 LabSZ sshd[24597]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=187.141.143.180  user=root
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: pam_unix(sshd:auth): authentication failure; logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=ssh ruser= rhost=<VAR:IP4>  user=root
@@ -2145,7 +2145,7 @@ raw:    Dec 10 09:16:56 LabSZ sshd[24597]: Received disconnect from 187.141.143.
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Received disconnect from <VAR:IP4>: <VAR:NUM>: Bye Bye [preauth]
 
 raw:    Dec 10 09:16:59 LabSZ sshd[24599]: reverse mapping checking getaddrinfo for customer-187-141-143-180-sta.uninet-ide.com.mx [187.141.143.180] failed - POSSIBLE BREAK-IN ATTEMPT!
-masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for customer-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-sta.uninet-ide.com.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
+masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for <VAR:HOST>.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
 
 raw:    Dec 10 09:16:59 LabSZ sshd[24599]: Invalid user butter from 187.141.143.180
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Invalid user butter from <VAR:IP4>
@@ -2166,7 +2166,7 @@ raw:    Dec 10 09:17:01 LabSZ sshd[24599]: Received disconnect from 187.141.143.
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Received disconnect from <VAR:IP4>: <VAR:NUM>: Bye Bye [preauth]
 
 raw:    Dec 10 09:17:05 LabSZ sshd[24604]: reverse mapping checking getaddrinfo for customer-187-141-143-180-sta.uninet-ide.com.mx [187.141.143.180] failed - POSSIBLE BREAK-IN ATTEMPT!
-masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for customer-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-sta.uninet-ide.com.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
+masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for <VAR:HOST>.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
 
 raw:    Dec 10 09:17:05 LabSZ sshd[24604]: Invalid user redhat from 187.141.143.180
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Invalid user redhat from <VAR:IP4>
@@ -2187,7 +2187,7 @@ raw:    Dec 10 09:17:08 LabSZ sshd[24604]: Received disconnect from 187.141.143.
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Received disconnect from <VAR:IP4>: <VAR:NUM>: Bye Bye [preauth]
 
 raw:    Dec 10 09:17:11 LabSZ sshd[24606]: reverse mapping checking getaddrinfo for customer-187-141-143-180-sta.uninet-ide.com.mx [187.141.143.180] failed - POSSIBLE BREAK-IN ATTEMPT!
-masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for customer-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-sta.uninet-ide.com.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
+masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for <VAR:HOST>.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
 
 raw:    Dec 10 09:17:11 LabSZ sshd[24606]: Invalid user oracle from 187.141.143.180
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Invalid user oracle from <VAR:IP4>
@@ -2208,7 +2208,7 @@ raw:    Dec 10 09:17:13 LabSZ sshd[24606]: Received disconnect from 187.141.143.
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Received disconnect from <VAR:IP4>: <VAR:NUM>: Bye Bye [preauth]
 
 raw:    Dec 10 09:17:15 LabSZ sshd[24608]: reverse mapping checking getaddrinfo for customer-187-141-143-180-sta.uninet-ide.com.mx [187.141.143.180] failed - POSSIBLE BREAK-IN ATTEMPT!
-masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for customer-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-sta.uninet-ide.com.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
+masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for <VAR:HOST>.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
 
 raw:    Dec 10 09:17:15 LabSZ sshd[24608]: Invalid user oracle from 187.141.143.180
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Invalid user oracle from <VAR:IP4>
@@ -2229,7 +2229,7 @@ raw:    Dec 10 09:17:18 LabSZ sshd[24608]: Received disconnect from 187.141.143.
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Received disconnect from <VAR:IP4>: <VAR:NUM>: Bye Bye [preauth]
 
 raw:    Dec 10 09:17:21 LabSZ sshd[24610]: reverse mapping checking getaddrinfo for customer-187-141-143-180-sta.uninet-ide.com.mx [187.141.143.180] failed - POSSIBLE BREAK-IN ATTEMPT!
-masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for customer-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-sta.uninet-ide.com.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
+masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for <VAR:HOST>.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
 
 raw:    Dec 10 09:17:21 LabSZ sshd[24610]: Invalid user oracle from 187.141.143.180
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Invalid user oracle from <VAR:IP4>
@@ -2250,7 +2250,7 @@ raw:    Dec 10 09:17:23 LabSZ sshd[24610]: Received disconnect from 187.141.143.
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Received disconnect from <VAR:IP4>: <VAR:NUM>: Bye Bye [preauth]
 
 raw:    Dec 10 09:17:26 LabSZ sshd[24612]: reverse mapping checking getaddrinfo for customer-187-141-143-180-sta.uninet-ide.com.mx [187.141.143.180] failed - POSSIBLE BREAK-IN ATTEMPT!
-masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for customer-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-sta.uninet-ide.com.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
+masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for <VAR:HOST>.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
 
 raw:    Dec 10 09:17:26 LabSZ sshd[24612]: Invalid user postgres from 187.141.143.180
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Invalid user postgres from <VAR:IP4>
@@ -2271,7 +2271,7 @@ raw:    Dec 10 09:17:28 LabSZ sshd[24612]: Received disconnect from 187.141.143.
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Received disconnect from <VAR:IP4>: <VAR:NUM>: Bye Bye [preauth]
 
 raw:    Dec 10 09:17:31 LabSZ sshd[24614]: reverse mapping checking getaddrinfo for customer-187-141-143-180-sta.uninet-ide.com.mx [187.141.143.180] failed - POSSIBLE BREAK-IN ATTEMPT!
-masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for customer-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-sta.uninet-ide.com.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
+masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for <VAR:HOST>.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
 
 raw:    Dec 10 09:17:31 LabSZ sshd[24614]: Invalid user nagios from 187.141.143.180
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Invalid user nagios from <VAR:IP4>
@@ -2292,7 +2292,7 @@ raw:    Dec 10 09:17:33 LabSZ sshd[24614]: Received disconnect from 187.141.143.
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Received disconnect from <VAR:IP4>: <VAR:NUM>: Bye Bye [preauth]
 
 raw:    Dec 10 09:17:36 LabSZ sshd[24616]: reverse mapping checking getaddrinfo for customer-187-141-143-180-sta.uninet-ide.com.mx [187.141.143.180] failed - POSSIBLE BREAK-IN ATTEMPT!
-masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for customer-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-sta.uninet-ide.com.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
+masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for <VAR:HOST>.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
 
 raw:    Dec 10 09:17:36 LabSZ sshd[24616]: Invalid user www from 187.141.143.180
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Invalid user www from <VAR:IP4>
@@ -2313,7 +2313,7 @@ raw:    Dec 10 09:17:38 LabSZ sshd[24616]: Received disconnect from 187.141.143.
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Received disconnect from <VAR:IP4>: <VAR:NUM>: Bye Bye [preauth]
 
 raw:    Dec 10 09:17:41 LabSZ sshd[24618]: reverse mapping checking getaddrinfo for customer-187-141-143-180-sta.uninet-ide.com.mx [187.141.143.180] failed - POSSIBLE BREAK-IN ATTEMPT!
-masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for customer-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-sta.uninet-ide.com.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
+masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for <VAR:HOST>.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
 
 raw:    Dec 10 09:17:41 LabSZ sshd[24618]: Invalid user abc from 187.141.143.180
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Invalid user abc from <VAR:IP4>
@@ -2334,7 +2334,7 @@ raw:    Dec 10 09:17:43 LabSZ sshd[24618]: Received disconnect from 187.141.143.
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Received disconnect from <VAR:IP4>: <VAR:NUM>: Bye Bye [preauth]
 
 raw:    Dec 10 09:17:46 LabSZ sshd[24620]: reverse mapping checking getaddrinfo for customer-187-141-143-180-sta.uninet-ide.com.mx [187.141.143.180] failed - POSSIBLE BREAK-IN ATTEMPT!
-masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for customer-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-sta.uninet-ide.com.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
+masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for <VAR:HOST>.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
 
 raw:    Dec 10 09:17:46 LabSZ sshd[24620]: Invalid user ted from 187.141.143.180
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Invalid user ted from <VAR:IP4>
@@ -2355,7 +2355,7 @@ raw:    Dec 10 09:17:49 LabSZ sshd[24620]: Received disconnect from 187.141.143.
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Received disconnect from <VAR:IP4>: <VAR:NUM>: Bye Bye [preauth]
 
 raw:    Dec 10 09:17:52 LabSZ sshd[24622]: reverse mapping checking getaddrinfo for customer-187-141-143-180-sta.uninet-ide.com.mx [187.141.143.180] failed - POSSIBLE BREAK-IN ATTEMPT!
-masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for customer-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-sta.uninet-ide.com.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
+masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for <VAR:HOST>.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
 
 raw:    Dec 10 09:17:52 LabSZ sshd[24622]: Invalid user vnc from 187.141.143.180
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Invalid user vnc from <VAR:IP4>
@@ -2376,7 +2376,7 @@ raw:    Dec 10 09:17:55 LabSZ sshd[24622]: Received disconnect from 187.141.143.
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Received disconnect from <VAR:IP4>: <VAR:NUM>: Bye Bye [preauth]
 
 raw:    Dec 10 09:17:58 LabSZ sshd[24624]: reverse mapping checking getaddrinfo for customer-187-141-143-180-sta.uninet-ide.com.mx [187.141.143.180] failed - POSSIBLE BREAK-IN ATTEMPT!
-masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for customer-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-sta.uninet-ide.com.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
+masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for <VAR:HOST>.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
 
 raw:    Dec 10 09:17:58 LabSZ sshd[24624]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=187.141.143.180  user=git
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: pam_unix(sshd:auth): authentication failure; logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=ssh ruser= rhost=<VAR:IP4>  user=git
@@ -2388,7 +2388,7 @@ raw:    Dec 10 09:18:01 LabSZ sshd[24624]: Received disconnect from 187.141.143.
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Received disconnect from <VAR:IP4>: <VAR:NUM>: Bye Bye [preauth]
 
 raw:    Dec 10 09:18:05 LabSZ sshd[24626]: reverse mapping checking getaddrinfo for customer-187-141-143-180-sta.uninet-ide.com.mx [187.141.143.180] failed - POSSIBLE BREAK-IN ATTEMPT!
-masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for customer-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-sta.uninet-ide.com.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
+masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for <VAR:HOST>.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
 
 raw:    Dec 10 09:18:05 LabSZ sshd[24626]: Invalid user ghost from 187.141.143.180
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Invalid user ghost from <VAR:IP4>
@@ -2409,7 +2409,7 @@ raw:    Dec 10 09:18:07 LabSZ sshd[24626]: Received disconnect from 187.141.143.
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Received disconnect from <VAR:IP4>: <VAR:NUM>: Bye Bye [preauth]
 
 raw:    Dec 10 09:18:11 LabSZ sshd[24628]: reverse mapping checking getaddrinfo for customer-187-141-143-180-sta.uninet-ide.com.mx [187.141.143.180] failed - POSSIBLE BREAK-IN ATTEMPT!
-masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for customer-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-sta.uninet-ide.com.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
+masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for <VAR:HOST>.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
 
 raw:    Dec 10 09:18:11 LabSZ sshd[24628]: Invalid user ubuntu from 187.141.143.180
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Invalid user ubuntu from <VAR:IP4>
@@ -2430,7 +2430,7 @@ raw:    Dec 10 09:18:13 LabSZ sshd[24628]: Received disconnect from 187.141.143.
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Received disconnect from <VAR:IP4>: <VAR:NUM>: Bye Bye [preauth]
 
 raw:    Dec 10 09:18:17 LabSZ sshd[24630]: reverse mapping checking getaddrinfo for customer-187-141-143-180-sta.uninet-ide.com.mx [187.141.143.180] failed - POSSIBLE BREAK-IN ATTEMPT!
-masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for customer-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-sta.uninet-ide.com.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
+masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for <VAR:HOST>.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
 
 raw:    Dec 10 09:18:17 LabSZ sshd[24630]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=187.141.143.180  user=ftp
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: pam_unix(sshd:auth): authentication failure; logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=ssh ruser= rhost=<VAR:IP4>  user=ftp
@@ -2442,7 +2442,7 @@ raw:    Dec 10 09:18:19 LabSZ sshd[24630]: Received disconnect from 187.141.143.
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Received disconnect from <VAR:IP4>: <VAR:NUM>: Bye Bye [preauth]
 
 raw:    Dec 10 09:18:22 LabSZ sshd[24632]: reverse mapping checking getaddrinfo for customer-187-141-143-180-sta.uninet-ide.com.mx [187.141.143.180] failed - POSSIBLE BREAK-IN ATTEMPT!
-masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for customer-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-sta.uninet-ide.com.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
+masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for <VAR:HOST>.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
 
 raw:    Dec 10 09:18:22 LabSZ sshd[24632]: Invalid user test from 187.141.143.180
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Invalid user test from <VAR:IP4>
@@ -2472,7 +2472,7 @@ raw:    Dec 10 09:18:27 LabSZ sshd[24637]: input_userauth_request: invalid user 
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: input_userauth_request: invalid user support [preauth]
 
 raw:    Dec 10 09:18:28 LabSZ sshd[24634]: reverse mapping checking getaddrinfo for customer-187-141-143-180-sta.uninet-ide.com.mx [187.141.143.180] failed - POSSIBLE BREAK-IN ATTEMPT!
-masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for customer-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-sta.uninet-ide.com.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
+masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for <VAR:HOST>.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
 
 raw:    Dec 10 09:18:28 LabSZ sshd[24634]: Invalid user deploy from 187.141.143.180
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Invalid user deploy from <VAR:IP4>
@@ -2526,7 +2526,7 @@ raw:    Dec 10 09:18:33 LabSZ sshd[24643]: pam_unix(sshd:auth): authentication f
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: pam_unix(sshd:auth): authentication failure; logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=ssh ruser= rhost=<VAR:IP4> 
 
 raw:    Dec 10 09:18:33 LabSZ sshd[24641]: reverse mapping checking getaddrinfo for customer-187-141-143-180-sta.uninet-ide.com.mx [187.141.143.180] failed - POSSIBLE BREAK-IN ATTEMPT!
-masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for customer-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-sta.uninet-ide.com.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
+masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for <VAR:HOST>.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
 
 raw:    Dec 10 09:18:33 LabSZ sshd[24641]: Invalid user deploy from 187.141.143.180
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Invalid user deploy from <VAR:IP4>
@@ -2553,7 +2553,7 @@ raw:    Dec 10 09:18:36 LabSZ sshd[24641]: Received disconnect from 187.141.143.
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Received disconnect from <VAR:IP4>: <VAR:NUM>: Bye Bye [preauth]
 
 raw:    Dec 10 09:18:40 LabSZ sshd[24645]: reverse mapping checking getaddrinfo for customer-187-141-143-180-sta.uninet-ide.com.mx [187.141.143.180] failed - POSSIBLE BREAK-IN ATTEMPT!
-masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for customer-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-sta.uninet-ide.com.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
+masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for <VAR:HOST>.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
 
 raw:    Dec 10 09:18:40 LabSZ sshd[24645]: Invalid user oralce from 187.141.143.180
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Invalid user oralce from <VAR:IP4>
@@ -2574,7 +2574,7 @@ raw:    Dec 10 09:18:42 LabSZ sshd[24645]: Received disconnect from 187.141.143.
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Received disconnect from <VAR:IP4>: <VAR:NUM>: Bye Bye [preauth]
 
 raw:    Dec 10 09:18:46 LabSZ sshd[24647]: reverse mapping checking getaddrinfo for customer-187-141-143-180-sta.uninet-ide.com.mx [187.141.143.180] failed - POSSIBLE BREAK-IN ATTEMPT!
-masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for customer-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-sta.uninet-ide.com.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
+masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for <VAR:HOST>.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
 
 raw:    Dec 10 09:18:46 LabSZ sshd[24647]: Invalid user oracle from 187.141.143.180
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Invalid user oracle from <VAR:IP4>
@@ -2595,7 +2595,7 @@ raw:    Dec 10 09:18:48 LabSZ sshd[24647]: Received disconnect from 187.141.143.
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Received disconnect from <VAR:IP4>: <VAR:NUM>: Bye Bye [preauth]
 
 raw:    Dec 10 09:18:52 LabSZ sshd[24649]: reverse mapping checking getaddrinfo for customer-187-141-143-180-sta.uninet-ide.com.mx [187.141.143.180] failed - POSSIBLE BREAK-IN ATTEMPT!
-masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for customer-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-sta.uninet-ide.com.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
+masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for <VAR:HOST>.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
 
 raw:    Dec 10 09:18:52 LabSZ sshd[24649]: Invalid user nagios1 from 187.141.143.180
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Invalid user nagios1 from <VAR:IP4>
@@ -2616,7 +2616,7 @@ raw:    Dec 10 09:18:54 LabSZ sshd[24649]: Received disconnect from 187.141.143.
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Received disconnect from <VAR:IP4>: <VAR:NUM>: Bye Bye [preauth]
 
 raw:    Dec 10 09:18:58 LabSZ sshd[24651]: reverse mapping checking getaddrinfo for customer-187-141-143-180-sta.uninet-ide.com.mx [187.141.143.180] failed - POSSIBLE BREAK-IN ATTEMPT!
-masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for customer-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-sta.uninet-ide.com.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
+masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for <VAR:HOST>.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
 
 raw:    Dec 10 09:18:58 LabSZ sshd[24651]: Invalid user postgres1 from 187.141.143.180
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Invalid user postgres1 from <VAR:IP4>
@@ -2637,7 +2637,7 @@ raw:    Dec 10 09:19:01 LabSZ sshd[24651]: Received disconnect from 187.141.143.
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Received disconnect from <VAR:IP4>: <VAR:NUM>: Bye Bye [preauth]
 
 raw:    Dec 10 09:19:04 LabSZ sshd[24653]: reverse mapping checking getaddrinfo for customer-187-141-143-180-sta.uninet-ide.com.mx [187.141.143.180] failed - POSSIBLE BREAK-IN ATTEMPT!
-masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for customer-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-sta.uninet-ide.com.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
+masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for <VAR:HOST>.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
 
 raw:    Dec 10 09:19:04 LabSZ sshd[24653]: Invalid user test1 from 187.141.143.180
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Invalid user test1 from <VAR:IP4>
@@ -2658,7 +2658,7 @@ raw:    Dec 10 09:19:06 LabSZ sshd[24653]: Received disconnect from 187.141.143.
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Received disconnect from <VAR:IP4>: <VAR:NUM>: Bye Bye [preauth]
 
 raw:    Dec 10 09:19:09 LabSZ sshd[24655]: reverse mapping checking getaddrinfo for customer-187-141-143-180-sta.uninet-ide.com.mx [187.141.143.180] failed - POSSIBLE BREAK-IN ATTEMPT!
-masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for customer-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-sta.uninet-ide.com.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
+masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for <VAR:HOST>.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
 
 raw:    Dec 10 09:19:09 LabSZ sshd[24655]: Invalid user test2 from 187.141.143.180
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Invalid user test2 from <VAR:IP4>
@@ -2679,7 +2679,7 @@ raw:    Dec 10 09:19:11 LabSZ sshd[24655]: Received disconnect from 187.141.143.
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Received disconnect from <VAR:IP4>: <VAR:NUM>: Bye Bye [preauth]
 
 raw:    Dec 10 09:19:15 LabSZ sshd[24657]: reverse mapping checking getaddrinfo for customer-187-141-143-180-sta.uninet-ide.com.mx [187.141.143.180] failed - POSSIBLE BREAK-IN ATTEMPT!
-masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for customer-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-sta.uninet-ide.com.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
+masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for <VAR:HOST>.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
 
 raw:    Dec 10 09:19:15 LabSZ sshd[24657]: Invalid user bssh from 187.141.143.180
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Invalid user bssh from <VAR:IP4>
@@ -2700,7 +2700,7 @@ raw:    Dec 10 09:19:17 LabSZ sshd[24657]: Received disconnect from 187.141.143.
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Received disconnect from <VAR:IP4>: <VAR:NUM>: Bye Bye [preauth]
 
 raw:    Dec 10 09:19:20 LabSZ sshd[24659]: reverse mapping checking getaddrinfo for customer-187-141-143-180-sta.uninet-ide.com.mx [187.141.143.180] failed - POSSIBLE BREAK-IN ATTEMPT!
-masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for customer-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-sta.uninet-ide.com.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
+masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for <VAR:HOST>.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
 
 raw:    Dec 10 09:19:20 LabSZ sshd[24659]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=187.141.143.180  user=mysql
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: pam_unix(sshd:auth): authentication failure; logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=ssh ruser= rhost=<VAR:IP4>  user=mysql
@@ -2712,7 +2712,7 @@ raw:    Dec 10 09:19:23 LabSZ sshd[24659]: Received disconnect from 187.141.143.
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Received disconnect from <VAR:IP4>: <VAR:NUM>: Bye Bye [preauth]
 
 raw:    Dec 10 09:19:26 LabSZ sshd[24661]: reverse mapping checking getaddrinfo for customer-187-141-143-180-sta.uninet-ide.com.mx [187.141.143.180] failed - POSSIBLE BREAK-IN ATTEMPT!
-masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for customer-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-sta.uninet-ide.com.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
+masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for <VAR:HOST>.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
 
 raw:    Dec 10 09:19:26 LabSZ sshd[24661]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=187.141.143.180  user=mysql
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: pam_unix(sshd:auth): authentication failure; logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=ssh ruser= rhost=<VAR:IP4>  user=mysql
@@ -2724,7 +2724,7 @@ raw:    Dec 10 09:19:28 LabSZ sshd[24661]: Received disconnect from 187.141.143.
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Received disconnect from <VAR:IP4>: <VAR:NUM>: Bye Bye [preauth]
 
 raw:    Dec 10 09:19:32 LabSZ sshd[24663]: reverse mapping checking getaddrinfo for customer-187-141-143-180-sta.uninet-ide.com.mx [187.141.143.180] failed - POSSIBLE BREAK-IN ATTEMPT!
-masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for customer-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-sta.uninet-ide.com.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
+masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for <VAR:HOST>.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
 
 raw:    Dec 10 09:19:32 LabSZ sshd[24663]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=187.141.143.180  user=git
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: pam_unix(sshd:auth): authentication failure; logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=ssh ruser= rhost=<VAR:IP4>  user=git
@@ -2736,7 +2736,7 @@ raw:    Dec 10 09:19:34 LabSZ sshd[24663]: Received disconnect from 187.141.143.
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Received disconnect from <VAR:IP4>: <VAR:NUM>: Bye Bye [preauth]
 
 raw:    Dec 10 09:19:37 LabSZ sshd[24665]: reverse mapping checking getaddrinfo for customer-187-141-143-180-sta.uninet-ide.com.mx [187.141.143.180] failed - POSSIBLE BREAK-IN ATTEMPT!
-masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for customer-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-sta.uninet-ide.com.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
+masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for <VAR:HOST>.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
 
 raw:    Dec 10 09:19:37 LabSZ sshd[24665]: Invalid user magnos from 187.141.143.180
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Invalid user magnos from <VAR:IP4>
@@ -2757,7 +2757,7 @@ raw:    Dec 10 09:19:40 LabSZ sshd[24665]: Received disconnect from 187.141.143.
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Received disconnect from <VAR:IP4>: <VAR:NUM>: Bye Bye [preauth]
 
 raw:    Dec 10 09:19:42 LabSZ sshd[24667]: reverse mapping checking getaddrinfo for customer-187-141-143-180-sta.uninet-ide.com.mx [187.141.143.180] failed - POSSIBLE BREAK-IN ATTEMPT!
-masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for customer-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-sta.uninet-ide.com.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
+masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for <VAR:HOST>.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
 
 raw:    Dec 10 09:19:42 LabSZ sshd[24667]: Invalid user magnos from 187.141.143.180
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Invalid user magnos from <VAR:IP4>
@@ -2778,7 +2778,7 @@ raw:    Dec 10 09:19:46 LabSZ sshd[24667]: Received disconnect from 187.141.143.
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Received disconnect from <VAR:IP4>: <VAR:NUM>: Bye Bye [preauth]
 
 raw:    Dec 10 09:19:49 LabSZ sshd[24669]: reverse mapping checking getaddrinfo for customer-187-141-143-180-sta.uninet-ide.com.mx [187.141.143.180] failed - POSSIBLE BREAK-IN ATTEMPT!
-masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for customer-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-sta.uninet-ide.com.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
+masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for <VAR:HOST>.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
 
 raw:    Dec 10 09:19:49 LabSZ sshd[24669]: Invalid user ingrid from 187.141.143.180
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Invalid user ingrid from <VAR:IP4>
@@ -2799,7 +2799,7 @@ raw:    Dec 10 09:19:51 LabSZ sshd[24669]: Received disconnect from 187.141.143.
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Received disconnect from <VAR:IP4>: <VAR:NUM>: Bye Bye [preauth]
 
 raw:    Dec 10 09:19:54 LabSZ sshd[24671]: reverse mapping checking getaddrinfo for customer-187-141-143-180-sta.uninet-ide.com.mx [187.141.143.180] failed - POSSIBLE BREAK-IN ATTEMPT!
-masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for customer-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-sta.uninet-ide.com.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
+masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for <VAR:HOST>.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
 
 raw:    Dec 10 09:19:54 LabSZ sshd[24671]: Invalid user jay from 187.141.143.180
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Invalid user jay from <VAR:IP4>
@@ -2820,7 +2820,7 @@ raw:    Dec 10 09:19:57 LabSZ sshd[24671]: Received disconnect from 187.141.143.
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Received disconnect from <VAR:IP4>: <VAR:NUM>: Bye Bye [preauth]
 
 raw:    Dec 10 09:20:00 LabSZ sshd[24673]: reverse mapping checking getaddrinfo for customer-187-141-143-180-sta.uninet-ide.com.mx [187.141.143.180] failed - POSSIBLE BREAK-IN ATTEMPT!
-masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for customer-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-sta.uninet-ide.com.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
+masked: <VAR:TS> LabSZ sshd<VAR:PID>: reverse mapping checking getaddrinfo for <VAR:HOST>.mx [<VAR:IP4>] failed - POSSIBLE BREAK-IN ATTEMPT!
 
 raw:    Dec 10 09:20:00 LabSZ sshd[24673]: Invalid user cyrus from 187.141.143.180
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Invalid user cyrus from <VAR:IP4>
@@ -2883,7 +2883,7 @@ raw:    Dec 10 09:32:35 LabSZ sshd[24787]: pam_unix(sshd:auth): check pass; user
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: pam_unix(sshd:auth): check pass; user unknown
 
 raw:    Dec 10 09:32:35 LabSZ sshd[24787]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=ec2-52-80-34-196.cn-north-1.compute.amazonaws.com.cn 
-masked: <VAR:TS> LabSZ sshd<VAR:PID>: pam_unix(sshd:auth): authentication failure; logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=ssh ruser= rhost=ec2-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>.cn-north-<VAR:NUM>.compute.amazonaws.com.cn 
+masked: <VAR:TS> LabSZ sshd<VAR:PID>: pam_unix(sshd:auth): authentication failure; logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=ssh ruser= rhost=<VAR:HOST> 
 
 raw:    Dec 10 09:32:42 LabSZ sshd[24787]: Failed password for invalid user matlab from 52.80.34.196 port 36060 ssh2
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Failed password for invalid user matlab from <VAR:IP4> port <VAR:NUM> ssh2
@@ -3024,7 +3024,7 @@ raw:    Dec 10 10:21:01 LabSZ sshd[24841]: pam_unix(sshd:auth): check pass; user
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: pam_unix(sshd:auth): check pass; user unknown
 
 raw:    Dec 10 10:21:01 LabSZ sshd[24841]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=ec2-52-80-34-196.cn-north-1.compute.amazonaws.com.cn 
-masked: <VAR:TS> LabSZ sshd<VAR:PID>: pam_unix(sshd:auth): authentication failure; logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=ssh ruser= rhost=ec2-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>.cn-north-<VAR:NUM>.compute.amazonaws.com.cn 
+masked: <VAR:TS> LabSZ sshd<VAR:PID>: pam_unix(sshd:auth): authentication failure; logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=ssh ruser= rhost=<VAR:HOST> 
 
 raw:    Dec 10 10:21:09 LabSZ sshd[24841]: Failed password for invalid user matlab from 52.80.34.196 port 36060 ssh2
 masked: <VAR:TS> LabSZ sshd<VAR:PID>: Failed password for invalid user matlab from <VAR:IP4> port <VAR:NUM> ssh2

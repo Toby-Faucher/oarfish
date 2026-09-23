@@ -52,6 +52,11 @@ pattern = '\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b'
 why     = "before PATH and HEX, which both match fragments of an address"
 
 [[slot]]
+name    = "HOST"
+pattern = '\b(?:[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?\.)+(?:com|net|org|edu|gov|mil|arpa|lan|localdomain|uk|de|fr|jp|cn|hk|ru|nl|au|ca|eu)\b'
+why     = "a DNS name: reverse lookups, rhost=, proxy targets, NTP and ACME peers. The last label must be a TLD that is not also a common word in code (`app`, `io`, `dev`, `internal` and `local` all end Java and Python package segments: `mapreduce.v2.app.rm` is a class, not a host), so dotted code names (`org.apache.hadoop.mapred.MapTask`, `nova.compute.manager`) stay literal: they name the logger, and masking them would merge events. `lan` and `localdomain` cover the homelab. TLDs that are also file extensions (md, py, sh, so, pl) are left out. After EMAIL, whose domain would otherwise be taken alone, and before PATH and NUM."
+
+[[slot]]
 name    = "DEV"
 pattern = '/dev/[a-zA-Z0-9/_-]+|\b(?:sd[a-z]+\d*|nvme\d+n\d+(?:p\d+)?|dm-\d+|vd[a-z]\d*|md\d+|zd\d+)\b'
 why     = "before PATH so /dev/sda1 is a device rather than a generic path, and before NUM so sda1 does not become sda<VAR:NUM>. vd[a-z] takes a single letter on purpose: vd[a-z]+ matches the word vdev."

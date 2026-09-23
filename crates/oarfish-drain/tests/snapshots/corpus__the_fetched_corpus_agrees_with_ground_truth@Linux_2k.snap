@@ -2,32 +2,28 @@
 source: crates/oarfish-drain/tests/corpus.rs
 assertion_line: 350
 ---
-truth_templates: 118 port_clusters: 132
+truth_templates: 118 port_clusters: 124
 unambiguous: 2000 unmatched: 0 ambiguous: 0
 impure_clusters: 1
   seq 9 mixes ["E17", "E19"]: <VAR:TS> combo sshd(pam_unix)<VAR:PID>: authentication failure; logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=NODEVssh ruser= rhost=<VAR:IP4> <*>
 split_events: 4
-  E29 in 11 clusters
   E101 in 4 clusters
+  E29 in 3 clusters
   E102 in 2 clusters
   E27 in 2 clusters
-lines: 2000 clusters: 132
+lines: 2000 clusters: 124
 617 <VAR:TS> combo ftpd<VAR:PID>: connection from <VAR:IP4> () at <VAR:TS>
   eg: Jun 20 03:40:59 combo ftpd[8829]: connection from 222.33.90.199 () at Mon Jun 20 03:40:59 2005 
 351 <VAR:TS> combo sshd(pam_unix)<VAR:PID>: authentication failure; logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=NODEVssh ruser= <*> user=root
   eg: Jun 15 02:04:59 combo sshd(pam_unix)[20882]: authentication failure; logname= uid=0 euid=0 tty=NODEVssh ruser= rhost=220-135-151-1.hinet-ip.hinet.net  user=root
+269 <VAR:TS> combo ftpd<VAR:PID>: connection from <VAR:IP4> (<VAR:HOST>) at <VAR:TS>
+  eg: Jun 17 07:07:00 combo ftpd[29504]: connection from 24.54.76.216 (24-54-76-216.bflony.adelphia.net) at Fri Jun 17 07:07:00 2005 
 117 <VAR:TS> combo sshd(pam_unix)<VAR:PID>: authentication failure; logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=NODEVssh ruser= <*>
   eg: Jun 14 15:16:01 combo sshd(pam_unix)[19939]: authentication failure; logname= uid=0 euid=0 tty=NODEVssh ruser= rhost=218.188.2.4 
 116 <VAR:TS> combo sshd(pam_unix)<VAR:PID>: check pass; user unknown
   eg: Jun 14 15:16:02 combo sshd(pam_unix)[19937]: check pass; user unknown
 86 <VAR:TS> combo su(pam_unix)<VAR:PID>: session opened for user <*> by (uid=<VAR:NUM>)
   eg: Jun 15 04:06:18 combo su(pam_unix)[21416]: session opened for user cyrus by (uid=0)
-46 <VAR:TS> combo ftpd<VAR:PID>: connection from <VAR:IP4> (<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>.dsl.in-addr.zen.co.uk) at <VAR:TS>
-  eg: Jul 17 21:23:20 combo ftpd[25038]: connection from 82.68.222.194 (82-68-222-194.dsl.in-addr.zen.co.uk) at Sun Jul 17 21:23:20 2005 
-46 <VAR:TS> combo ftpd<VAR:PID>: connection from <VAR:IP4> (dsl-Chn-static-<VAR:IP4>.touchtelindia.net) at <VAR:TS>
-  eg: Jul  3 10:05:25 combo ftpd[32069]: connection from 203.101.45.59 (dsl-Chn-static-059.45.101.203.touchtelindia.net) at Sun Jul  3 10:05:25 2005 
-46 <VAR:TS> combo ftpd<VAR:PID>: connection from <VAR:IP4> (host8.topspot.net) at <VAR:TS>
-  eg: Jul 17 12:30:35 combo ftpd[24192]: connection from 207.30.238.8 (host8.topspot.net) at Sun Jul 17 12:30:35 2005 
 43 <VAR:TS> combo logrotate: ALERT exited abnormally with <VAR:PID>
   eg: Jun 15 04:06:20 combo logrotate: ALERT exited abnormally with [1]
 43 <VAR:TS> combo su(pam_unix)<VAR:PID>: session closed for user cyrus
@@ -38,28 +34,16 @@ lines: 2000 clusters: 132
   eg: Jun 17 20:34:57 combo sshd(pam_unix)[30631]: session closed for user test
 36 <VAR:TS> combo sshd(pam_unix)<VAR:PID>: session opened for user test by (uid=<VAR:NUM>)
   eg: Jun 17 20:29:26 combo sshd(pam_unix)[30631]: session opened for user test by (uid=509)
-32 <VAR:TS> combo ftpd<VAR:PID>: connection from <VAR:IP4> (aml-sfh-3310b.adsl.wanadoo.nl) at <VAR:TS>
-  eg: Jul 17 04:06:32 combo ftpd[19675]: connection from 83.116.207.11 (aml-sfh-3310b.adsl.wanadoo.nl) at Sun Jul 17 04:06:32 2005 
 23 <VAR:TS> combo ftpd<VAR:PID>: connection from <VAR:IP4> (<VAR:IP4>.sh.interxion.inode.at) at <VAR:TS>
   eg: Jul  3 23:16:09 combo ftpd[768]: connection from 62.99.164.82 (62.99.164.82.sh.interxion.inode.at) at Sun Jul  3 23:16:09 2005 
-23 <VAR:TS> combo ftpd<VAR:PID>: connection from <VAR:IP4> (adsl-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>.dsl.mtry01.pacbell.net) at <VAR:TS>
-  eg: Jul  4 12:52:44 combo ftpd[2839]: connection from 63.197.98.106 (adsl-63-197-98-106.dsl.mtry01.pacbell.net) at Mon Jul  4 12:52:44 2005 
-23 <VAR:TS> combo ftpd<VAR:PID>: connection from <VAR:IP4> (dsl-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>.arcor-ip.net) at <VAR:TS>
-  eg: Jul 10 07:24:24 combo ftpd[29726]: connection from 82.83.227.67 (dsl-082-083-227-067.arcor-ip.net) at Sun Jul 10 07:24:24 2005 
-23 <VAR:TS> combo ftpd<VAR:PID>: connection from <VAR:IP4> (host129.<VAR:NUM>.<VAR:NUM>.maximumasp.com) at <VAR:TS>
-  eg: Jul  9 22:53:19 combo ftpd[24085]: connection from 206.196.21.129 (host129.206.196.21.maximumasp.com) at Sat Jul  9 22:53:19 2005 
 23 <VAR:TS> combo klogind<VAR:PID>: Kerberos authentication failed
   eg: Jun 30 20:53:04 combo klogind[19272]: Kerberos authentication failed 
-22 <VAR:TS> combo ftpd<VAR:PID>: connection from <VAR:IP4> (lns-vlq-<VAR:NUM>-tou-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>.adsl.proxad.net) at <VAR:TS>
-  eg: Jun 17 20:55:06 combo ftpd[30755]: connection from 82.252.162.81 (lns-vlq-45-tou-82-252-162-81.adsl.proxad.net) at Fri Jun 17 20:55:06 2005 
 21 <VAR:TS> combo sshd(pam_unix)<VAR:PID>: authentication failure; logname= uid=<VAR:NUM> euid=<VAR:NUM> tty=NODEVssh ruser= rhost=<VAR:IP4> <*>
   eg: Jun 17 19:43:13 combo sshd(pam_unix)[30565]: authentication failure; logname= uid=0 euid=0 tty=NODEVssh ruser= rhost=211.46.224.253  user=guest
 16 <VAR:TS> combo named<VAR:PID>: notify question section contains no SOA
   eg: Jul 25 12:09:06 combo named[2306]: notify question section contains no SOA
 15 <VAR:TS> combo klogind<VAR:PID>: Authentication failed from <VAR:IP4> (<VAR:IP4>): Software caused connection abort
   eg: Jun 30 20:53:04 combo klogind[19274]: Authentication failed from 163.27.187.39 (163.27.187.39): Software caused connection abort 
-8 <VAR:TS> combo ftpd<VAR:PID>: connection from <VAR:IP4> (<VAR:NUM>-<VAR:NUM>-<VAR:NUM>-<VAR:NUM>.bflony.adelphia.net) at <VAR:TS>
-  eg: Jun 17 07:07:00 combo ftpd[29504]: connection from 24.54.76.216 (24-54-76-216.bflony.adelphia.net) at Fri Jun 17 07:07:00 2005 
 8 <VAR:TS> combo klogind<VAR:PID>: Authentication failed from <VAR:IP4> (<VAR:IP4>): Permission denied in replay cache code
   eg: Jun 30 20:53:04 combo klogind[19272]: Authentication failed from 163.27.187.39 (163.27.187.39): Permission denied in replay cache code 
 7 <VAR:TS> combo syslogd <VAR:NUM>.<VAR:NUM>: restart.

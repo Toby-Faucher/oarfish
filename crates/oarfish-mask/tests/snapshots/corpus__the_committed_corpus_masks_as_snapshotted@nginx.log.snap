@@ -14,7 +14,7 @@ raw:    192.168.1.20 - - [18/Sep/2026:03:15:44 +0000] "GET /favicon.ico HTTP/1.1
 masked: <VAR:IP4> - - [<VAR:TS>] "GET /favicon.ico HTTP/<VAR:NUM>" <VAR:NUM> <VAR:NUM> "-" "Mozilla/<VAR:NUM>"
 
 raw:    2026/09/18 03:14:07 [error] 918#918: *4412 upstream timed out (110: Connection timed out) while reading response header from upstream, client: 10.0.0.9, server: board.lan, request: "GET /api/stream HTTP/1.1", upstream: "http://127.0.0.1:4000/api/stream"
-masked: <VAR:TS> [error] <VAR:NUM>#<VAR:NUM>: *<VAR:NUM> upstream timed out (<VAR:NUM>: Connection timed out) while reading response header from upstream, client: <VAR:IP4>, server: board.lan, request: "GET <VAR:PATH> HTTP/<VAR:NUM>", upstream: "<VAR:URL>"
+masked: <VAR:TS> [error] <VAR:NUM>#<VAR:NUM>: *<VAR:NUM> upstream timed out (<VAR:NUM>: Connection timed out) while reading response header from upstream, client: <VAR:IP4>, server: <VAR:HOST>, request: "GET <VAR:PATH> HTTP/<VAR:NUM>", upstream: "<VAR:URL>"
 
 raw:    2026/09/18 03:16:01 [warn] 918#918: *4530 a client request body is buffered to a temporary file /var/lib/nginx/body/0000000012
 masked: <VAR:TS> [warn] <VAR:NUM>#<VAR:NUM>: *<VAR:NUM> a client request body is buffered to a temporary file <VAR:PATH>

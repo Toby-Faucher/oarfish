@@ -29,7 +29,7 @@ mod tests {
     fn the_curated_bundle_loads() {
         let bundle = curated();
         assert_eq!(bundle.version(), 1);
-        assert_eq!(bundle.slots().len(), 14);
+        assert_eq!(bundle.slots().len(), 15);
     }
 
     #[test]
@@ -103,6 +103,30 @@ mod tests {
     #[case("wal 000000010000000000000042 ok", "wal <VAR:HEX> ok")]
     #[case("max 18446744073709551615 ok", "max <VAR:NUM> ok")]
     fn hex_needs_a_letter(#[case] line: &str, #[case] expected: &str) {
+        assert_eq!(curated().mask(line).template(), expected);
+    }
+
+    /// DNS names are variables; dotted code names are the logger's identity.
+    #[rstest::rstest]
+    #[case(
+        "reverse mapping for ns.example.com failed",
+        "reverse mapping for <VAR:HOST> failed"
+    )]
+    #[case("rhost=massive.merukuru.org", "rhost=<VAR:HOST>")]
+    #[case("proxy.cse.cuhk.edu.hk:5070 open", "<VAR:HOST>:<VAR:NUM> open")]
+    #[case("lookup nas.lan ok", "lookup <VAR:HOST> ok")]
+    #[case(
+        "org.apache.hadoop.mapred.MapTask: done",
+        "org.apache.hadoop.mapred.MapTask: done"
+    )]
+    #[case("nova.compute.manager started", "nova.compute.manager started")]
+    #[case("see README.md", "see README.md")]
+    #[case(
+        "mapreduce.v2.app.rm.RMContainerAllocator: ok",
+        "mapreduce.v2.app.rm.RMContainerAllocator: ok"
+    )]
+    #[case("mail to ops@example.com bounced", "mail to <VAR:EMAIL> bounced")]
+    fn host_takes_dns_names_only(#[case] line: &str, #[case] expected: &str) {
         assert_eq!(curated().mask(line).template(), expected);
     }
 
