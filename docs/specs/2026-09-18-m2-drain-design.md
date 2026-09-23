@@ -65,8 +65,11 @@ divergent where Loki is deployment. Concretely:
 - Template update: positions where the line and the cluster template differ become the
   parameter string, in place. Generalization is monotonic — a position generalizes at
   most once — which is what bounds the id churn in §5.
-- Stale-id hygiene: evicted cluster ids linger in tree nodes and are filtered on read
-  and cleaned on insert. No background pruning pass; there is no retention concept yet.
+- Stale-id hygiene: eviction takes the id out of its tree leaf, found by the path
+  recorded at insert, and prunes nodes it leaves empty, so the tree holds exactly the
+  live clusters. *(Revised 2026-09-22. This said "filtered on read and cleaned on
+  insert", but nothing cleaned them, and leaves grew without bound under the hostile
+  input `max_clusters` exists to bound.)*
 
 One mechanics note, verified while porting: a word-varying early position (e.g. two
 usernames as token 2) never meets in the tree — the search follows exact-or-parameter

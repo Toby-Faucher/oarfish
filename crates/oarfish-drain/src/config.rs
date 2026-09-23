@@ -26,10 +26,10 @@ pub struct Config {
     /// Lines past this many tokens cluster on their prefix. 128: bounds
     /// per-cluster memory while keeping the function total.
     pub max_tokens: usize,
-    /// The floor of the merge-referral band in [`Drain::neighbours`](crate::Drain::neighbours).
+    /// The floor of merge referral in [`Drain::neighbours`](crate::Drain::neighbours).
     /// 0.65: pairs scoring below this are different events, not close ones.
-    /// The ceiling is [`Config::similarity`] itself, not a tuning choice — at
-    /// or above it the two lines would already be one cluster.
+    /// There is no ceiling: a high Jaccard does not mean Drain merged the
+    /// pair, since Drain never compares across token counts or tree paths.
     pub referral_floor: f64,
 }
 
